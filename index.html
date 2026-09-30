@@ -717,6 +717,7 @@ function floatOn(pi,text,color){
 function popDeck(){
   if(!S.deck.length){
     const t=S.discard.pop();S.deck=shuffle(S.discard);S.discard=[t];
+    S.deck.forEach(c=>{if(c.orig){c.type=c.orig;c.color='w';c.value=null;delete c.orig}c.chosen=null});
     if(!S.deck.length)return null;
   }
   return S.deck.pop();
@@ -865,23 +866,19 @@ function srcRect(pi,card){
   return el?el.getBoundingClientRect():null;
 }
 function playCard(pi,card,chosen){
-  const p=S.players[pi];const before=p.hand.length;sfx('play');S.passes=0;
-  S.animPlay=S.fastSrc||srcRect(pi,card);S.fastSrc=null;
+  const p=S.players[pi];
+  const annc=S.ann===card;if(annc){S.discard=S.discard.filter(c=>c!==card);S.ann=null;S.lastTop=null;S.morph=true}
+  const before=p.hand.length+(p.hand.includes(card)?0:1);if(!annc)sfx('play');S.passes=0;
+  S.animPlay=annc?null:(S.fastSrc||srcRect(pi,card));S.fastSrc=null;
   const inCombo=S.phase==='combo';
   if(inCombo&&R.sequence&&card.value!==S.comboValue&&!S.seqDir)S.seqDir=card.value-S.comboValue;
   const black=R.black&&identical(card,top());
   const prev=top();const colBefore=S.color;S.colBefore=colBefore;
   const sunPen=S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(card);
   const hadColor=p.hand.some(c=>c.id!==card.id&&c.color!=='w'&&sameCol(c.color,colBefore));
-  const orig=card.type;
-  if(card.type==='clone'&&['chest','batata','simon','half','bomb'].includes(prev.type)){card.type='random'}
-  if(card.type==='clone'){
-    card.type=prev.type;card.value=prev.value;
-    if(prev.color==='w'||prev.color==='k'){card.color='w';chosen=chosen||(S.color==='k'?rand(COLORS):S.color)}else card.color=prev.color;
-  }else if(card.type==='random'){
-    const pool=['skip','rev','d2',...Object.keys(SP).filter(k=>!['random','clone','bomb','chest','d99','half','simon','batata'].includes(k))];
-    card.type=rand(pool);card.color=rand(COLORS);
-  }
+  if(card.type==='clone'||card.type==='random')morphCard(card,prev);
+  const orig=card.orig||card.type;
+  if(card.color==='w'&&!chosen&&orig!==card.type)chosen=S.color==='k'?rand(COLORS):S.color;
   p.hand=p.hand.filter(c=>c.id!==card.id);
   card.rot=Math.random()*24-12;
   S.discard.push(card);
@@ -890,7 +887,7 @@ function playCard(pi,card,chosen){
   let msg=`${who(pi)} jogou ${orig!==card.type?SP[orig].n+' → ':''}${cardName(card)}`;
   if(card.color==='w'&&chosen)msg+=` → ${CNAME[chosen]}`;
   const on=!(S.peace>0);
-  if(orig!==card.type)stampOn(pi,SP[orig].g,'var(--accent)');
+  if(orig!==card.type&&!annc)stampOn(pi,SP[orig].g,'var(--accent)');
   if(!on&&card.type!=='num'&&!isWildPick(card)){msg+=' (sem efeito: Paz)';fx('☮️','Sem efeito: Paz','var(--cg)','stamp')}
   if(on&&card.type==='skip'){S.skip=true;const v=nextIdx(pi,1);fx('⊘',v===0?'Você perdeu a vez':`${who(v)} perdeu a vez`,'var(--cr)','stamp');stampOn(v,'⊘','var(--cr)')}
   if(on&&card.type==='rev'){
@@ -1609,9 +1606,48 @@ function botAct(){
   if(S.phase==='combo'&&confused(pi)){endTurn();return}
   botPlay(botChoose(p,opts));
 }
+function randomPool(){
+  const ex=['random','clone','bomb','chest','d99','half','simon','batata'];
+  const pool=R.noaction?[]:['skip','rev','d2'];
+  if(!R.noaction)Object.entries(SP).forEach(([k,v])=>{if(!ex.includes(k)&&R[v.rule||k])pool.push(k)});
+  return pool.length?pool:['skip','rev','d2'];
+}
+function morphCard(card,prev){
+  card.orig=card.orig||card.type;
+  if(card.type==='clone'&&(!prev||['chest','batata','simon','half','bomb','clone','random'].includes(prev.type)))card.type='random';
+  if(card.type==='clone'){card.type=prev.type;card.value=prev.value;card.color=(prev.color==='w'||prev.color==='k')?'w':prev.color}
+  else if(card.type==='random'){card.type=rand(randomPool());card.value=null;card.color=rand(COLORS)}
+}
+const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simon'];
+const needsAnn=(pi,card)=>card.type==='random'||card.type==='clone'||(pi!==0&&(isWildPick(card)||ASK_TYPES.includes(card.type)));
+function announce(pi,card,cont){
+  clearFlash();
+  const p=S.players[pi];const rect=srcRect(pi,card);
+  p.hand=p.hand.filter(c=>c.id!==card.id);
+  card.rot=Math.random()*24-12;S.discard.push(card);S.ann=card;
+  S.animPlay=rect;S.busy=true;S.announcing=true;S.annText=`${who(pi)} ${pi===0?'jogou':'jogou'} ${label(card)}`;sfx('play');
+  render();
+  const g=S.gen;
+  const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;S.announcing=false;cont()};
+  setTimeout(()=>{
+    if(g!==S.gen||S.phase==='over')return;
+    if(card.type==='clone'||card.type==='random'){
+      const og=SP[card.type].g;
+      morphCard(card,S.discard[S.discard.length-2]);S.lastTop=null;S.morph=true;
+      S.annText=`${SP[card.orig].n} virou ${label(card)}`;
+      fx(og,`Virou ${card.color==='w'?label(card):cardName(card)}`,CVAR[card.color]||'var(--accent)','stamp');
+      render();setTimeout(done,950);
+    }else done();
+  },950);
+}
 function botPlay(card){
+  const pi=S.turn;
+  if(needsAnn(pi,card)){announce(pi,card,()=>botPlayNow(card,pi));return}
+  botPlayNow(card,pi);
+}
+function botPlayNow(card,pi0){
   const pi=S.turn,p=cur();
-  const col=(isWildPick(card)||(card.type==='clone'&&top().color==='w'))?bestColor(p.hand.filter(c=>c.id!==card.id)):null;
+  const col=isWildPick(card)?bestColor(p.hand.filter(c=>c.id!==card.id)):null;
   const r=playCard(pi,card,col);
   if(r==='win')return;
   if(r==='combo'){S.tok++;render();scheduleBot();return}
@@ -1638,7 +1674,10 @@ function humanClick(id,el){
 function humanPlay(card){
   S.mull=false;
   if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card);return}
-  if(card.type==='clone'&&top().color==='w'){const pv=top();S.busy=true;render();openColors(col=>finishHuman(card,col),pv);return}
+  if(card.type==='clone'||card.type==='random'){
+    announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else finishHuman(card,null)});
+    return;
+  }
   finishHuman(card,null);
 }
 function finishHuman(card,col){
@@ -1728,6 +1767,7 @@ function sortHand(h){
 function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
   const p=cur();
+  if(S.announcing)return S.annText;
   if(p.bot)return `Vez de ${p.name}`;
   if(S.busy)return 'Escolha…';
   if(S.phase==='combo'){
@@ -1839,7 +1879,9 @@ function render(){
   if(S.lastTop!==t.id){
     S.lastTop=t.id;
     dis.innerHTML=S.discard.slice(-3).map(c=>`<div class="dc" style="--rot:${c.rot.toFixed(1)}deg"><div class="card c-${c.chosen&&c.chosen!=='k'?c.chosen:c.color}" ${c.chosen==='k'?`style="box-shadow:0 0 0 3px #0d0a14,0 3px 0 rgba(0,0,0,.22)"`:''}>${faceHTML(c)}</div></div>`).join('');
-    if(S.animPlay){flyFrom(dis.lastElementChild.firstElementChild,S.animPlay,{rot:-25,dur:430})}
+    if(S.morph&&!RM){dis.lastElementChild.firstElementChild.animate([{transform:'rotateY(90deg) scale(1.15)'},{transform:'none'}],{duration:450,easing:'cubic-bezier(.2,.9,.3,1.2)'})}
+    else if(S.animPlay){flyFrom(dis.lastElementChild.firstElementChild,S.animPlay,{rot:-25,dur:430})}
+    S.morph=false;
   }
   S.animPlay=null;
   document.querySelector('.table').dataset.weather=S.weather||'';
