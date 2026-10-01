@@ -362,7 +362,7 @@ button.card:disabled{cursor:default}
 <body>
 <header class="top">
   <div class="brand">unotfm <small>solo</small></div>
-  <div class="topbtns"><button class="iconbtn" id="soundBtn" aria-label="Som">🔊</button><button class="iconbtn" id="openActive">Regras</button><button class="iconbtn" id="openSettings" aria-label="Nova partida">Nova partida</button></div>
+  <div class="topbtns"><button class="iconbtn" id="openConfig" aria-label="Configurações">⚙️</button><button class="iconbtn" id="openSettings" aria-label="Nova partida">Nova partida</button></div>
 </header>
 <section class="rail" id="rail" aria-label="Ordem de jogada"><div class="seatrow" id="seatrow"></div><div class="marker" id="marker"></div></section>
 <section class="rulestrip" id="rulestrip" aria-label="Regras em jogo"></section>
@@ -408,10 +408,9 @@ button.card:disabled{cursor:default}
     <div class="tip" id="tipBox"></div>
     <div class="field"><div class="lb">Modo</div><div class="seg" data-key="mode"></div><p class="legend" id="modeLegend"></p></div>
     <div class="field"><div class="lb">Dificuldade dos adversários</div><div class="seg" data-key="diff"></div></div>
-    <div class="field"><div class="lb">Adversários</div><div class="seg" data-key="bots"></div></div>
-    <div class="field"><div class="lb">Cartas iniciais</div><div class="seg" data-key="start"></div></div>
+    <div class="field" id="botsField"><div class="lb">Adversários</div><div class="seg" data-key="bots"></div></div>
+    <div class="field" id="startField"><div class="lb">Cartas iniciais</div><div class="seg" data-key="start"></div></div>
     <div class="field"><div class="lb">Defesa contra compras</div><div class="seg" data-key="combo"></div><p class="legend" id="comboLegend"></p></div>
-    <div class="field"><div class="lb">Efeitos 3D</div><div class="seg" data-key="fx3d"></div><p class="legend">Dado 3D, partículas dos climas, explosões e confete. Desligue se o celular ficar lento.</p></div>
     <div class="field" id="rulesField"><div class="lb">Regras da casa</div><div id="ruleList"></div></div>
     <div class="row2 stick">
       <button class="btn" id="closeSettings">Voltar</button>
@@ -443,12 +442,18 @@ button.card:disabled{cursor:default}
   <div class="sheet"><h2 id="histTitle">Últimas jogadas</h2><p class="sub">A mais recente primeiro.</p><div id="histList"></div>
     <div class="row2" style="margin-top:14px"><button class="btn main" id="histClose">Voltar ao jogo</button></div></div>
 </div>
+<div class="ov" id="configOv" role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
+  <div class="sheet"><h2 id="cfgTitle">Configurações</h2>
+    <div class="field"><div class="lb">Som</div><div class="seg" data-key="sound"></div></div>
+    <div class="field"><div class="lb">Efeitos 3D</div><div class="seg" data-key="fx3d"></div><p class="legend">Dado 3D, partículas dos climas, explosões e confete. Desligue se o celular ficar lento.</p></div>
+    <div class="row2" style="margin-top:6px"><button class="btn main" id="cfgClose">Voltar</button></div></div>
+</div>
 <div class="ov" id="endOv" role="dialog" aria-modal="true" aria-labelledby="endTitle">
   <div class="sheet">
     <h2 id="endTitle"></h2>
     <p class="sub" id="endSub"></p>
     <table class="score" id="scoreTbl"></table>
-    <div class="row2"><button class="btn" id="endRules">Regras</button><button class="btn main" id="againBtn">Nova rodada</button></div>
+    <div class="row2"><button class="btn" id="endRules">Mudar modo</button><button class="btn main" id="againBtn">Nova rodada</button></div>
   </div>
 </div>
 
@@ -598,6 +603,7 @@ const TIPS=[
 ];
 const COMBO_DESC={rise:'Crescente: você pode se defender com outra carta de compra de mesmo valor ou maior: +2 em +2, +4 em +2 ou +4, +99 em qualquer um. As compras se acumulam para o próximo jogador.',normal:'Igual: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.',super:'Super combo: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.',none:'Sem combo: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'};
 const SEGS={
+  sound:[[true,'Ligado'],[false,'Desligado']],
   mode:[['classic','Clássico'],['mix','Mix de regras'],['custom','Personalizado']],
   fx3d:[[true,'Ligados'],[false,'Desligados']],
   bots:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],
@@ -618,7 +624,7 @@ let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
 ['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise','red','blue','yellow','green'].forEach(k=>{delete CFG[k]});
 RULES.forEach(r=>{if(CFG[r.k]&&(CONFLICT[r.k]||[]).some(x=>CFG[x]&&RULES.findIndex(q=>q.k===x)<RULES.findIndex(q=>q.k===r.k)))CFG[r.k]=false});
 if(!CFG.mode)CFG.mode=RULES.some(r=>r.k!=='poker'&&CFG[r.k])?'custom':'mix';
-function rulesForMode(){const r={...CFG};if(CFG.mode!=='custom'){RULES.forEach(x=>r[x.k]=false);if(CFG.mode==='mix')r.poker=true}return r}
+function rulesForMode(){const r={...CFG};if(CFG.mode!=='custom'){RULES.forEach(x=>r[x.k]=false);if(CFG.mode==='mix')r.poker=true;r.bots=3;r.start=7}return r}
 let R=rulesForMode();
 let SCORE=load('unotfm-solo-score',{});
 let S=null,uid=0,flashT=null,limboT=null,timeT=null,addT=null,TOUR=null;
@@ -2473,9 +2479,12 @@ function buildSettings(){
   document.querySelectorAll('.seg').forEach(seg=>{
     const k=seg.dataset.key;
     seg.innerHTML=SEGS[k].map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${String(CFG[k])===String(v)}">${l}</button>`).join('');
-    seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;CFG[k]=SEGS[k].find(x=>String(x[0])===b.dataset.v)[0];buildSettings()};
+    seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;CFG[k]=SEGS[k].find(x=>String(x[0])===b.dataset.v)[0];
+      if(k==='sound'){MUTED=!CFG.sound;save('unotfm-solo-mute',MUTED);if(!MUTED)sfx('special')}
+      if(k==='fx3d'||k==='sound'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
+      buildSettings()};
   });
-  $('comboLegend').textContent=COMBO_DESC[CFG.combo]||'';$('modeLegend').textContent=MODE_DESC[CFG.mode]||'';$('rulesField').hidden=CFG.mode!=='custom';
+  $('comboLegend').textContent=COMBO_DESC[CFG.combo]||'';$('modeLegend').textContent=MODE_DESC[CFG.mode]||'';$('rulesField').hidden=CFG.mode!=='custom';$('botsField').hidden=CFG.mode!=='custom';$('startField').hidden=CFG.mode!=='custom';
   let html='',g='';
   if(CFG.bots%2===0)CFG.team=false;
   RULES.forEach(r=>{
@@ -2532,7 +2541,6 @@ $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
 $('chalBtn').onclick=()=>{if(myTurn()&&S.chal)doChallenge(0)};
 $('openSettings').onclick=openSettings;
-$('openActive').onclick=openActive;
 $('discard').addEventListener('click',openHistory);$('histClose').onclick=()=>$('histOv').classList.remove('show');
 document.addEventListener('pointerdown',e=>{
   if(e.target.closest('#notices')||e.target.closest('.ri'))return;
@@ -2562,9 +2570,8 @@ function showRuleInfo(k){
   const a=(S&&S.added||[]).find(x=>x.k===k);
   notice(k,a?`Nova regra, adicionada por ${a.by}`:'Em jogo',{info:true,title:RNAME[k],anchor:b});
 }
-function syncSoundBtn(){$('soundBtn').textContent=MUTED?'🔇':'🔊';$('soundBtn').setAttribute('aria-label',MUTED?'Ligar som':'Desligar som')}
-$('soundBtn').onclick=()=>{MUTED=!MUTED;save('unotfm-solo-mute',MUTED);syncSoundBtn();if(!MUTED)sfx('special')};
-syncSoundBtn();
+$('openConfig').onclick=()=>{CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()};
+$('cfgClose').onclick=()=>$('configOv').classList.remove('show');
 document.addEventListener('pointerdown',()=>{if(!MUTED)audio()},{once:true});
 $('closeActive').onclick=()=>$('activeOv').classList.remove('show');
 $('endRules').onclick=openSettings;
