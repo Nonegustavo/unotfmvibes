@@ -50,6 +50,12 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
+.sheet{scrollbar-width:thin;scrollbar-color:var(--accent) transparent;overscroll-behavior:contain}
+.sheet::-webkit-scrollbar{width:8px}
+.sheet::-webkit-scrollbar-track{background:transparent;margin:18px 0}
+.sheet::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 70%,transparent);border-radius:999px;border:2px solid var(--panel)}
+.sheet::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+.ov.lite .sheet{overflow-x:hidden}
 .pend{position:absolute;left:50%;top:2%;transform:translateX(-50%);z-index:4;pointer-events:none;display:flex;flex-direction:column;align-items:center}
 .pend[hidden]{display:none}
 .pend b{font-size:calc(var(--cw)*.85);line-height:1;font-weight:800;color:var(--cr);text-shadow:0 3px 0 rgba(0,0,0,.2),0 0 18px rgba(224,67,58,.55);animation:pendPulse 1.1s ease-in-out infinite}
@@ -104,7 +110,7 @@
 .pk-head .new{font-style:normal;font-size:.7rem;font-weight:600;color:#fff;background:var(--accent);border-radius:999px;padding:1px 8px}
 .pk-body p{margin:0;font-size:.84rem;color:var(--muted)}
 @media (max-width:430px){.brand small{display:none}.iconbtn{padding:5px 10px}}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{overflow:hidden;height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 body{
   height:100%;margin:0;background:var(--bg);color:var(--ink);
   font-family:"Fredoka","Trebuchet MS",system-ui,sans-serif;font-size:16px;line-height:1.35;
@@ -258,7 +264,8 @@ button.card:disabled{cursor:default}
 
 /* hand */
 .handwrap{padding:4px 0 0;min-height:calc(var(--cw)*1.5 + 34px)}
-.hand{display:flex;justify-content:safe center;overflow-x:auto;overflow-y:visible;padding:18px 14px 10px;scrollbar-width:thin}
+.hand{display:flex;justify-content:safe center;overflow-x:auto;overflow-y:hidden;padding:18px 14px 10px;scrollbar-width:none}
+.hand::-webkit-scrollbar{display:none}
 .hand .card+.card{margin-left:var(--ov,6px)}
 .hand.myturn .card.ok{transform:translateY(-10px)}
 .hand.myturn .card.ok:hover{transform:translateY(-16px) rotate(-2deg)}
@@ -300,7 +307,7 @@ button.card:disabled{cursor:default}
 .rule em{font-style:normal;font-size:.75rem;color:var(--muted);display:block;margin-top:2px}
 .colors{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
 .colors button{border:none;border-radius:18px;height:84px;color:#fff;font-weight:700;font-size:1.05rem;box-shadow:0 3px 0 rgba(0,0,0,.25)}
-.picks{display:flex;gap:14px;justify-content:center;padding:14px 0 6px}
+.picks{display:flex;gap:14px;justify-content:center;padding:14px 0 6px;overflow:hidden}
 .score{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:.95rem}
 .score td{padding:6px 4px;border-bottom:1px solid var(--line)}
 .score td:last-child{text-align:right;font-weight:600}
@@ -1923,7 +1930,7 @@ function render(){
   const cw=hand.firstElementChild?hand.firstElementChild.getBoundingClientRect().width:60;
   const n=me.hand.length,avail=hand.clientWidth-28;
   let ov=n>1?Math.min(6,(avail-cw)/(n-1)-cw):0;
-  hand.style.setProperty('--ov',Math.max(ov,-cw*.62)+'px');
+  hand.style.setProperty('--ov',Math.max(ov,-cw*.72)+'px');
   // animations for draws
   const deckR=deck.getBoundingClientRect();
   const from=S.handFrom||deckR;S.handFrom=null;
