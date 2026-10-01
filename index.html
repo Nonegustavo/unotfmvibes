@@ -427,7 +427,7 @@ const RULES=[
   {g:'Compras',k:'nou',n:'Contra-ataque',d:'Você pode jogar cartas Inverter para devolver compras de carta.'},
   {g:'Compras',k:'satisfaction',n:'Satisfação',d:'Compre cartas até poder jogar uma.'},
   {g:'Compras',k:'insatisfaction',n:'Insatisfação',d:'Comprar carta fará você passar a vez automaticamente.'},
-  {g:'Compras',k:'fastdraw',n:'Compra rápida',d:'Cartas compradas são jogadas imediatamente (exceto por penalidades).'},
+  {g:'Compras',k:'fastdraw',n:'Compra rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem com a mesa (exceto a Carta Bomba e compras de penalidade).'},
   {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
   {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
   {g:'Pressão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
@@ -472,7 +472,7 @@ const SP={
   theft:{n:'Carta do Roubo',g:'🧤',d:'Ao jogar esta carta, force um jogador a dar uma carta curinga para você (se ele tiver uma).',deck:C8},
   ban:{n:'Carta do Banimento',g:'🚫',d:'Ao jogar esta carta, escolha uma entre 3 cartas da sua mão. Tire do jogo TODAS as cartas com o mesmo símbolo da carta escolhida.',deck:C4},
   box:{n:'Carta do Presente',g:'📦',d:'Ao jogar esta carta, todos ganham uma Carta Misteriosa, que ativa um efeito aleatório.',deck:['r','b']},
-  confuse:{n:'Carta da Confusão',g:'💫',d:'Ao jogar esta carta, você jogará de forma aleatória no próximo turno.',deck:C8},
+  confuse:{n:'Carta da Confusão',g:'🍄',d:'Ao jogar esta carta, você jogará de forma aleatória no próximo turno.',deck:C8},
   ink:{n:'Carta da Tinta',g:'🖌️',d:'Ao jogar esta carta, pinte todas as cartas do próximo jogador com a cor desta carta.',deck:C4},
   mix1:{n:'Combo Inverter + Bloqueio',g:'⇄⊘',small:1,hide:1,rule:'mix',deck:C4},
   mix2:{n:'Combo Inverter + +2',g:'⇄+2',small:1,hide:1,rule:'mix',deck:C4},
@@ -874,7 +874,7 @@ function playCard(pi,card,chosen){
   if(inCombo&&R.sequence&&card.value!==S.comboValue&&!S.seqDir)S.seqDir=card.value-S.comboValue;
   const black=R.black&&identical(card,top());
   const prev=top();const colBefore=S.color;S.colBefore=colBefore;
-  const sunPen=S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(card);
+  const sunPen=!S.forcedPlay&&S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(card);S.forcedPlay=false;
   const hadColor=p.hand.some(c=>c.id!==card.id&&c.color!=='w'&&sameCol(c.color,colBefore));
   if(card.type==='clone'||card.type==='random')morphCard(card,prev);
   const orig=card.orig||card.type;
@@ -1065,9 +1065,11 @@ function afterDraw(pi,drawn,count){
   const p=S.players[pi];
   log(`${who(pi)} comprou ${count} carta${count===1?'':'s'}.`);
   if(overloaded(pi)){if(markOut(pi))return;endTurn();return}
-  if(!drawn||R.insatisfaction||!canPlay(p,drawn)){endTurn();return}
+  const fast=(R.fastdraw||ab(pi,'papaille'))&&drawn&&drawn.type!=='bomb'&&p.hand.includes(drawn);
+  if(!fast&&(!drawn||R.insatisfaction||!canPlay(p,drawn))){endTurn();return}
   S.phase='drawn';S.drawnId=drawn.id;
-  if(R.fastdraw||ab(pi,'papaille')){
+  if(fast){
+    S.forcedPlay=true;fx('⏩',`Compra rápida: ${pi===0?'você joga':who(pi)+' joga'} a carta comprada`,'var(--accent)','stamp');
     S.fastSrc=$('deck').getBoundingClientRect();S.newIds=S.newIds.filter(id=>id!==drawn.id);if(S.botDraw[pi]){S.botDraw[pi]--;if(!S.botDraw[pi])delete S.botDraw[pi]}
     if(p.bot)botPlay(drawn);else humanPlay(drawn);return}
   S.tok++;render();
@@ -1416,7 +1418,7 @@ function applySpecial(pi,card){
     case 'box':
       alive().forEach((i,k)=>{const c=mk('w','random');S.players[i].hand.push(c);S.players[i].called=false;if(i===0){S.newIds.push(c.id)}else ghost($('deck').getBoundingClientRect(),targetRect(i),k*60)});
       fx('📦','Todos ganham uma Carta Misteriosa',col,'slam');log('Presente: todos ganharam uma Carta Misteriosa.');return massCheck();
-    case 'confuse':p.confuseNext=true;fx('💫',`${pi===0?'Você jogará':who(pi)+' jogará'} aleatoriamente na próxima vez`,col,'stamp');log(`${who(pi)} ficará confuso.`);return 'done';
+    case 'confuse':p.confuseNext=true;fx('🍄',`${pi===0?'Você jogará':who(pi)+' jogará'} aleatoriamente na próxima vez`,col,'stamp');log(`${who(pi)} ficará confuso.`);return 'done';
     case 'ink':{
       const t=nextIdx(pi,1);S.players[t].hand.forEach(c=>{if(c.color!=='w')c.color=card.color});
       stampOn(t,'🖌️',col);fx('🖌️',`Cartas de ${t===0?'você':who(t)} pintadas de ${CNAME[card.color].toLowerCase()}`,col,'slam');log(`Tinta: cartas de ${who(t)} pintadas.`);return 'done'}
@@ -1803,7 +1805,7 @@ function renderRail(){
       
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
       <div class="nm">${p.name}</div>
-      <div class="ct ${shiny?'shiny':''} ${ctCls}">${ctTxt}</div>${(p.batata&&p.hand.some(c=>c.type==='batata'))||p.treasure||p.confuse?`<span class="mini">${p.hand.some(c=>c.type==='batata')&&p.batata?`🥔${p.batata}/5 `:''}${p.treasure?`🧭${p.treasure}/3 `:''}${p.confuse?'💫':''}</span>`:''}${p.hand2&&p.hand2.length&&!p.out?`<span class="mini">✋+${p.hand2.length}</span>`:''}
+      <div class="ct ${shiny?'shiny':''} ${ctCls}">${ctTxt}</div>${(p.batata&&p.hand.some(c=>c.type==='batata'))||p.treasure||p.confuse?`<span class="mini">${p.hand.some(c=>c.type==='batata')&&p.batata?`🥔${p.batata}/5 `:''}${p.treasure?`🧭${p.treasure}/3 `:''}${p.confuse?'🍄':''}</span>`:''}${p.hand2&&p.hand2.length&&!p.out?`<span class="mini">✋+${p.hand2.length}</span>`:''}
       ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?'<span class="tag">fora</span>':partner(i)===0?'<span class="tag next">dupla</span>':''}</div>`);
   });
   parts.push(edge);
