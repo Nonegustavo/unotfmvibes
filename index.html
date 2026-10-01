@@ -58,23 +58,22 @@
 .side-b .card{border-color:#15101f}
 .side-b .card::before{border-color:rgba(0,0,0,.55)}
 .side-b .card .cn{color:#15101f}
-.side-b .card .face{text-shadow:0 2px 0 rgba(0,0,0,.55),0 0 1px #000}
+.side-b .card .face{color:#15101f;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.side-b .card .wheel span{color:#15101f;text-shadow:0 1px 0 rgba(255,255,255,.5)}
 .side-b .c-w{--cc:#f6f4fb;color:#15101f}
 .side-b .c-w .face{text-shadow:none}
 .side-b .wheel,.side-b .mw{border-color:#15101f}
 .side-b .wxf{border-color:rgba(0,0,0,.7)}
-.side-b .back{--cc:#140c22;background:repeating-linear-gradient(135deg,#140c22 0 7px,#2b1645 7px 14px);border-color:#15101f}
-.side-b .back .face{background:#16b3c2;color:#140c22}
-html.side-b .table{background:radial-gradient(circle at 50% 38%,#3b2163,#170d2b 75%);color:#f0eaff}
-html.side-b .table .status,html.side-b .table .count{color:#e6dcff}
-html.side-b .dirring{color:#c79bff}
-html.side-b .discard::before{opacity:.75}
+.side-b .back{--cc:#1a0f2e;background:repeating-linear-gradient(135deg,#1a0f2e 0 7px,#4a2a7a 7px 14px);border-color:#0b0712;box-shadow:0 3px 0 rgba(0,0,0,.5),0 0 14px rgba(138,79,216,.55)}
+.side-b .back::before{border-color:rgba(22,179,194,.7)}
+.side-b .back .face{background:#16b3c2;color:#140c22;text-shadow:none}
 .side-a{--cr:#e0433a;--cy:#f0b21f;--cg:#2c9a57;--cb:#2b6bd6}
 .side-a .card{border-color:#fff}
 .side-a .card::before{border-color:rgba(255,255,255,.33)}
 .side-a .card .cn{color:#fff}
 .side-a .c-w{--cc:var(--ck);color:#fff}
-.side-a .card .face{text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.side-a .card .face{color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.side-a .card .wheel span{color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.5)}
 .side-a .wheel,.side-a .mw{border-color:#fff}
 .hside{font-size:.7rem;font-weight:600;color:#8a4fd8;margin-left:4px}
 .seat .mini.oside{color:#8a4fd8}
@@ -936,8 +935,8 @@ const FX3D=(()=>{
         if(a[i*3]<L)a[i*3]=Rr;else if(a[i*3]>Rr)a[i*3]=L}geo.attributes.position.needsUpdate=true;
         if(k==='sun')mat.opacity=.55+.25*Math.sin(tt*2)};
       if(k==='sun'){
-        const sz=Math.min(Wd,Ht)*.9;const ray=new THREE.Mesh(new THREE.PlaneGeometry(sz,sz),new THREE.MeshBasicMaterial({map:rayTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.45}));
-        ray.position.set(Rr-sz*.18,Tp-sz*.18,-.5);scene.add(ray);objs.push(ray);
+        const sz=Math.min(Wd,Ht)*.6;const ray=new THREE.Mesh(new THREE.PlaneGeometry(sz,sz),new THREE.MeshBasicMaterial({map:rayTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.45}));
+        ray.position.set(Rr-sz*.5,Tp-sz*.5,-.5);scene.add(ray);objs.push(ray);
         const prev=upd;upd=dt=>{prev(dt);ray.rotation.z+=dt*.15;ray.material.opacity=.35+.1*Math.sin(tt*1.3)};
       }
     }else if(k==='storm'){
@@ -1278,6 +1277,7 @@ function buildSideB(startOf){
   applySide(saved);
 }
 function switchSide(pi){
+  endTurnHook(pi);
   const here=captureSide();applySide(S.other);S.other=here;
   S.side=S.side==='b'?'a':'b';S.crossed=true;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.lastTop=null;
@@ -1397,12 +1397,9 @@ function penalize(pi,by){
   if(overloaded(pi)){if(markOut(pi))return;if(pi===S.turn){endTurn();return}}
   render();
 }
-function endTurn(){
-  if(S.phase==='over')return;
-  if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}S.histCur=null;
-  clearFlash();S.auto=false;
-  const fp=S.players[S.turn];const crossed=S.crossed;S.crossed=false;
-  if(!fp.out&&!crossed){
+function endTurnHook(pi){
+  const fp=S.players[pi];
+  if(!fp.out){
     fp.hand.forEach(c=>c.lock=false);
     const wasNext=fp.confuseNext;fp.confuse=false;if(wasNext){fp.confuse=true;fp.confuseNext=false}
     const bt=fp.hand.find(c=>c.type==='batata');
@@ -1410,20 +1407,28 @@ function endTurn(){
       fp.batata=(fp.batata||0)+1;
       if(fp.batata>=5){
         fp.hand=fp.hand.filter(c=>c!==bt);fp.batata=0;
-        fx('🥔',`${who(S.turn)} ficou com a batata por 5 turnos!`,'var(--cr)','slam');stampOn(S.turn,'🥔','var(--cr)');
-        if(markOut(S.turn))return;
+        fx('🥔',`${who(pi)} ficou com a batata por 5 turnos!`,'var(--cr)','slam');stampOn(pi,'🥔','var(--cr)');
+        if(markOut(pi))return true;
         const t=rand(alive());bt.color=rand(COLORS);S.players[t].hand.push(bt);S.players[t].batata=0;
-        if(t===0){S.newIds.push(bt.id)}else ghost(targetRect(S.turn),targetRect(t),0);
+        if(t===0){S.newIds.push(bt.id)}else ghost(targetRect(pi),targetRect(t),0);
         hold(1200);
       }
     }else fp.batata=0;
   }
-  if(S.curse&&!crossed){S.curse.left--;if(S.curse.left<=0){S.curse=null;toast('A maldição acabou!','var(--cg)')}}
+  if(S.curse){S.curse.left--;if(S.curse.left<=0){S.curse=null;toast('A maldição acabou!','var(--cg)')}}
+  if(S.peace>0)S.peace--;
+  if(S.numOnly>0)S.numOnly--;
+  return false;
+}
+function endTurn(){
+  if(S.phase==='over')return;
+  if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}S.histCur=null;
+  clearFlash();S.auto=false;
+  const crossed=S.crossed;S.crossed=false;
+  if(!crossed&&endTurnHook(S.turn))return;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.busy=false;
   let steps=S.extra?0:1;steps+=S.skip===true?1:(S.skip||0);
   S.extra=false;S.skip=false;
-  if(S.peace>0&&!crossed)S.peace--;
-  if(S.numOnly>0&&!crossed)S.numOnly--;
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
   if(S.pending>0&&R.combo==='none'&&!R.nou){
     const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
