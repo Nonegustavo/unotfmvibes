@@ -51,6 +51,14 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
+.wxf{position:absolute;inset:4px;border-radius:7px;border:2px dashed rgba(255,255,255,.85);pointer-events:none}
+.card:has(.wxf)::before{display:none}
+.hand .card.perf{box-shadow:0 0 0 3px #f0b21f,0 0 14px rgba(240,178,31,.7),0 3px 0 rgba(0,0,0,.22)}
+.hand .card.perf::after{content:"💯";position:absolute;top:-11px;right:-7px;font-size:.8rem;background:#f0b21f;border-radius:999px;padding:1px 4px;line-height:1.2;text-shadow:none}
+.hand .card.calm{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),var(--cc)}
+.hand .card.calm .face,.hand .card.calm .cn,.hand .card.calm .wheel{opacity:.7}
+.hand .card.calm::after{content:"🌼";position:absolute;top:-10px;left:-6px;font-size:.85rem;line-height:1;text-shadow:none}
+.hand .card.sunny.perf::after{content:"💯 ☀️+1"}
 #fx3d{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:24}
 html.fx3d-on .table[data-weather="blizzard"]::before{background:rgba(225,240,255,.18);animation:none}
 .sheet{scrollbar-width:thin;scrollbar-color:var(--accent) transparent;overscroll-behavior:contain}
@@ -467,7 +475,7 @@ const SP={
   tornado:{n:'Carta do Tornado',g:'🌪️',d:'Ao jogar esta carta, embaralhe as cartas dos outros jogadores.',deck:['r','b','y','g','r','b','y','g']},
   steal:{n:'Carta da Reciclagem',g:'♻️',d:'Ao jogar esta carta, todos os outros descartam uma carta de ação aleatória e compram 1 carta para repor.',deck:['r','b','y','g']},
   wish:{n:'Carta do Desejo',g:'☄️',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
-  peace:{n:'Carta da Paz',g:'☮️',d:'Ao jogar esta carta, cartas de ação não terão efeito nos próximos dois turnos.',deck:['r','b','y','g']},
+  peace:{n:'Carta da Paz',g:'🌼',d:'Ao jogar esta carta, cartas de ação não terão efeito nos próximos dois turnos.',deck:['r','b','y','g']},
   luck:{n:'Carta da Sorte',g:'🍀',d:'Ao jogar esta carta, a sua próxima carta comprada será uma carta jogável naquele turno.',deck:['r','b','y','g','r','b','y','g']},
   random:{n:'Carta Misteriosa',g:'❓',d:'Esta carta ativa um efeito aleatório quando jogada.',deck:['w','w','w','w']},
   clone:{n:'Carta da Clonagem',g:'🧬',d:'Esta carta ativa o mesmo efeito da carta anterior.',deck:['w','w','w','w']},
@@ -908,7 +916,7 @@ function sfxGlyph(g){
   const s=String(g);
   if(s===ARROWS)return sfx('rev');
   const map=[['⊘+2','plus'],['⊘','skip'],['💣','boom'],['💥','boom'],['☀️','sun'],['☁️','fog'],['⛈️','storm'],['❄️','blizzard'],['⚀','dice'],['⚁','dice'],['⚂','dice'],['⚃','dice'],['⚄','dice'],['⚅','dice'],
-    ['💰','chest'],['📜','rule'],['⚔️','chal'],['☠️','death'],['✂','jump'],['★','bonus'],['⇆','swoosh'],['🔀','swoosh'],['🎠','swoosh'],['🌪️','swoosh'],['✋','swoosh'],['🥔','pop'],['☮️','peace'],['🕊️','peace'],
+    ['💰','chest'],['📜','rule'],['⚔️','chal'],['☠️','death'],['✂','jump'],['★','bonus'],['⇆','swoosh'],['🔀','swoosh'],['🎠','swoosh'],['🌪️','swoosh'],['✋','swoosh'],['🥔','pop'],['🌼','peace'],['🕊️','peace'],
     ['⚒️','curse'],['🧊','curse'],['👢','curse'],['🌵','curse'],['⏱️','curse'],['🧪','curse'],['⚡','storm'],['🌧️','draw'],['wheel','wild'],['+','plus']];
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }
@@ -1104,9 +1112,11 @@ function playCard(pi,card,chosen){
   const prev=top();const colBefore=S.color;S.colBefore=colBefore;
   const sunPen=!S.forcedPlay&&S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(card);S.forcedPlay=false;
   const hadColor=p.hand.some(c=>c.id!==card.id&&c.color!=='w'&&sameCol(c.color,colBefore));
-  if(card.type==='clone'||card.type==='random')morphCard(card,prev);
+  const peaceOn=S.peace>0;
+  if(!peaceOn&&(card.type==='clone'||card.type==='random'))morphCard(card,prev);
   const orig=card.orig||card.type;
   if(card.color==='w'&&!chosen&&orig!==card.type)chosen=S.color==='k'?rand(COLORS):S.color;
+  if(peaceOn&&card.color==='w')chosen=S.color;
   p.hand=p.hand.filter(c=>c.id!==card.id);
   card.rot=Math.random()*24-12;
   S.discard.push(card);
@@ -1116,7 +1126,7 @@ function playCard(pi,card,chosen){
   if(card.color==='w'&&chosen)msg+=` → ${CNAME[chosen]}`;
   const on=!(S.peace>0);
   if(orig!==card.type&&!annc)stampOn(pi,SP[orig].g,'var(--accent)');
-  if(!on&&card.type!=='num'&&!isWildPick(card)){msg+=' (sem efeito: Paz)';fx('☮️','Sem efeito: Paz','var(--cg)','stamp')}
+  if(!on&&card.type!=='num'){msg+=' (sem efeito: Paz)';fx('🌼',card.color==='w'?`Sem efeito: Paz. A cor continua ${CNAME[S.color]||'a mesma'}`:'Sem efeito: Paz','var(--cg)','stamp')}
   if(on&&card.type==='skip'){S.skip=true;const v=nextIdx(pi,1);fx('⊘',v===0?'Você perdeu a vez':`${who(v)} perdeu a vez`,'var(--cr)','stamp');stampOn(v,'⊘','var(--cr)')}
   if(on&&card.type==='rev'){
     S.dir*=-1;
@@ -1133,7 +1143,8 @@ function playCard(pi,card,chosen){
     if(S.pending>drawVal(card))msg+=` (acumulado +${S.pending})`;
     const v=nextIdx(pi,1);fx(`+${S.pending}`,v===0?'Para você!':`Para ${who(v)}`,'var(--cr)','slam');
   }
-  if(card.color==='w'&&chosen){card.chosen=chosen;burst(CVAR[chosen]);FX3D.sparks(discardRect(),CVAR[chosen]);if(!isDraw(card))fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,CNAME[chosen],CVAR[chosen],'stamp')}
+  if(card.color==='w'&&chosen&&peaceOn){card.chosen=chosen}
+  else if(card.color==='w'&&chosen){card.chosen=chosen;burst(CVAR[chosen]);FX3D.sparks(discardRect(),CVAR[chosen]);if(!isDraw(card))fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,CNAME[chosen],CVAR[chosen],'stamp')}
   log(msg+'.');
   if(sunPen){drawN(pi,1);floatOn(pi,'+1 ☀️','#e8a317');log(`${who(pi)} jogou fora da cor com sol e comprou 1.`)}
   if(p.hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
@@ -1618,7 +1629,7 @@ function applySpecial(pi,card){
     case 'steal':{
       opp.forEach(i=>{const q=S.players[i];const acts=q.hand.filter(c=>c.type!=='num');if(acts.length){discardCard(i,rand(acts));drawOne(i)}});
       fx('♻️','Adversários trocam uma ação',col,'stamp');log('Reciclagem: adversários descartaram uma ação e compraram 1.');return massCheck()}
-    case 'peace':S.peace=3;fx('☮️','Ações sem efeito por 2 turnos','var(--cg)','stamp');log('Paz: cartas de ação sem efeito por 2 turnos.');return 'done';
+    case 'peace':S.peace=3;fx('🌼','Ações sem efeito por 2 turnos','var(--cg)','stamp');log('Paz: cartas de ação sem efeito por 2 turnos.');return 'done';
     case 'batata':if(pi===0)return 'ask';{const o=opponents(pi);giveBatata(pi,card,o.length?rand(o):rand(opp));return 'done'}
     case 'curse':{FX3D.aura('#8b3fd1');
       const k=rand(Object.keys(CURSES));S.curse={k,left:CURSES[k].n*alive().length+2};
@@ -1884,7 +1895,7 @@ function announce(pi,card,cont){
   const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;S.announcing=false;cont()};
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
-    if(card.type==='clone'||card.type==='random'){
+    if(S.peace<=0&&(card.type==='clone'||card.type==='random')){
       const og=SP[card.type].g;
       morphCard(card,S.discard[S.discard.length-2]);S.lastTop=null;S.morph=true;
       S.annText=`${SP[card.orig].n} virou ${label(card)}`;
@@ -1900,7 +1911,7 @@ function botPlay(card){
 }
 function botPlayNow(card,pi0){
   const pi=S.turn,p=cur();
-  const col=isWildPick(card)?bestColor(p.hand.filter(c=>c.id!==card.id)):null;
+  const col=isWildPick(card)&&S.peace<=0?bestColor(p.hand.filter(c=>c.id!==card.id)):null;
   const r=playCard(pi,card,col);
   if(r==='win'||r==='defer')return;
   if(r==='combo'){S.tok++;render();scheduleBot();return}
@@ -1926,6 +1937,7 @@ function humanClick(id,el){
 }
 function humanPlay(card){
   S.mull=false;
+  if(S.peace>0&&card.color==='w'){finishHuman(card,null);return}
   if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card);return}
   if(card.type==='clone'||card.type==='random'){
     announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else finishHuman(card,null)});
@@ -2019,7 +2031,7 @@ function ghost(from,to,delay){
 /* ---------- rendering ---------- */
 function faceHTML(c){
   if(c.type==='num')return `<span class="cn">${c.value}</span><span class="face">${c.value}</span><span class="cn br">${c.value}</span>`;
-  if(SP[c.type]){const g=SP[c.type].g,sm=SP[c.type].small?' sm':'';return `<span class="cn${sm}">${g}</span><span class="face sym sp${sm}">${g}</span><span class="cn br${sm}">${g}</span>`}
+  if(SP[c.type]){const g=SP[c.type].g,sm=SP[c.type].small?' sm':'';return `${WEATHER[c.type]?'<span class="wxf"></span>':''}<span class="cn${sm}">${g}</span><span class="face sym sp${sm}">${g}</span><span class="cn br${sm}">${g}</span>`}
   const sym={skip:'⊘',rev:'⇄',d2:'+2'}[c.type];
   if(sym)return `<span class="cn">${sym}</span><span class="face sym">${sym}</span><span class="cn br">${sym}</span>`;
   if(c.type==='wild')return `<span class="cn"><i class="mw"></i></span><span class="wheel"></span><span class="cn br"><i class="mw"></i></span>`;
@@ -2153,7 +2165,7 @@ function render(){
   }
   S.animPlay=null;
   document.querySelector('.table').dataset.weather=S.weather||'';FX3D.setWeather(S.phase==='over'?null:S.weather);
-  $('meta').innerHTML=(S.weather?`<span class="chip" style="border-color:${WEATHER[S.weather].c}">${WEATHER[S.weather].g} ${WEATHER[S.weather].n}: ${WEATHER[S.weather].t}</span>`:'')+(R.limbo||R.overload?`<span class="chip">Limite: ${limit()} cartas</span>`:'')+(S.peace>0?`<span class="chip">☮️ Paz: ${S.peace} turno${S.peace>1?'s':''}</span>`:'')
+  $('meta').innerHTML=(S.weather?`<span class="chip" style="border-color:${WEATHER[S.weather].c}">${WEATHER[S.weather].g} ${WEATHER[S.weather].n}: ${WEATHER[S.weather].t}</span>`:'')+(R.limbo||R.overload?`<span class="chip">Limite: ${limit()} cartas</span>`:'')+(S.peace>0?`<span class="chip">🌼 Paz: ${S.peace} turno${S.peace>1?'s':''}</span>`:'')
     +(S.curse?`<span class="chip warn" title="${CURSES[S.curse.k].t}">${CURSES[S.curse.k].g} ${CURSES[S.curse.k].t}</span>`:'')
     +(S.death?'<span class="chip warn">☠️ Morte súbita</span>':'')
     +(S.traffic?`<span class="chip">🚦 Proibido vencer com ${S.traffic==='odd'?'ímpar':'par'}</span>`:'')
@@ -2182,6 +2194,8 @@ function render(){
     else if(canJump(0,c))cls+=' jump';
     if(c.id===S.drawnId)cls+=' fresh';
     if(c.lock)cls+=' locked';
+    if(R.perfection&&c.type==='num'&&c.value===me.hand.length&&S.phase!=='over')cls+=' perf';
+    if(S.peace>0&&c.type!=='num'&&S.phase!=='over')cls+=' calm';
     if(el.className.replace(' shake','')!==cls)el.className=cls;
     if(hand.children[idx]!==el)hand.insertBefore(el,hand.children[idx]||null);
   });
