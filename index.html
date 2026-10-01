@@ -51,6 +51,12 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
+.dizzytag{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;background:linear-gradient(90deg,#c2477f,#8e5bd0,#2b9aa0,#c2477f);background-size:300% 100%;color:#fff;font-weight:700;font-size:.74rem;padding:2px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;animation:dzbg 3s linear infinite}
+@keyframes dzbg{to{background-position:-300% 0}}
+.hand.dizzy .card{animation:dizzy 2.2s ease-in-out infinite}
+.hand.dizzy .card:nth-child(2n){animation-duration:2.6s;animation-direction:reverse}
+.hand.dizzy .card:nth-child(3n){animation-duration:1.9s;animation-delay:-.6s}
+@keyframes dizzy{0%,100%{rotate:-5deg;translate:0 0;filter:hue-rotate(0deg) blur(0)}25%{rotate:4deg;translate:0 -6px;filter:hue-rotate(40deg) blur(.4px)}50%{rotate:-3deg;translate:0 3px;filter:hue-rotate(-30deg) blur(0)}75%{rotate:6deg;translate:0 -3px;filter:hue-rotate(20deg) blur(.5px)}}
 .wxf{position:absolute;inset:4px;border-radius:7px;border:2px dashed rgba(255,255,255,.85);pointer-events:none}
 .card:has(.wxf)::before{display:none}
 .hand .card.perf{box-shadow:0 0 0 3px #f0b21f,0 0 14px rgba(240,178,31,.7),0 3px 0 rgba(0,0,0,.22)}
@@ -170,7 +176,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .tag{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);font-size:.68rem;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap;background:var(--bg);border:1.5px solid var(--line);color:var(--muted)}
 .tag.next{border-color:var(--accent);color:var(--accent)}
 .badge{position:absolute;top:-8px;right:-4px;background:var(--cr);color:#fff;font-weight:700;font-size:.7rem;padding:2px 7px;border-radius:999px;transform:rotate(6deg);animation:pop .35s}
-.catch{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);background:var(--cy);color:#241c3a;border:none;border-radius:999px;font-weight:700;font-size:.74rem;padding:3px 9px;white-space:nowrap;box-shadow:0 2px 0 rgba(0,0,0,.2);z-index:2}
+.catch{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);background:var(--cy);color:#241c3a;border:none;border-radius:999px;font-weight:700;font-size:.74rem;padding:3px 9px;white-space:nowrap;box-shadow:0 2px 0 rgba(0,0,0,.2);z-index:2}
 .arr{flex:0 0 auto;font-size:1.3rem;font-weight:700;color:var(--arrow);line-height:1;display:inline-block;animation:nudge 1.4s ease-in-out infinite}
 .rail.ccw .arr{animation-name:nudgeL}
 .loop{flex:0 0 auto;font-size:1.25rem;color:var(--arrow);font-weight:700}
@@ -365,7 +371,7 @@ button.card:disabled{cursor:default}
   <div class="log" id="log" aria-live="polite"></div>
   <div class="flash" id="flash"><b id="flashBar"></b></div>
 </main>
-<section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><div class="hand" id="hand" aria-label="Sua mão"></div></section>
+<section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><div class="dizzytag" id="dizzytag" hidden>🍄 Confuso: sua próxima jogada será aleatória</div><div class="hand" id="hand" aria-label="Sua mão"></div></section>
 <nav class="actions">
   <button class="btn mull" id="mullBtn" hidden>Trocar mão</button>
   <button class="btn mull" id="chalBtn" hidden>Desafiar</button>
@@ -445,7 +451,7 @@ const RULES=[
   {g:'Jogadas',k:'neighbor',n:'Vizinho',d:'Números iguais não combinam mais. Números só combinam com um número acima ou abaixo.'},
   {g:'Jogadas',k:'hell',n:'Inferno',d:'Cartas de ação podem ser jogadas em cima de outras cartas de ação de qualquer cor.'},
   {g:'Jogadas',k:'jumpin',n:'Corte',d:'Se você tiver uma carta idêntica à da mesa, pode jogá-la mesmo que não seja sua vez!'},
-  {g:'Jogadas',k:'black',n:'Cartas pretas',d:'Se jogar uma carta idêntica à da mesa, ela fica preta. Em cima dela, só vale uma carta com o mesmo número ou símbolo.'},
+  {g:'Jogadas',k:'black',n:'Cartas pretas',d:'Se jogar uma carta idêntica à da mesa, ela fica preta. Em cima dela, só vale uma carta com o mesmo número ou símbolo, ou um curinga.'},
   {g:'Jogadas',k:'perfection',n:'Perfeccionista',d:'Se jogar um número igual ao número de cartas na mão, jogue novamente.'},
   {g:'Jogadas',k:'clean',n:'Final limpo',d:'Você só pode vencer se sua última carta for numérica.'},
   {g:'Compras',k:'nou',n:'Contra-ataque',d:'Você pode jogar cartas Inverter para devolver compras de carta.'},
@@ -1024,7 +1030,7 @@ function canPlay(p,c){
 }
 function matchTop(c){
   const t=top();
-  if(S.color==='k')return c.type===t.type&&(c.type!=='num'||c.value===t.value);
+  if(S.color==='k')return c.color==='w'||c.type===t.type&&(c.type!=='num'||c.value===t.value);
   if(c.color==='w'||sameCol(c.color,S.color))return true;
   if(R.hell&&c.type!=='num'&&t.type!=='num')return true;
   if(c.type!=='num')return c.type===t.type;
@@ -2140,6 +2146,8 @@ function render(){
     moveMarker(MK.turn,S.turn);MK.turn=S.turn;
   }else if(S.turn!==0&&Date.now()>MK.until)placeMarker(S.turn,true);
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
+  {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);$('dizzytag').hidden=!dz||!$('limitwarn').hidden;
+   if(dz)$('dizzytag').textContent=S.turn===0?'🍄 Confuso: jogando no aleatório…':'🍄 Confuso: sua próxima jogada será aleatória';}
   {const me0=S.players[0],lim=limit(),thr=Math.max(3,Math.round(lim*.25)),n=me0.hand.length,rem=lim-n;
    const near=S.phase!=='over'&&!me0.out&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
    hw.classList.toggle('near',near);hw.style.setProperty('--lv',lv.toFixed(2));
@@ -2323,7 +2331,7 @@ function openSettings(){
 
 /* ---------- wiring ---------- */
 $('hand').addEventListener('click',e=>{const b=e.target.closest('.card');if(b)humanClick(+b.dataset.id,b)});
-$('rail').addEventListener('click',e=>{const b=e.target.closest('[data-catch]');if(b)humanCatch(+b.dataset.catch)});
+['pointerdown','click'].forEach(ev=>$('rail').addEventListener(ev,e=>{const b=e.target.closest('[data-catch]');if(b){e.preventDefault();humanCatch(+b.dataset.catch)}}));
 $('deck').onclick=()=>{if(myTurn()&&S.phase==='play')takeDraw(0)};
 $('drawBtn').onclick=humanMain;
 $('unoBtn').onclick=humanUno;
