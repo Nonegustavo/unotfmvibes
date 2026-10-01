@@ -466,7 +466,7 @@ const SP={
   magnet:{n:'Carta do Imã',g:'🧲',d:'Ao jogar esta carta, descarte todas as cartas da mesma cor que esta.',deck:['r','b','y','g','r','b','y','g']},
   tornado:{n:'Carta do Tornado',g:'🌪️',d:'Ao jogar esta carta, embaralhe as cartas dos outros jogadores.',deck:['r','b','y','g','r','b','y','g']},
   steal:{n:'Carta da Reciclagem',g:'♻️',d:'Ao jogar esta carta, todos os outros descartam uma carta de ação aleatória e compram 1 carta para repor.',deck:['r','b','y','g']},
-  wish:{n:'Carta do Desejo',g:'🌠',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
+  wish:{n:'Carta do Desejo',g:'☄️',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
   peace:{n:'Carta da Paz',g:'☮️',d:'Ao jogar esta carta, cartas de ação não terão efeito nos próximos dois turnos.',deck:['r','b','y','g']},
   luck:{n:'Carta da Sorte',g:'🍀',d:'Ao jogar esta carta, a sua próxima carta comprada será uma carta jogável naquele turno.',deck:['r','b','y','g','r','b','y','g']},
   random:{n:'Carta Misteriosa',g:'❓',d:'Esta carta ativa um efeito aleatório quando jogada.',deck:['w','w','w','w']},
@@ -478,9 +478,9 @@ const SP={
   oddeven:{n:'Carta do Semáforo',g:'🚦',d:'Ao jogar esta carta, será proibido vencer com cartas pares ou ímpares (escolhido aleatoriamente). Ao jogar isso de novo, mude.',deck:C8},
   half:{n:'Carta da Autoridade',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
   death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado.',deck:['r','b']},
-  share:{n:'Carta da Partilha',g:'🖨️',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
+  share:{n:'Carta da Partilha',g:'🤲',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
   simon:{n:'Carta da Memorização',g:'🧠',d:'Ao jogar esta carta, repita as cores escolhidas por outras cartas desta. Se errar, compre 1 carta. Se acertar, escolha a próxima cor.',deck:['w','w','w','w','w','w','w','w']},
-  chair:{n:'Carta da Dança',g:'💺',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente.',deck:C4},
+  chair:{n:'Carta da Dança das Cadeiras',g:'🪑',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente.',deck:C4},
   view:{n:'Carta da Clarividência',g:'👁️',d:'Ao jogar esta carta, todos mostram uma de suas cartas.',deck:C8},
   treasure:{n:'Carta da Busca',g:'🧭',d:'Ao jogar esta carta 3 vezes, receba a Carta do Tesouro, que faz você vencer o jogo.',deck:C8},
   chest:{n:'Carta do Tesouro',g:'💰',hide:1,rule:'treasure',deck:[]},
@@ -643,12 +643,17 @@ const FX3D=(()=>{
       const c=renderer.domElement;c.id='fx3d';document.body.appendChild(c);
       scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(35,1,.1,100);camera.position.set(0,0,20);
       scene.add(new THREE.AmbientLight(0xffffff,.85));const dl=new THREE.DirectionalLight(0xffffff,.55);dl.position.set(4,6,12);scene.add(dl);
-      ok=true;resize();addEventListener('resize',resize);document.documentElement.classList.add('fx3d-on');
+      ok=true;resize();addEventListener('resize',resize);document.addEventListener('fullscreenchange',()=>setTimeout(resize,60));document.documentElement.classList.add('fx3d-on');
       return true;
     }catch(e){failed=true;return false}
   }
   function resize(){
-    if(!ok)return;W=innerWidth;H=innerHeight;renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
+    if(!ok)return;W=innerWidth;H=innerHeight;
+    const gl=renderer.getContext(),mx=Math.min(4096,gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)||4096);
+    let pr=Math.min(2,window.devicePixelRatio||1,mx/W,mx/H);
+    renderer.setPixelRatio(pr);renderer.setSize(W,H);
+    if(gl.drawingBufferWidth<Math.floor(W*pr)-2||gl.drawingBufferHeight<Math.floor(H*pr)-2){pr=Math.min(gl.drawingBufferWidth/W,gl.drawingBufferHeight/H);renderer.setPixelRatio(pr);renderer.setSize(W,H)}
+    camera.aspect=W/H;camera.updateProjectionMatrix();
     visH=2*Math.tan(17.5*Math.PI/180)*20;
     if(wkind){const k=wkind;clearWeather();setWeather(k)}
   }
@@ -696,7 +701,7 @@ const FX3D=(()=>{
     geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));
     const size=o.size||.3;
     const mat=new THREE.PointsMaterial({size,map:o.tex||dotTex(),vertexColors:true,transparent:true,depthWrite:false,blending:o.add?THREE.AdditiveBlending:THREE.NormalBlending,opacity:o.opacity??1});
-    const pts=new THREE.Points(geo,mat);scene.add(pts);
+    const pts=new THREE.Points(geo,mat);pts.frustumCulled=false;scene.add(pts);
     let age=0;const life=o.life||1.2,g=o.gravity??-3,drag=o.drag??.98,op=o.opacity??1;
     add({update(dt){
       age+=dt;const a=geo.attributes.position.array;
@@ -741,7 +746,7 @@ const FX3D=(()=>{
   function instanced(n,w,h,colors,setup,step,life){
     if(!init())return;const THREE=T();
     const geo=new THREE.PlaneGeometry(w,h);const mat=new THREE.MeshBasicMaterial({side:THREE.DoubleSide,transparent:true});
-    const mesh=new THREE.InstancedMesh(geo,mat,n);const d=new THREE.Object3D();const cl=new THREE.Color();
+    const mesh=new THREE.InstancedMesh(geo,mat,n);mesh.frustumCulled=false;const d=new THREE.Object3D();const cl=new THREE.Color();
     const st=[];for(let i=0;i<n;i++){st.push(setup(i));cl.set(css(colors[i%colors.length]));mesh.setColorAt(i,cl)}
     if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
     scene.add(mesh);let age=0;
@@ -783,9 +788,12 @@ const FX3D=(()=>{
 
   /* weather */
   function clearWeather(){if(wsys){wsys.dispose();wsys=null}wkind=null}
+  let wRect='';
   function setWeather(k){
     if(!k||!on()){if(wkind)clearWeather();return}
-    if(k===wkind)return;
+    const tb=document.querySelector('.table').getBoundingClientRect(),key=[tb.left,tb.top,tb.width,tb.height,innerWidth,innerHeight].map(Math.round).join();
+    if(k===wkind&&key===wRect)return;wRect=key;
+    if(ok&&(W!==innerWidth||H!==innerHeight))resize();
     if(!init())return;
     clearWeather();wkind=k;const THREE=T();
     const tr=document.querySelector('.table').getBoundingClientRect();
@@ -797,9 +805,10 @@ const FX3D=(()=>{
       for(let i=0;i<n;i++){pos[i*3]=rx();pos[i*3+1]=ry();pos[i*3+2]=0;v.push({vy:k==='blizzard'?-(.5+Math.random()*.9):(.25+Math.random()*.45),ph:Math.random()*6,f:.6+Math.random()})}
       const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
       const mat=new THREE.PointsMaterial({size:k==='blizzard'?.27:.22,map:dotTex(),color:k==='blizzard'?0xbcd8f7:0xffd36b,transparent:true,depthWrite:false,opacity:k==='blizzard'?.95:.8,blending:k==='sun'?THREE.AdditiveBlending:THREE.NormalBlending});
-      const p=new THREE.Points(geo,mat);scene.add(p);objs.push(p);
+      const p=new THREE.Points(geo,mat);p.frustumCulled=false;scene.add(p);objs.push(p);
       upd=dt=>{const a=geo.attributes.position.array;for(let i=0;i<n;i++){a[i*3+1]+=v[i].vy*dt;a[i*3]+=Math.sin(tt*v[i].f+v[i].ph)*.35*dt;
-        if(a[i*3+1]<B){a[i*3+1]=Tp;a[i*3]=rx()}if(a[i*3+1]>Tp){a[i*3+1]=B;a[i*3]=rx()}}geo.attributes.position.needsUpdate=true;
+        if(v[i].vy<0&&a[i*3+1]<B){a[i*3+1]=Tp;a[i*3]=rx()}else if(v[i].vy>0&&a[i*3+1]>Tp){a[i*3+1]=B;a[i*3]=rx()}
+        if(a[i*3]<L)a[i*3]=Rr;else if(a[i*3]>Rr)a[i*3]=L}geo.attributes.position.needsUpdate=true;
         if(k==='sun')mat.opacity=.55+.25*Math.sin(tt*2)};
       if(k==='sun'){
         const sz=Math.min(Wd,Ht)*.9;const ray=new THREE.Mesh(new THREE.PlaneGeometry(sz,sz),new THREE.MeshBasicMaterial({map:rayTex(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.45}));
@@ -812,7 +821,7 @@ const FX3D=(()=>{
       for(let i=0;i<n;i++){const x=rx(),y=ry();pos.set([x,y,0,x+dx,y+dy,0],i*6);sp.push(7+Math.random()*5)}
       const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
       const mat=new THREE.LineBasicMaterial({color:0xb7ccff,transparent:true,opacity:.6});
-      const ls=new THREE.LineSegments(geo,mat);scene.add(ls);objs.push(ls);
+      const ls=new THREE.LineSegments(geo,mat);ls.frustumCulled=false;scene.add(ls);objs.push(ls);
       upd=dt=>{const a=geo.attributes.position.array;for(let i=0;i<n;i++){const vy=-sp[i]*dt,vx=vy*.24;
         for(const o of [0,3]){a[i*6+o]+=vx;a[i*6+o+1]+=vy}
         if(a[i*6+4]<B){const x=rx(),y=Tp;a.set([x,y,0,x+dx,y+dy,0],i*6)}}geo.attributes.position.needsUpdate=true};
@@ -899,7 +908,7 @@ function sfxGlyph(g){
   const s=String(g);
   if(s===ARROWS)return sfx('rev');
   const map=[['⊘+2','plus'],['⊘','skip'],['💣','boom'],['💥','boom'],['☀️','sun'],['☁️','fog'],['⛈️','storm'],['❄️','blizzard'],['⚀','dice'],['⚁','dice'],['⚂','dice'],['⚃','dice'],['⚄','dice'],['⚅','dice'],
-    ['💰','chest'],['📜','rule'],['🔍','chal'],['☠️','death'],['✂','jump'],['★','bonus'],['⇆','swoosh'],['🔀','swoosh'],['🎠','swoosh'],['🌪️','swoosh'],['✋','swoosh'],['🥔','pop'],['☮️','peace'],['🕊️','peace'],
+    ['💰','chest'],['📜','rule'],['⚔️','chal'],['☠️','death'],['✂','jump'],['★','bonus'],['⇆','swoosh'],['🔀','swoosh'],['🎠','swoosh'],['🌪️','swoosh'],['✋','swoosh'],['🥔','pop'],['☮️','peace'],['🕊️','peace'],
     ['⚒️','curse'],['🧊','curse'],['👢','curse'],['🌵','curse'],['⏱️','curse'],['🧪','curse'],['⚡','storm'],['🌧️','draw'],['wheel','wild'],['+','plus']];
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }
@@ -1381,7 +1390,7 @@ function wishSwap(pi,c){
   if(c.color==='w')c.chosen=null;
   p.hand.push(c);if(pi===0){S.newIds.push(c.id);S.handFrom=discardRect()}
   ghost(discardRect(),targetRect(pi),0);
-  fx('🌠',`${who(pi)} pegou ${cardName(c)} da pilha`,'var(--cy)','stamp');
+  fx('☄️',`${who(pi)} pegou ${cardName(c)} da pilha`,'var(--cy)','stamp');
   log(`${who(pi)} trocou uma carta com a pilha.`);
 }
 function giveBatata(pi,card,t){
@@ -1456,12 +1465,12 @@ function doChallenge(pi){
   const c=S.chal;S.chal=null;const n=S.pending;S.pending=0;S.pendingType=null;
   if(c.bluff){
     const k=drawAmt(c.by,n);drawN(c.by,k);floatOn(c.by,`+${k}`,'var(--cr)');
-    fx('🔍',`Blefe! ${c.by===0?'Você compra':who(c.by)+' compra'} ${k}`,'var(--cg)','slam');log(`${who(pi)} desafiou: ${who(c.by)} blefou e comprou ${k}.`);
+    fx('⚔️',`Blefe! ${c.by===0?'Você compra':who(c.by)+' compra'} ${k}`,'var(--cg)','slam');log(`${who(pi)} desafiou: ${who(c.by)} blefou e comprou ${k}.`);
     if(massCheck()==='win')return;
     S.tok++;render();if(cur().bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();
   }else{
     const k=drawAmt(pi,n+2);drawN(pi,k);floatOn(pi,`+${k}`,'var(--cr)');
-    fx('🔍',`Jogada legal! ${pi===0?'Você compra':who(pi)+' compra'} ${k}`,'var(--cr)','slam');log(`${who(pi)} desafiou e errou: comprou ${k}.`);
+    fx('⚔️',`Jogada legal! ${pi===0?'Você compra':who(pi)+' compra'} ${k}`,'var(--cr)','slam');log(`${who(pi)} desafiou e errou: comprou ${k}.`);
     if(overloaded(pi)&&markOut(pi))return;endTurn();
   }
 }
@@ -1505,7 +1514,7 @@ function addRule(pi,k,quiet){
   log(`${pi==null?'O jogo':who(pi)} adicionou a regra ${RNAME[k]}${extra}.`);
 }
 const RICON={stack:'📚',sequence:'🔢',neighbor:'↕️',hell:'🔥',jumpin:'✂️',perfection:'💯',clean:'🧼',nou:'↩️',satisfaction:'😋',insatisfaction:'😒',
-  fastdraw:'⏩',tracking:'🗂️',flash:'🏃',overload:'🏋️',limbo:'🪜',hard:'🎯',dos:'✌️',shiny:'💎',team:'🤝',black:'⬛',noaction:'🧮',mess:'🎭',
+  fastdraw:'⏩',tracking:'🔎',flash:'🏃',overload:'🏋️',limbo:'🪜',hard:'🎯',dos:'✌️',shiny:'💎',team:'🤝',black:'⬛',noaction:'🧮',mess:'🎭',
   revelation:'🔦',mulligan:'🆕',camouflage:'🥷',bg:'🩵',nochallenge:'🤐',time:'⏰',limitless:'♾️',twohands:'✋',poker:'🃏',addrules:'➕',
   tournament:'🏆',survivor:'🛡️',drekkemaus:'🐉',jingle:'🔔',papaille:'🦋',charlotte:'🕷️',elisah:'🔮',buffy:'🐣',snowy:'⛄',icemice:'🐭',elise:'⚜️',red:'🔴',blue:'🔵',yellow:'🟡',green:'🟢',weather:'🌡️',mix:'⇄⊘',plus99:'+99'};
 function ruleIcon(k){
@@ -1631,17 +1640,17 @@ function applySpecial(pi,card){
     case 'share':{
       const copies=shuffle([...p.hand]).slice(0,10).map(c=>mk(c.color,c.type,c.value));
       copies.forEach((c,k)=>{const t=rand(opp);if(t==null)return;S.players[t].hand.push(c);S.players[t].called=false;if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),k*50)});
-      fx('🖨️',`${who(pi)} partilhou ${copies.length} cópia${copies.length===1?'':'s'}`,col,'slam');log(`${who(pi)} deu ${copies.length} cópias das suas cartas.`);return massCheck()}
+      fx('🤲',`${who(pi)} partilhou ${copies.length} cópia${copies.length===1?'':'s'}`,col,'slam');log(`${who(pi)} deu ${copies.length} cópias das suas cartas.`);return massCheck()}
     case 'simon':
       if(pi===0)return 'ask';{
         const seq=S.simon;const ok=!seq.length||Math.random()<Math.pow({easy:.6,normal:.85,hard:.95}[R.diff],seq.length);
         return resolveSimon(pi,card,ok,bestColor(p.hand))}
     case 'chair':{
       const idx=alive().filter(i=>i!==0&&i!==pi);
-      if(R.team||idx.length<2){fx('💺','Ninguém trocou de lugar',col,'stamp');return 'done'}
+      if(R.team||idx.length<2){fx('🪑','Ninguém trocou de lugar',col,'stamp');return 'done'}
       S.seatFlip=Object.fromEntries([...document.querySelectorAll('#seatrow .seat')].map(e=>[e.dataset.name,e.getBoundingClientRect()]));
       const objs=shuffle(idx.map(i=>S.players[i]));idx.forEach((i,k)=>S.players[i]=objs[k]);
-      fx('💺','Os adversários trocaram de lugar',col,'slam');log('Dança: os adversários trocaram de lugar.');return 'done'}
+      fx('🪑','Os adversários trocaram de lugar',col,'slam');log('Dança: os adversários trocaram de lugar.');return 'done'}
     case 'view':
       opp.forEach(i=>{const q=S.players[i];if(q.hand.length&&i!==0)peek(i,rand(q.hand))});
       fx('👁️','Todos mostram uma carta',col,'stamp');log('Clarividência: todos mostraram uma carta.');return 'done';
