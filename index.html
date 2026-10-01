@@ -200,6 +200,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .fxg svg{width:calc(var(--cw)*2.4);height:calc(var(--cw)*2.4);display:block;filter:drop-shadow(0 0 10px var(--fxc))}
 .fxcap{background:var(--fxc);color:#fff;font-weight:700;font-size:.95rem;padding:4px 14px;border-radius:16px;white-space:normal;text-align:center;max-width:min(78vw,290px);box-shadow:0 3px 0 rgba(0,0,0,.2)}
 .k-stamp{animation:stamp .45s cubic-bezier(.2,.9,.3,1.3)}
+.k-roll{animation:roll .3s linear infinite}
+@keyframes roll{25%{transform:rotate(25deg) translateY(-6px)}50%{transform:rotate(0) translateY(0)}75%{transform:rotate(-25deg) translateY(-6px)}}
 .k-slam{animation:slam .5s cubic-bezier(.2,.9,.3,1.4)}
 .k-cw svg{animation:rot 1s cubic-bezier(.3,.7,.3,1)}
 .k-ccw svg{transform:scaleX(-1)}.k-ccw svg g{animation:rot 1s cubic-bezier(.3,.7,.3,1);transform-origin:100px 100px}
@@ -250,7 +252,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .card .face.sp{font-size:calc(var(--cw)*.36);text-shadow:0 2px 0 rgba(0,0,0,.25)}
 .card .cn{position:absolute;top:5px;left:7px;font-size:calc(var(--cw)*.19);line-height:1}
 .card .cn.br{top:auto;left:auto;bottom:5px;right:7px;transform:rotate(180deg)}
-.c-r{--cc:var(--cr)}.c-y{--cc:var(--cy)}.c-g{--cc:var(--cg)}.c-b{--cc:var(--cb)}.c-w{--cc:var(--ck)}
+.mw{display:inline-block;width:calc(var(--cw)*.17);aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);border:1px solid #fff;vertical-align:top}
+.c-k{--cc:var(--ck)}.c-r{--cc:var(--cr)}.c-y{--cc:var(--cy)}.c-g{--cc:var(--cg)}.c-b{--cc:var(--cb)}.c-w{--cc:var(--ck)}
 .wheel{width:58%;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);display:grid;place-items:center;border:2px solid #fff}
 .wheel span{font-size:calc(var(--cw)*.26);text-shadow:0 1px 0 rgba(0,0,0,.5)}
 .back{--cc:#3b2f6b;background:repeating-linear-gradient(135deg,#3b2f6b 0 7px,#46397d 7px 14px)}
@@ -260,6 +263,7 @@ button.card:disabled{cursor:default}
 .deckbtn.can:hover{transform:translateY(-3px)}
 .deckbtn.reveal{opacity:.95}
 .deckbtn .eye{position:absolute;top:-10px;right:-10px;background:var(--ink);color:var(--bg);font-size:.65rem;border-radius:999px;padding:2px 6px;text-shadow:none}
+.flyclone{box-shadow:0 8px 18px rgba(20,10,50,.3)!important}
 .ghost{position:fixed;z-index:20;pointer-events:none;margin:0}
 
 /* hand */
@@ -692,9 +696,9 @@ function sfxGlyph(g){
     ['⚒️','curse'],['🧊','curse'],['👢','curse'],['🌵','curse'],['⏱️','curse'],['🧪','curse'],['⚡','storm'],['🌧️','draw'],['wheel','wild'],['+','plus']];
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }
-function fx(glyph,cap,color,kind){
-  hold(950);sfxGlyph(glyph);
-  $('fx').innerHTML=`<div class="fxin" style="--fxc:${color}"><div class="fxg k-${kind}" style="color:${color}">${glyph}</div>${cap?`<div class="fxcap">${cap}</div>`:''}</div>`;
+function fx(glyph,cap,color,kind,dur){
+  hold(dur?dur+200:950);sfxGlyph(glyph);
+  $('fx').innerHTML=`<div class="fxin" style="--fxc:${color}${dur?`;animation-duration:${dur}ms`:''}"><div class="fxg k-${kind}" style="color:${color}">${glyph}</div>${cap?`<div class="fxcap">${cap}</div>`:''}</div>`;
 }
 function burst(color){
   if(RM)return;
@@ -1180,10 +1184,20 @@ function giveBatata(pi,card,t){
   if(t===0){S.newIds.push(card.id);S.handFrom=discardRect()}else ghost(discardRect(),targetRect(t),0);
   stampOn(t,'🥔','var(--cy)');fx('🥔',`A batata foi para ${t===0?'você':who(t)}!`,'var(--cy)','slam');log(`${who(pi)} passou a batata para ${t===0?'você':who(t)}.`);
 }
-function rollDice(pi,t){
-  const n=1+Math.floor(Math.random()*6),q=S.players[t],face='⚀⚁⚂⚃⚄⚅'[n-1];
+function diceSVG(n){
+  const P={1:[[50,50]],2:[[28,28],[72,72]],3:[[26,26],[50,50],[74,74]],4:[[28,28],[72,28],[28,72],[72,72]],5:[[26,26],[74,26],[50,50],[26,74],[74,74]],6:[[28,24],[72,24],[28,50],[72,50],[28,76],[72,76]]}[n];
+  return `<svg viewBox="0 0 100 100" style="width:calc(var(--cw)*1.3);height:calc(var(--cw)*1.3);filter:drop-shadow(0 4px 0 rgba(0,0,0,.25))"><rect x="5" y="5" width="90" height="90" rx="20" fill="#fff" stroke="var(--accent)" stroke-width="6"/>${P.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="9" fill="${n===1?'#e0433a':'#241c3a'}"/>`).join('')}</svg>`;
+}
+function rollDice(pi,t,then){
+  const n=1+Math.floor(Math.random()*6),face='⚀⚁⚂⚃⚄⚅'[n-1];
   const txt=['Pega 1 carta do jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Joga um 4 ou compra 4','Distribui 5 cartas','Compra até ficar com 6'][n-1];
-  fx(face,`${t===0?'Você':who(t)}: ${txt}`,'var(--accent)','slam');log(`Dado de ${who(t)}: ${n} (${txt.toLowerCase()}).`);
+  fx(diceSVG(n),`${t===0?'Você':who(t)}: ${txt}`,'var(--accent)','slam',3000);sfx('dice');log(`Dado de ${who(t)}: ${n} (${txt.toLowerCase()}).`);
+  S.annText=`Dado: ${n}. ${t===0?'Você':who(t)}: ${txt.toLowerCase()}`;S.announcing=true;render();
+  const g=S.gen;
+  setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.announcing=false;const r=diceEffect(pi,t,n);if(r==='win')return;then()},2600);
+}
+function diceEffect(pi,t,n){
+  const q=S.players[t];
   if(n===1&&S.players[pi].hand.length){const c=rand(S.players[pi].hand);S.players[pi].hand=S.players[pi].hand.filter(x=>x!==c);q.hand.push(c);if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}}
   if(n===2){const k=drawAmt(t,2);drawN(t,k);floatOn(t,`+${k}`,'var(--cr)')}
   if(n===3){let k=0;while(q.hand.length>3)discardCard(t,rand(q.hand),k++)}
@@ -1390,7 +1404,14 @@ function applySpecial(pi,card){
     case 'curse':{
       const k=rand(Object.keys(CURSES));S.curse={k,left:CURSES[k].n*alive().length+2};
       fx(CURSES[k].g,CURSES[k].t,'#6b2fa3','slam');log(`Maldição: ${CURSES[k].t.toLowerCase()}.`);return 'done'}
-    case 'dice':return rollDice(pi,nextIdx(pi,1));
+    case 'dice':{
+      const t=nextIdx(pi,1),g=S.gen;S.busy=true;clearFlash();
+      fx('🎲',`${t===0?'Você rola':who(t)+' rola'} o dado…`,'var(--accent)','roll',1100);
+      setTimeout(()=>{
+        if(g!==S.gen||S.phase==='over')return;
+        const r=rollDice(pi,t,()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();if(S.phase!=='over')endTurn()});
+      },900);
+      return 'defer'}
     case 'oddeven':S.traffic=S.traffic==='odd'?'even':S.traffic==='even'?'odd':rand(['odd','even']);
       fx('🚦',`Proibido vencer com cartas ${S.traffic==='odd'?'ímpares':'pares'}`,col,'stamp');log(`Semáforo: proibido vencer com ${S.traffic==='odd'?'ímpares':'pares'}.`);return 'done';
     case 'death':S.death=true;fx('☠️','Morte súbita! Quem comprar ou errar é eliminado','#0d0a14','slam');log('Morte súbita ativada.');return 'done';
@@ -1522,7 +1543,7 @@ function doJumpIn(pi,card){
   fx('✂',pi===0?'Você cortou!':`Corte de ${who(pi)}!`,'var(--cy)','stamp');
   log(`${who(pi)} cortou a vez!`);
   const r=playCard(pi,card,null);
-  if(r==='win')return;
+  if(r==='win'||r==='defer')return;
   if(r==='ask'){humanAsk(card);return}
   if(r==='combo'){S.tok++;render();if(S.players[pi].bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();return}
   endTurn();
@@ -1658,7 +1679,7 @@ function botPlayNow(card,pi0){
   const pi=S.turn,p=cur();
   const col=isWildPick(card)?bestColor(p.hand.filter(c=>c.id!==card.id)):null;
   const r=playCard(pi,card,col);
-  if(r==='win')return;
+  if(r==='win'||r==='defer')return;
   if(r==='combo'){S.tok++;render();scheduleBot();return}
   endTurn();
 }
@@ -1692,7 +1713,7 @@ function humanPlay(card){
 function finishHuman(card,col){
   S.busy=false;
   const r=playCard(0,card,col);
-  if(r==='win')return;
+  if(r==='win'||r==='defer')return;
   if(r==='ask'){humanAsk(card);return}
   if(r==='combo'){S.tok++;render();if(R.flash||curseIs('time'))startFlash();return}
   endTurn();
@@ -1738,6 +1759,21 @@ function startFlash(){
 }
 
 /* ---------- animation helpers ---------- */
+function flyClone(target,from,o={}){
+  if(RM||!target||!from)return;
+  const r=target.getBoundingClientRect(),w=target.offsetWidth,h=target.offsetHeight;if(!w)return;
+  const cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const g=target.cloneNode(true);g.classList.add('flyclone');g.removeAttribute('data-id');
+  Object.assign(g.style,{position:'fixed',left:(cx-w/2)+'px',top:(cy-h/2)+'px',width:w+'px',height:h+'px',margin:'0',zIndex:25,pointerEvents:'none',transition:'none',visibility:'visible'});
+  document.body.appendChild(g);
+  target.style.visibility='hidden';
+  const dx=from.left+from.width/2-cx,dy=from.top+from.height/2-cy;
+  const sc=Math.max(.35,Math.min(1.3,from.width/w));
+  const a=g.animate([{transform:`translate(${dx}px,${dy}px) rotate(${o.rot||0}deg) scale(${sc})`},{transform:`rotate(${o.endRot||0}deg)`}],
+    {duration:o.dur||420,delay:o.delay||0,easing:'cubic-bezier(.2,.9,.25,1.05)',fill:'both'});
+  const end=()=>{g.remove();target.style.visibility=''};
+  a.onfinish=end;a.oncancel=end;setTimeout(end,(o.delay||0)+(o.dur||420)+400);
+}
 function flyFrom(el,from,o={}){
   if(RM||!el||!from)return;
   const to=el.getBoundingClientRect();
@@ -1763,7 +1799,7 @@ function faceHTML(c){
   if(SP[c.type]){const g=SP[c.type].g,sm=SP[c.type].small?' sm':'';return `<span class="cn${sm}">${g}</span><span class="face sym sp${sm}">${g}</span><span class="cn br${sm}">${g}</span>`}
   const sym={skip:'⊘',rev:'⇄',d2:'+2'}[c.type];
   if(sym)return `<span class="cn">${sym}</span><span class="face sym">${sym}</span><span class="cn br">${sym}</span>`;
-  if(c.type==='wild')return `<span class="wheel"></span>`;
+  if(c.type==='wild')return `<span class="cn"><i class="mw"></i></span><span class="wheel"></span><span class="cn br"><i class="mw"></i></span>`;
   return `<span class="cn">+4</span><span class="wheel"><span>+4</span></span><span class="cn br">+4</span>`;
 }
 function makeCard(c){
@@ -1887,9 +1923,9 @@ function render(){
   dis.style.setProperty('--ring',CVAR[S.color]);
   if(S.lastTop!==t.id){
     S.lastTop=t.id;
-    dis.innerHTML=S.discard.slice(-3).map(c=>`<div class="dc" style="--rot:${c.rot.toFixed(1)}deg"><div class="card c-${c.chosen&&c.chosen!=='k'?c.chosen:c.color}" ${c.chosen==='k'?`style="box-shadow:0 0 0 3px #0d0a14,0 3px 0 rgba(0,0,0,.22)"`:''}>${faceHTML(c)}</div></div>`).join('');
+    dis.innerHTML=S.discard.slice(-3).map(c=>`<div class="dc" style="--rot:${c.rot.toFixed(1)}deg"><div class="card c-${c.chosen||c.color}">${faceHTML(c)}</div></div>`).join('');
     if(S.morph&&!RM){dis.lastElementChild.firstElementChild.animate([{transform:'rotateY(90deg) scale(1.15)'},{transform:'none'}],{duration:450,easing:'cubic-bezier(.2,.9,.3,1.2)'})}
-    else if(S.animPlay){flyFrom(dis.lastElementChild.firstElementChild,S.animPlay,{rot:-25,dur:430})}
+    else if(S.animPlay){const tc=S.discard[S.discard.length-1];flyClone(dis.lastElementChild.firstElementChild,S.animPlay,{rot:-25,dur:430,endRot:tc.rot||0})}
     S.morph=false;
   }
   S.animPlay=null;
@@ -1934,7 +1970,7 @@ function render(){
   // animations for draws
   const deckR=deck.getBoundingClientRect();
   const from=S.handFrom||deckR;S.handFrom=null;
-  S.newIds.forEach((id,k)=>flyFrom(hand.querySelector(`[data-id="${id}"]`),from,{delay:k*(S.newIds.length>8?35:70),rot:-15}));
+  S.newIds.forEach((id,k)=>flyClone(hand.querySelector(`[data-id="${id}"]`),from,{delay:k*(S.newIds.length>8?35:70),rot:-15}));
   S.newIds=[];
   Object.entries(S.botDraw).forEach(([pi,cnt])=>{
     const av=document.querySelector(`[data-seat="${pi}"] .av`);const r=av&&av.getBoundingClientRect();
