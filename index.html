@@ -54,6 +54,32 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
+.side-b{--cr:#e8479a;--cy:#f28a1c;--cg:#16b3c2;--cb:#8a4fd8}
+.side-b .card{border-color:#15101f}
+.side-b .card::before{border-color:rgba(0,0,0,.55)}
+.side-b .card .cn{color:#15101f}
+.side-b .card .face{text-shadow:0 2px 0 rgba(0,0,0,.55),0 0 1px #000}
+.side-b .c-w{--cc:#f6f4fb;color:#15101f}
+.side-b .c-w .face{text-shadow:none}
+.side-b .wheel,.side-b .mw{border-color:#15101f}
+.side-b .wxf{border-color:rgba(0,0,0,.7)}
+.side-b .back{--cc:#140c22;background:repeating-linear-gradient(135deg,#140c22 0 7px,#2b1645 7px 14px);border-color:#15101f}
+.side-b .back .face{background:#16b3c2;color:#140c22}
+html.side-b .table{background:radial-gradient(circle at 50% 38%,#3b2163,#170d2b 75%);color:#f0eaff}
+html.side-b .table .status,html.side-b .table .count{color:#e6dcff}
+html.side-b .dirring{color:#c79bff}
+html.side-b .discard::before{opacity:.75}
+.side-a{--cr:#e0433a;--cy:#f0b21f;--cg:#2c9a57;--cb:#2b6bd6}
+.side-a .card{border-color:#fff}
+.side-a .card::before{border-color:rgba(255,255,255,.33)}
+.side-a .card .cn{color:#fff}
+.side-a .c-w{--cc:var(--ck);color:#fff}
+.side-a .card .face{text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.side-a .wheel,.side-a .mw{border-color:#fff}
+.hside{font-size:.7rem;font-weight:600;color:#8a4fd8;margin-left:4px}
+.seat .mini.oside{color:#8a4fd8}
+.table.portaling{animation:portalIn .9s cubic-bezier(.3,.7,.3,1)}
+@keyframes portalIn{0%{transform:scale(.9) rotate(-3deg);filter:blur(4px) hue-rotate(90deg);opacity:.4}60%{transform:scale(1.02) rotate(.5deg);filter:blur(0)}100%{transform:none;opacity:1}}
 .seg[data-key=diff] button[data-v=master][aria-pressed="true"]{background:linear-gradient(90deg,#f0b21f,#ffd36b,#f0b21f);background-size:200% 100%;color:#4a3300;font-weight:700;animation:shimmer 2.5s linear infinite;box-shadow:0 0 0 2px #b88400,0 0 12px rgba(240,178,31,.7)}
 .tip.unlock{background:linear-gradient(90deg,#fff3cf,#ffe39a);border-color:#f0b21f;color:#4a3300}
 .tip.unlock b{color:#9a6a00}
@@ -483,8 +509,12 @@ const COLORS=['r','y','g','b'];
 const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Preto'};
 const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'#0d0a14'};
 function applyBg(){
-  document.documentElement.classList.toggle('bgmerge',!!R.bg);
+  const sb=!!(S&&S.side==='b');
+  document.documentElement.classList.toggle('side-b',sb);
+  document.documentElement.classList.toggle('bgmerge',!!R.bg&&!sb);
   const def=(k,v)=>Object.defineProperty(CNAME,k,{configurable:true,enumerable:true,get:typeof v==='function'?v:()=>v});
+  if(sb){def('r','Rosa');def('y','Laranja');def('g','Ciano');def('b','Roxo');return}
+  def('r','Vermelho');def('y','Amarelo');
   if(R.bg){const q=()=>Math.random()<.5?'Azul?':'Verde?';def('b',q);def('g',q)}else{def('b','Azul');def('g','Verde')}
 }
 const TEAMCOL=['var(--accent)','#e08a2b','#2b9aa0'];
@@ -566,7 +596,7 @@ const SP={
   fog:{n:'Clima: Nevoeiro',g:'☁️',hide:1,rule:'weather',deck:C4},
   storm:{n:'Clima: Tempestade',g:'⛈️',hide:1,rule:'weather',deck:C4},
   blizzard:{n:'Clima: Nevasca',g:'❄️',hide:1,rule:'weather',deck:C4},
-  paradox:{n:'Carta do Paradoxo',g:'⏳',d:'Ao jogar esta carta, envie uma carta aleatória da sua mão para a sua mão da sua próxima partida.',deck:C4},
+  portal:{n:'Carta do Portal',g:'🌀',d:'Duas partidas estão acontecendo ao mesmo tempo. Jogue esta carta para alternar entre elas.',deck:C8},
   rule:{n:'Carta da Regra',g:'📜',d:'Ao jogar esta carta, adicione uma nova regra à partida atual.',deck:C4},
 };
 Object.entries(SP).forEach(([k,v])=>{if(!v.hide)RULES.push({g:'Cartas especiais',k:v.rule||k,n:v.n,d:v.d})});
@@ -1025,6 +1055,7 @@ const SND={
   thaw:()=>arp([784,988,1175,1568],.1,{type:'triangle',vol:.1,d:.4}),
   rain:()=>{for(let i=0;i<10;i++)noise(.04,{f:3000+Math.random()*2000,vol:.06,at:Math.random()*.6})},
   thunder:()=>{noise(.9,{f:250,filter:'lowpass',vol:.35});noise(.1,{f:5000,filter:'highpass',vol:.15})},
+  portal:()=>{noise(.9,{f:200,fTo:3000,vol:.14,q:4});arp([392,523,659,880,1175],.08,{type:'sine',vol:.09,d:.35,at:.15});tone(110,.9,{to:55,vol:.12})},
   siren:()=>{tone(700,.25,{type:'square',vol:.08,to:1000});tone(1000,.25,{type:'square',vol:.08,to:700,at:.25})},
 };
 function sfx(k){if(MUTED||!SND[k])return;try{SND[k]()}catch(e){}}
@@ -1037,7 +1068,7 @@ function sfxGlyph(g){
     ['⚒️','curse'],['🧊','curse'],['👢','curse'],['🌵','curse'],['⏱️','curse'],['🧪','curse'],['😈','curse'],['⚡','thunder'],['🌧️','rain'],
     ['🎁','gift'],['🕸️','web'],['☄️','wish'],['🟰','equal'],['⚖️','justice'],['🧲','magnet'],['♻️','recycle'],['🍀','luck'],['❓','mystery'],['🧬','clone'],['🚦','beep'],
     ['🤲','copy'],['🧠','simon'],['🪑','chairs'],['👁️','view'],['🧭','compass'],['🔒','lock'],['🧤','sneak'],['🚫','ban'],['📦','box'],['🍄','dizzy'],['🖌️','splat'],['⏳','paradox'],
-    ['⏩','zip'],['🌤️','thaw'],['🚨','siren'],['#0d0a14','thud'],['wheel','wild'],['+','plus']];
+    ['⏩','zip'],['🌀','portal'],['🌤️','thaw'],['🚨','siren'],['#0d0a14','thud'],['wheel','wild'],['+','plus']];
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }
 function fx(glyph,cap,color,kind,dur){
@@ -1101,6 +1132,7 @@ function markOut(pi,reason){
   const p=S.players[pi];
   if(immune(pi)){if(S.boom===pi)S.boom=null;toast('Charlotte não pode ser eliminada!','var(--cg)');return false}
   FX3D.smoke(targetRect(pi));p.out=true;sfx('out');
+  if(S.other){const o=S.other.players[pi];S.other.deck.unshift(...o.hand,...(o.hand2||[]));o.hand=[];o.hand2=[]}
   const cards=[...p.hand,...(p.hand2||[])];p.hand=[];p.hand2=[];
   if(ab(pi,'snowy')&&alive().length){
     cards.forEach((c,k)=>{const t=rand(alive());S.players[t].hand.push(c);S.players[t].called=false;if(t===0)S.newIds.push(c.id);else if(k<8)ghost(targetRect(pi),targetRect(t),k*60)});
@@ -1186,7 +1218,7 @@ function newGame(){
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,log:[],busy:false,
      newIds:[],botDraw:{},animPlay:null,mull:R.mulligan,autoResolve:null,lastTop:null};
   applyBg();S.added=[];S.removed=[];S.freshRules=[];$('notices').innerHTML='';$('rulestrip').dataset.sig='';
-  S.mem={lacks:{},lastCol:{},played:{}};
+  S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
   if(timeT){clearInterval(timeT);timeT=null}
   if(limboT){clearInterval(limboT);limboT=null}
@@ -1220,8 +1252,42 @@ function dealAndStart(){
   S.turn=Math.floor(Math.random()*players.length);
   log(`Primeira carta: ${cardName(first)}. ${who(S.turn)} ${S.turn===0?'começa':'começa'}.`);
   if(R.addrules){const g=S.gen;addT=setInterval(()=>{if(!S||S.gen!==g||S.phase==='over'||S.busy)return;const o=ruleOptions(1);if(o.length){addRule(null,o[0]);render()}},75000)}
+  if(R.portal)buildSideB(startOf);
   S.lastTop=null;S.newIds=players[0].hand.map(c=>c.id);
   startTurn();
+}
+
+/* ---------- portal: two sides ---------- */
+const SIDE_KEYS=['deck','discard','color','pending','pendingType','chal','comboValue','seqDir','weather','peace','curse','death','traffic','simon','passes','numOnly','boom','mem','added','removed'];
+const PLAYER_KEYS=['hand','hand2','called','luck','webbed','confuse','confuseNext','treasure','batata','escaped'];
+function captureSide(){const o={R};SIDE_KEYS.forEach(k=>o[k]=S[k]);o.players=S.players.map(p=>{const q={};PLAYER_KEYS.forEach(k=>q[k]=p[k]);return q});return o}
+function applySide(o){R=o.R;SIDE_KEYS.forEach(k=>S[k]=o[k]);S.players.forEach((p,i)=>PLAYER_KEYS.forEach(k=>p[k]=o.players[i][k]))}
+function buildSideB(startOf){
+  const saved=captureSide();
+  R={...saved.R,bg:false};
+  S.deck=buildDeck();if(R.bomb&&!R.noaction)S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,mk('w','bomb'));
+  S.players.forEach(p=>{p.hand=[];p.hand2=[];p.called=false;p.luck=false;p.webbed=false;p.confuse=false;p.confuseNext=false;p.treasure=0;p.batata=0;p.escaped=false});
+  for(let r=0;r<10;r++)S.players.forEach((p,i)=>{if(r<startOf(i)){const c=popDeck();if(c&&c.type==='bomb'){S.deck.unshift(c);const d=popDeck();if(d)p.hand.push(d)}else if(c)p.hand.push(c)}});
+  if(R.twohands)S.players.forEach((p,i)=>{for(let r=0;r<startOf(i);r++){const c=popDeck();if(c&&c.type!=='bomb')p.hand2.push(c)}});
+  let first;S.discard=[];
+  do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
+  S.discard.push(first);S.color=first.color;
+  Object.assign(S,{pending:0,pendingType:null,chal:null,comboValue:null,seqDir:null,weather:null,peace:0,curse:null,death:false,traffic:null,simon:[],passes:0,numOnly:0,boom:null,
+    mem:{lacks:{},lastCol:{},played:{}},added:[...(saved.added||[])],removed:[]});
+  S.other=captureSide();
+  applySide(saved);
+}
+function switchSide(pi){
+  const here=captureSide();applySide(S.other);S.other=here;
+  S.side=S.side==='b'?'a':'b';S.crossed=true;
+  S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.lastTop=null;
+  applyBg();
+  $('hand').innerHTML='';S.newIds=S.players[0].hand.map(c=>c.id);S.handFrom=discardRect();
+  const t=document.querySelector('.table');if(!RM){t.classList.remove('portaling');void t.offsetWidth;t.classList.add('portaling')}
+  FX3D.swirl('tornado');sfx('portal');
+  fx('🌀',S.side==='b'?'A mesa atravessou o portal…':'A mesa voltou pelo portal…','#8a4fd8','stamp');
+  log(`${who(pi)} abriu o portal: a mesa foi para ${S.side==='b'?'o outro lado':'o lado normal'}.`);
+  hold(1200);
 }
 
 /* ---------- core play ---------- */
@@ -1252,7 +1318,7 @@ function playCard(pi,card,chosen){
   memPlay(pi,card);
   if(black){S.color='k';card.chosen='k';fx('<span class="wheel" style="width:calc(var(--cw)*1.1);background:#0d0a14"></span>','Carta preta!','#0d0a14','stamp');burst('#0d0a14')}
   if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}
-  S.hist=S.hist||[];const he={by:pi,live:card,card:null,notes:[]};S.hist.push(he);if(S.hist.length>12)S.hist.shift();S.histCur=he;
+  S.hist=S.hist||[];const he={by:pi,live:card,card:null,notes:[],side:S.side||'a'};S.hist.push(he);if(S.hist.length>12)S.hist.shift();S.histCur=he;
   let msg=`${who(pi)} jogou ${orig!==card.type?SP[orig].n+' → ':''}${cardName(card)}`;
   if(card.color==='w'&&chosen)msg+=` → ${CNAME[chosen]}`;
   const on=!(S.peace>0);
@@ -1335,8 +1401,8 @@ function endTurn(){
   if(S.phase==='over')return;
   if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}S.histCur=null;
   clearFlash();S.auto=false;
-  const fp=S.players[S.turn];
-  if(!fp.out){
+  const fp=S.players[S.turn];const crossed=S.crossed;S.crossed=false;
+  if(!fp.out&&!crossed){
     fp.hand.forEach(c=>c.lock=false);
     const wasNext=fp.confuseNext;fp.confuse=false;if(wasNext){fp.confuse=true;fp.confuseNext=false}
     const bt=fp.hand.find(c=>c.type==='batata');
@@ -1352,12 +1418,12 @@ function endTurn(){
       }
     }else fp.batata=0;
   }
-  if(S.curse){S.curse.left--;if(S.curse.left<=0){S.curse=null;toast('A maldição acabou!','var(--cg)')}}
+  if(S.curse&&!crossed){S.curse.left--;if(S.curse.left<=0){S.curse=null;toast('A maldição acabou!','var(--cg)')}}
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.busy=false;
   let steps=S.extra?0:1;steps+=S.skip===true?1:(S.skip||0);
   S.extra=false;S.skip=false;
-  if(S.peace>0)S.peace--;
-  if(S.numOnly>0)S.numOnly--;
+  if(S.peace>0&&!crossed)S.peace--;
+  if(S.numOnly>0&&!crossed)S.numOnly--;
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
   if(S.pending>0&&R.combo==='none'&&!R.nou){
     const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
@@ -1697,7 +1763,7 @@ function autoPlay(card){
 }
 const CARD_RULES=()=>RULES.filter(r=>r.g==='Cartas especiais').map(r=>r.k);
 function ruleOptions(n=2,pre){
-  const pool=[...RULE_POOL,...CARD_RULES(),...(pre?['noaction','mess','mulligan','mini','maxi','twohands']:[])].filter(k=>!R[k]&&!(CONFLICT[k]||[]).some(x=>R[x]));
+  const pool=[...RULE_POOL,...CARD_RULES(),...(pre?['noaction','mess','mulligan','mini','maxi','twohands']:[])].filter(k=>!R[k]&&!(CONFLICT[k]||[]).some(x=>R[x])&&!(k==='bg'&&S&&S.side==='b')&&!(k==='portal'&&!pre));
   return shuffle(pool).slice(0,n);
 }
 function addRule(pi,k,quiet){
@@ -1953,6 +2019,7 @@ function applySpecial(pi,card){
       if(T==='storm')flashStorm();
       if(T==='fog')S.players.forEach(q=>q.called=false);
       return 'done'}
+    case 'portal':if(!S.other)return 'done';switchSide(pi);return 'done';
     case 'luck':p.luck=true;fx('🍀',pi===0?'Sua próxima compra será jogável':`Próxima compra de ${who(pi)} será jogável`,'var(--cg)','stamp');log(`${who(pi)} está com sorte.`);return 'done';
   }
   return 'done';
@@ -2136,6 +2203,8 @@ function botChoose(p,opts){
         batata:30+(p.batata||0)*10,curse:10,dice:14,oddeven:6,half:p.hand.length<=2?30:1,death:p.hand.length<=3?25:3,share:10,simon:6,chair:6,view:5,
         treasure:20+(p.treasure||0)*10,chest:999,lock:12,theft:10,ban:8,box:8,confuse:1,ink:12,mix1:nn<=2?45:14,mix2:nn<=2?50:16,mix3:16,
         d99:nn<=2?80:(p.hand.length<=2?40:1),rule:8,
+        portal:(()=>{if(!S.other)return 0;const oh=S.other.players[S.turn].hand.length,h=p.hand.length-1;let v=-8;if(oh<=h-2)v=35;
+          const th=alive().filter(i=>i!==S.turn&&S.players[i].hand.length<=2);if(th.some(i=>S.other.players[i].hand.length>3))v=Math.max(v,30);if(oh>=h+3&&!th.length)v=-25;return v})(),
         sun:12,fog:p.hand.length<=3?28:6,storm:8+p.hand.filter(x=>x.type==='num'&&x.value===0).length*10,blizzard:(p.hand.length>6||S.players[nextIdx(S.turn,1)].hand.length<=2)?22:6};
       s=(sc[c.type]??10)+(cc[c.color]||0);
     }else if(c.type==='wild'){s=p.hand.length<=2?30:2}
@@ -2432,7 +2501,7 @@ function renderRail(){
       
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
       <div class="nm">${p.name}</div>
-      <div class="ct ${shiny?'shiny':''} ${ctCls}">${ctTxt}</div>${(p.batata&&p.hand.some(c=>c.type==='batata'))||p.treasure||p.confuse||p.luck?`<span class="mini">${p.hand.some(c=>c.type==='batata')&&p.batata?`🥔${p.batata}/5 `:''}${p.treasure?`🧭${p.treasure}/3 `:''}${p.confuse?'🍄':''}${p.luck?'🍀':''}</span>`:''}${p.hand2&&p.hand2.length&&!p.out?`<span class="mini">✋+${p.hand2.length}</span>`:''}
+      <div class="ct ${shiny?'shiny':''} ${ctCls}">${ctTxt}</div>${(p.batata&&p.hand.some(c=>c.type==='batata'))||p.treasure||p.confuse||p.luck?`<span class="mini">${p.hand.some(c=>c.type==='batata')&&p.batata?`🥔${p.batata}/5 `:''}${p.treasure?`🧭${p.treasure}/3 `:''}${p.confuse?'🍄':''}${p.luck?'🍀':''}</span>`:''}${p.hand2&&p.hand2.length&&!p.out?`<span class="mini">✋+${p.hand2.length}</span>`:''}${S.other&&!p.out?`<span class="mini oside">🌀${S.other.players[i].hand.length}</span>`:''}
       ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?'<span class="tag">fora</span>':partner(i)===0?'<span class="tag next">dupla</span>':''}</div>`);
   });
   parts.push(edge);
@@ -2697,7 +2766,7 @@ function openHistory(){
   const list=S.hist.slice(-5).reverse().map(h=>{
     const c=h.live?snap(h.live):h.card;if(!c)return '';
     const col=c.chosen||c.color;
-    return `<div class="hrow"><div class="card c-${col}" style="--cw:44px">${faceHTML(c)}</div><div class="hbody"><b>${h.by==null?'Mesa':h.by===0?'Você':S.players[h.by].name}</b>${h.notes.map(n=>`<span>${n}</span>`).join('')}</div></div>`}).join('');
+    return `<div class="hrow ${S.other?(h.side==='b'?'side-b':'side-a'):''}"><div class="card c-${col}" style="--cw:44px">${faceHTML(c)}</div><div class="hbody"><b>${h.by==null?'Mesa':h.by===0?'Você':S.players[h.by].name}${S.other&&h.side==='b'?' <span class="hside">🌀 outro lado</span>':''}</b>${h.notes.map(n=>`<span>${n}</span>`).join('')}</div></div>`}).join('');
   $('histList').innerHTML=list||'<p class="sub">Nenhuma jogada ainda.</p>';
   $('histOv').classList.add('show');$('histClose').focus();
 }
