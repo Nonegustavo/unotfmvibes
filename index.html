@@ -489,7 +489,7 @@ const BOTNAMES=['Snowy','Buffy','Elise','Jingle','Charlotte','Papaille','Drekkem
 const AVCOL=['#d9534f','#2b8a9e','#8e5bd0','#d4892b','#3c9d5d','#c2477f','#4a6fd1','#7c8b2a','#b0563a'];
 
 const RULES=[
-  {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho é formado apenas por números e curingas.'},
+  {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho é formado apenas por números e curingas comuns (sem +4).'},
   {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho é formado apenas por cartas de ação.'},
   {g:'Baralho e mão',k:'revelation',n:'Revelação',d:'A carta no topo do baralho é visível para todos.'},
   {g:'Baralho e mão',k:'mulligan',n:'Segunda chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
@@ -667,7 +667,7 @@ function buildDeck(){
       if(!R.mess){d.push(mk(c,'num',0));for(let v=1;v<=9;v++)d.push(mk(c,'num',v),mk(c,'num',v))}
       if(!R.noaction)for(const t of['skip','rev','d2'])d.push(mk(c,t),mk(c,t));
     }
-    for(let i=0;i<4;i++)d.push(mk('w','wild'),mk('w','d4'));
+    for(let i=0;i<4;i++){d.push(mk('w','wild'));if(!R.noaction)d.push(mk('w','d4'))}
   }
   if(!R.noaction)Object.entries(SP).forEach(([t,v])=>{if(R[v.rule||t])v.deck.forEach(c=>d.push(mk(c,t)))});
   return shuffle(d);
