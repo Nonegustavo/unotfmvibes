@@ -56,6 +56,12 @@
 .topbtns{display:flex;gap:6px}
 .hand .card.blocked{border-color:var(--cr);box-shadow:0 0 0 2px var(--cr),0 3px 0 rgba(0,0,0,.22)}
 .card .cb.bad{border-color:var(--cr);background:#fde8e6;color:#8a1f18}
+.deckbtn.frozen{background-image:linear-gradient(160deg,rgba(235,247,255,.85),rgba(160,210,250,.55) 55%,rgba(210,236,255,.8)),repeating-linear-gradient(135deg,#3b2f6b 0 7px,#46397d 7px 14px);border-color:#d8efff;box-shadow:0 0 0 2px #9fd3ff,0 0 16px rgba(120,190,255,.7),0 3px 0 rgba(0,0,0,.22)}
+.deckbtn.frozen .face{background:#e8f6ff;color:#2b6bd6}
+.deckbtn.frozen::after{content:"";position:absolute;left:6%;right:6%;top:-3px;height:12px;background:repeating-linear-gradient(90deg,#e8f6ff 0 6px,transparent 6px 11px);clip-path:polygon(0 0,100% 0,100% 30%,95% 100%,88% 30%,80% 90%,70% 30%,62% 100%,52% 30%,44% 80%,35% 30%,26% 100%,18% 30%,10% 85%,0 30%);pointer-events:none}
+.deckbtn.gone{background:transparent!important;border:3px dashed var(--muted);box-shadow:none}
+.deckbtn.gone::before{border-color:transparent}
+.deckbtn.gone .face,.deckbtn.gone .cn,.deckbtn.gone .wheel,.deckbtn.gone .eye{visibility:hidden}
 .card .cb{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:.72rem;font-weight:700;line-height:1.35;background:var(--panel);color:var(--ink);border:1.5px solid var(--accent);border-radius:999px;padding:0 6px;white-space:nowrap;text-shadow:none;z-index:2;pointer-events:none;box-shadow:0 2px 4px rgba(0,0,0,.15)}
 .dizzytag{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;background:linear-gradient(90deg,#c2477f,#8e5bd0,#2b9aa0,#c2477f);background-size:300% 100%;color:#fff;font-weight:700;font-size:.74rem;padding:2px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;animation:dzbg 3s linear infinite}
 @keyframes dzbg{to{background-position:-300% 0}}
@@ -190,10 +196,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 /* table */
 .table{position:relative;margin:4px 12px 0;border-radius:28px;background:var(--table);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0;padding:12px;overflow:hidden}
 .arena{position:relative;display:grid;place-items:center;flex:none;width:min(calc(var(--cw)*3.9),36vh,80vw);aspect-ratio:1}
-.dirring{position:absolute;inset:0;color:var(--arrow);pointer-events:none}
+.dirring{position:absolute;inset:0;color:var(--arrow);pointer-events:none;opacity:.32}
+.dirring path{stroke-width:2.5}
 .dirring.ccw{transform:scaleX(-1)}
-.dirring svg{width:100%;height:100%;animation:spin 16s linear infinite}
-.dirring.flipped svg{animation:spinfast .9s cubic-bezier(.3,.7,.3,1),spin 16s linear .9s infinite}
+.dirring svg{width:100%;height:100%;animation:spin 28s linear infinite}
+.dirring.flipped svg{animation:spinfast .9s cubic-bezier(.3,.7,.3,1),spin 28s linear .9s infinite}
 @keyframes spinfast{from{transform:rotate(-200deg);opacity:.3}to{transform:rotate(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes burst{50%{opacity:.2}}
@@ -486,7 +493,7 @@ const SP={
   tornado:{n:'Carta do Tornado',g:'🌪️',d:'Ao jogar esta carta, embaralhe as cartas dos outros jogadores.',deck:['r','b','y','g','r','b','y','g']},
   steal:{n:'Carta da Reciclagem',g:'♻️',d:'Ao jogar esta carta, todos os outros descartam uma carta de ação aleatória e compram 1 carta para repor.',deck:['r','b','y','g']},
   wish:{n:'Carta do Desejo',g:'☄️',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
-  peace:{n:'Carta da Paz',g:'🌼',d:'Ao jogar esta carta, cartas de ação não terão efeito por alguns turnos (número de jogadores × 2 + 2).',deck:['r','b','y','g']},
+  peace:{n:'Carta da Paz',g:'🌼',d:'Ao jogar esta carta, cartas de ação não terão efeito por alguns turnos.',deck:['r','b','y','g']},
   luck:{n:'Carta da Sorte',g:'🍀',d:'Ao jogar esta carta, a sua próxima carta comprada será uma carta jogável naquele turno.',deck:['r','b','y','g','r','b','y','g']},
   random:{n:'Carta Misteriosa',g:'❓',d:'Esta carta ativa um efeito aleatório quando jogada.',deck:['w','w','w','w']},
   clone:{n:'Carta da Clonagem',g:'🧬',d:'Esta carta ativa o mesmo efeito da carta anterior.',deck:['w','w','w','w']},
@@ -1650,7 +1657,7 @@ function applySpecial(pi,card){
     case 'steal':{
       opp.forEach(i=>{const q=S.players[i];const acts=q.hand.filter(c=>c.type!=='num');if(acts.length){discardCard(i,rand(acts));drawOne(i)}});
       fx('♻️','Adversários trocam uma ação',col,'stamp');log('Reciclagem: adversários descartaram uma ação e compraram 1.');return massCheck()}
-    case 'peace':{const n=alive().length*2+2;S.peace=n+1;fx('🌼',`Ações sem efeito por ${n} turnos`,'var(--cg)','stamp');log(`Paz: cartas de ação sem efeito por ${n} turnos.`);return 'done'}
+    case 'peace':{const n=alive().length*2+2;S.peace=n+1;fx('🌼','Ações sem efeito por alguns turnos','var(--cg)','stamp');log('Paz: cartas de ação sem efeito por alguns turnos.');return 'done'}
     case 'batata':if(pi===0)return 'ask';{const o=opponents(pi);giveBatata(pi,card,o.length?rand(o):rand(opp));return 'done'}
     case 'curse':{FX3D.aura('#8b3fd1');
       const k=rand(Object.keys(CURSES));S.curse={k,left:CURSES[k].n*alive().length+2};
@@ -2093,6 +2100,7 @@ function cardBadges(p,c,turn){
       else if(S.weather==='sun')b.push('☀️+1');
     }
   }else if(!turn&&canJump(0,c))b.push('✂️');
+  if(c.type==='batata')b.push(`🥔 ${p.batata||0}/5`);
   if(R.perfection&&c.type==='num'&&c.value===p.hand.length)b.push('💯');
   if(S.peace>0&&c.type!=='num')b.push('🌼');
   return b;
@@ -2105,7 +2113,7 @@ function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
   const p=cur();
   if(S.announcing)return S.annText;
-  if(p.bot)return `Vez de ${p.name}`;
+  if(p.bot)return '';
   if(S.busy)return 'Escolha…';
   if(S.phase==='combo'){
     const parts=[];if(R.stack)parts.push(`outro ${S.comboValue}`);if(R.sequence)parts.push('continue a sequência');
@@ -2116,7 +2124,7 @@ function statusText(){
     const any=S.players[0].hand.some(c=>canPlay(S.players[0],c));
     return any?`Defenda o +${S.pending} ou compre`:`Você compra ${S.pending}`;
   }
-  return 'Sua vez';
+  return '';
 }
 function renderRail(){
   const row=$('seatrow');$('rail').classList.toggle('many',S.players.length>=5);const ccw=S.dir===-1;
@@ -2212,6 +2220,10 @@ function render(){
   if(R.revelation&&dtop){deck.className=`card deckbtn reveal c-${dtop.color}`;deck.innerHTML=faceHTML(dtop)+'<span class="eye">topo</span>'}
   else{deck.className='card back deckbtn';deck.innerHTML='<span class="face">unotfm</span>'}
   deck.classList.toggle('can',mine);deck.disabled=!mine;
+  {const ic=[];if(R.satisfaction)ic.push('😋');if(R.insatisfaction)ic.push('😒');if(R.tracking)ic.push('🔎');if(R.fastdraw)ic.push('⏩');
+   if(S.death)ic.push('☠️');if(S.curse)ic.push(CURSES[S.curse.k].g);if(S.weather)ic.push(WEATHER[S.weather].g);
+   if(ic.length){const sp=document.createElement('span');sp.className='cb deckcb';sp.textContent=ic.join(' ');deck.appendChild(sp)}
+   deck.classList.toggle('frozen',S.weather==='blizzard'||curseIs('ice'));deck.classList.toggle('gone',!!S.death);}
   $('deckCount').textContent=`${S.deck.length} no monte`;
   // discard
   const t=top();const dis=$('discard');
@@ -2230,7 +2242,7 @@ function render(){
     +(S.death?'<span class="chip warn">☠️ Morte súbita</span>':'')
     +(S.traffic?`<span class="chip">🚦 Proibido vencer com ${S.traffic==='odd'?'ímpar':'par'}</span>`:'')
     +(R.time?`<span class="chip">⏰ <span id="timeLeft">${fmtTime(Math.max(0,S.timeEnd-Date.now()))}</span></span>`:'')
-    +(me.batata&&holds(0,'batata')?`<span class="chip warn">🥔 ${me.batata}/5</span>`:'')
+    
     +(me.treasure?`<span class="chip">🧭 ${me.treasure}/3</span>`:'')
     +(S.simon.length?`<span class="chip">🧠 ${S.simon.length}</span>`:'')
     +(me.hand2&&me.hand2.length?`<span class="chip">✋ Segunda mão: ${me.hand2.length}</span>`:'')
