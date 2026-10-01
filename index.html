@@ -98,7 +98,7 @@
 .hand.dizzy .card:nth-child(2n){animation-duration:2.6s;animation-direction:reverse}
 .hand.dizzy .card:nth-child(3n){animation-duration:1.9s;animation-delay:-.6s}
 @keyframes dizzy{0%,100%{rotate:-5deg;translate:0 0;filter:hue-rotate(0deg) blur(0)}25%{rotate:4deg;translate:0 -6px;filter:hue-rotate(40deg) blur(.4px)}50%{rotate:-3deg;translate:0 3px;filter:hue-rotate(-30deg) blur(0)}75%{rotate:6deg;translate:0 -3px;filter:hue-rotate(20deg) blur(.5px)}}
-.wxf{position:absolute;inset:4px;border-radius:7px;border:2px dashed rgba(255,255,255,.85);pointer-events:none}
+.wxf{position:absolute;inset:calc(var(--cw)*.05);border-radius:calc(var(--cw)*.09);border:max(1px,calc(var(--cw)*.026)) dashed rgba(255,255,255,.85);pointer-events:none}
 .card:has(.wxf)::before{display:none}
 .hand .card.perf{box-shadow:0 0 0 3px #f0b21f,0 0 14px rgba(240,178,31,.7),0 3px 0 rgba(0,0,0,.22)}
 .hand .card.calm{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),var(--cc)}
@@ -292,8 +292,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @keyframes toast{0%{opacity:0;transform:translate(-50%,-8px) scale(.85)}12%{opacity:1;transform:translate(-50%,0) scale(1.05)}20%{transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0}}
 
 /* cards */
-.card{width:var(--cw);aspect-ratio:2/3;border-radius:11px;background:var(--cc);border:3px solid #fff;position:relative;color:#fff;font-weight:700;display:grid;place-items:center;padding:0;flex:0 0 auto;box-shadow:0 3px 0 rgba(0,0,0,.22);transition:transform .18s,opacity .18s,box-shadow .18s}
-.card::before{content:"";position:absolute;inset:4px;border-radius:7px;border:2px solid rgba(255,255,255,.33);pointer-events:none}
+.card{width:var(--cw);aspect-ratio:2/3;border-radius:calc(var(--cw)*.14);background:var(--cc);border:max(1.5px,calc(var(--cw)*.04)) solid #fff;box-sizing:border-box;position:relative;color:#fff;font-weight:700;display:grid;place-items:center;padding:0;flex:0 0 auto;box-shadow:0 3px 0 rgba(0,0,0,.22);transition:transform .18s,opacity .18s,box-shadow .18s}
+.card::before{content:"";position:absolute;inset:calc(var(--cw)*.05);border-radius:calc(var(--cw)*.09);border:max(1px,calc(var(--cw)*.026)) solid rgba(255,255,255,.33);pointer-events:none}
 .card .face{font-size:calc(var(--cw)*.44);line-height:1;text-shadow:0 2px 0 rgba(0,0,0,.3)}
 .card .face.sym{font-size:calc(var(--cw)*.4)}
 .card .face.sp.sm{font-size:calc(var(--cw)*.27);letter-spacing:-.02em}
@@ -306,11 +306,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .simon-dots i{width:14px;height:14px;border-radius:50%;background:var(--line)}
 .simon-dots i.on{background:var(--accent)}
 .card .face.sp{font-size:calc(var(--cw)*.36);text-shadow:0 2px 0 rgba(0,0,0,.25)}
-.card .cn{position:absolute;top:5px;left:7px;font-size:calc(var(--cw)*.19);line-height:1}
-.card .cn.br{top:auto;left:auto;bottom:5px;right:7px;transform:rotate(180deg)}
+.card .cn{position:absolute;top:calc(var(--cw)*.065);left:calc(var(--cw)*.09);font-size:calc(var(--cw)*.19);line-height:1}
+.card .cn.br{top:auto;left:auto;bottom:calc(var(--cw)*.065);right:calc(var(--cw)*.09);transform:rotate(180deg)}
 .mw{display:inline-block;width:calc(var(--cw)*.17);aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);border:1px solid #fff;vertical-align:top}
 .c-k{--cc:var(--ck)}.c-r{--cc:var(--cr)}.c-y{--cc:var(--cy)}.c-g{--cc:var(--cg)}.c-b{--cc:var(--cb)}.c-w{--cc:var(--ck)}
-.wheel{width:58%;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);display:grid;place-items:center;border:2px solid #fff}
+.wheel{width:58%;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);display:grid;place-items:center;border:max(1px,calc(var(--cw)*.026)) solid #fff}
 .wheel span{font-size:calc(var(--cw)*.26);text-shadow:0 1px 0 rgba(0,0,0,.5)}
 .back{--cc:#3b2f6b;background:repeating-linear-gradient(135deg,#3b2f6b 0 7px,#46397d 7px 14px)}
 .back .face{font-size:calc(var(--cw)*.2);background:#fff;color:#3b2f6b;padding:3px 6px;border-radius:6px;text-shadow:none;transform:rotate(-12deg)}
@@ -1609,7 +1609,7 @@ function banType(pi,c){
 function peek(i,c){
   if(RM)return;const r=targetRect(i);if(!r)return;
   const el=makeCard(c);el.className=`card c-${c.color} peekc`;el.disabled=true;
-  const w=Math.min(r.width*.6,46);el.style.width=w+'px';el.style.left=(r.left+r.width/2-w/2)+'px';el.style.top=(r.bottom+4)+'px';
+  const w=Math.min(r.width*.6,46);el.style.setProperty('--cw',w+'px');el.style.left=(r.left+r.width/2-w/2)+'px';el.style.top=(r.bottom+4)+'px';
   document.body.appendChild(el);el.addEventListener('animationend',()=>el.remove());
 }
 function revealCard(pi,c){
