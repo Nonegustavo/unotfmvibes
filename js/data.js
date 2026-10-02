@@ -26,6 +26,9 @@ const RULES=[
   {g:'Baralho e mão',k:'mini',n:'Mini',d:'Todos começam com 4 cartas (ignora a quantidade de cartas iniciais escolhida).'},
   {g:'Baralho e mão',k:'maxi',n:'Maxi',d:'Todos começam com 9 cartas (ignora a quantidade de cartas iniciais escolhida).'},
   {g:'Baralho e mão',k:'twohands',n:'Duas mãos',d:'Você tem duas mãos de cartas para jogar. Termine uma primeiro para poder usar a outra e ganhar o jogo!'},
+  {g:'Baralho e mão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
+  {g:'Baralho e mão',k:'dos',n:'DOS!',d:'Ao invés de declarar UNO, você precisa declarar DOS quando tiver duas cartas na mão.'},
+  {g:'Baralho e mão',k:'shiny',n:'Mão brilhante',d:'Quem tiver um curinga ou as 4 cores na mão fica com o número de cartas brilhando.'},
   {g:'Jogadas',k:'stack',n:'Empilhar',d:'Você pode jogar várias cartas do mesmo número de uma só vez.'},
   {g:'Jogadas',k:'sequence',n:'Sequência',d:'Você pode jogar várias cartas da mesma cor, desde que formem uma sequência numérica.'},
   {g:'Jogadas',k:'neighbor',n:'Vizinho',d:'Números iguais não combinam mais. Números só combinam com um número acima ou abaixo.'},
@@ -40,12 +43,8 @@ const RULES=[
   {g:'Compras',k:'fastdraw',n:'Compra rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem com a mesa (exceto a Carta Bomba e compras de penalidade).'},
   {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
   {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
-  {g:'Pressão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
   {g:'Pressão',k:'limbo',n:'Limbo',d:'Quem ultrapassar o limite de cartas na mão será eliminado. O limite começa em 12 e reduz em 1 a cada minuto.'},
   {g:'Pressão',k:'hard',n:'Modo rigoroso',d:'Clicar em carta errada faz comprar 1 e passar a vez. Não falar UNO faz comprar 4 cartas.'},
-  {g:'Mesa',k:'dos',n:'DOS!',d:'Ao invés de declarar UNO, você precisa declarar DOS quando tiver duas cartas na mão.'},
-  {g:'Mesa',k:'shiny',n:'Mão brilhante',d:'Quem tiver um curinga ou as 4 cores na mão fica com o número de cartas brilhando.'},
-  {g:'Mesa',k:'team',n:'Jogo em duplas',d:'Cada jogador tem uma dupla (quem senta à frente). Se um vencer, a equipe toda vence.'},
 ];
 const C4=['r','b','y','g'],C8=[...C4,...C4];
 const SP={
@@ -104,6 +103,7 @@ RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'time',n:'Tempo 
 RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'limitless',n:'Sem limite',d:'Os jogadores agora podem ter mais de 30 cartas na mão. (Sem esta regra, quem passar de 30 cartas é eliminado.)'});
 RULES.push(
   {g:'Partida',k:'poker',n:'Mix de regras',d:'No início do jogo, cada jogador escolhe uma regra para colocar na partida.'},
+  {g:'Partida',k:'team',n:'Jogo em duplas',d:'Cada jogador tem uma dupla (quem senta à frente). Se um vencer, a equipe toda vence.'},
   {g:'Partida',k:'addrules',n:'Mais regras',d:'O jogo adiciona outras regras de vez em quando (a cada 75 segundos).'},
   {g:'Partida',k:'tournament',n:'Torneio',d:'Várias partidas ocorrerão. Quando um jogador atingir 500 pontos, ele será o vencedor. Quem vence a rodada ganha os pontos das cartas que sobraram na mão dos outros.'},
   {g:'Partida',k:'survivor',n:'Torneio de sobrevivência',d:'Várias partidas ocorrerão. Quando um jogador atingir 300 pontos, ele será eliminado do torneio. Vence quem sobrar. Cada um soma os pontos das cartas que sobraram na própria mão.'},
