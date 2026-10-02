@@ -66,26 +66,28 @@
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
 .seat .nm{margin-bottom:3px}
-.fan{position:relative;height:30px;margin:4px auto 0;width:100%;display:flex;justify-content:center}
-.fan i{position:absolute;bottom:0;left:50%;width:15px;height:22px;margin-left:-7.5px;border-radius:3px;border:1.5px solid #fff;background:repeating-linear-gradient(135deg,#3b2f6b 0 3px,#46397d 3px 6px);box-shadow:0 1px 2px rgba(0,0,0,.25);transform-origin:50% 120%;
-  transform:translateX(calc((var(--k) - (var(--n) - 1) / 2) * min(8px, 46px / var(--n)))) rotate(calc((var(--k) - (var(--n) - 1) / 2) * min(11deg, 56deg / var(--n))))}
+.fan{position:relative;height:34px;margin:-2px auto 0;width:100%}
+.fan i{position:absolute;top:2px;left:50%;width:15px;height:22px;margin-left:-7.5px;border-radius:3px;border:1.5px solid #fff;background:repeating-linear-gradient(135deg,#3b2f6b 0 3px,#46397d 3px 6px);box-shadow:0 1px 2px rgba(0,0,0,.25);
+  transform-origin:50% 230%;transform:rotate(calc((var(--k) - (var(--n) - 1) / 2) * min(9deg, 46deg / var(--n))))}
 .side-b .fan i{background:repeating-linear-gradient(135deg,#1a0f2e 0 3px,#4a2a7a 3px 6px);border-color:#0b0712}
-.fan .mist{position:absolute;left:50%;bottom:-3px;width:34px;height:14px;margin-left:-17px;border-radius:50%;background:radial-gradient(ellipse,rgba(235,232,245,.9) 0,rgba(235,232,245,.55) 50%,rgba(235,232,245,0) 75%);filter:blur(1px);pointer-events:none;z-index:1}
-.fan.fog .cnt{left:calc(50% + 14px);top:55%;transform:translate(0,-50%)}
-.fan.fog i{margin-left:-14px}
-.fan.fog .mist{margin-left:-24px;bottom:2px;width:30px;height:20px}
+.fan .mist{position:absolute;left:50%;top:8px;width:30px;height:18px;margin-left:-15px;border-radius:50%;background:radial-gradient(ellipse,rgba(235,232,245,.9) 0,rgba(235,232,245,.55) 50%,rgba(235,232,245,0) 75%);filter:blur(1px);pointer-events:none;z-index:1}
 .fan.fog i{filter:saturate(.7) brightness(1.05)}
-.fan .cnt{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);z-index:2;min-width:20px;padding:0 6px;border-radius:999px;background:var(--panel);border:1.5px solid var(--line);font-size:.74rem;font-weight:800;line-height:1.35;color:var(--ink);text-align:center;white-space:nowrap}
-.fan .cnt.c4{color:#b57c00;border-color:#e6b74a}
-.fan .cnt.c3{color:#d86a0a;border-color:#f0a050}
-.fan .cnt.c2{color:#fff;background:#e0763a;border-color:transparent}
-.fan .cnt.c1{color:#fff;background:var(--cr);border-color:transparent;animation:pop .35s}
-.fan .cnt.nr{color:#fff;background:var(--cr);border-color:transparent}
-.fan .cnt.said{color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);border-color:transparent;animation:pop .35s,saidPulse 1s ease-in-out infinite .35s}
-.fan .cnt.shiny::before{content:'✨'}
+.fan .cnt{position:absolute;left:50%;top:13px;transform:translate(-50%,-50%);z-index:2;font-size:1rem;font-weight:900;line-height:1;color:#fff;text-align:center;white-space:nowrap;
+  text-shadow:0 0 2px #1d1435,1px 1px 0 #1d1435,-1px -1px 0 #1d1435,1px -1px 0 #1d1435,-1px 1px 0 #1d1435,0 2px 3px rgba(0,0,0,.4)}
+.fan .cnt.c4{color:#ffd24d}
+.fan .cnt.c3{color:#ffa94d}
+.fan .cnt.c2{color:#ff7a4d}
+.fan .cnt.c1{color:#ff5a52;animation:cntPop .35s}
+.fan .cnt.nr{color:#ff5a52}
+.fan .cnt.said{color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);padding:2px 8px;border-radius:999px;font-size:.78rem;text-shadow:none;animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
+@keyframes cntPop{0%{scale:.4}70%{scale:1.2}100%{scale:1}}
+@keyframes cntPulse{50%{scale:1.08}}
+.tag.stat{font-size:.7rem;padding:0 7px;color:var(--ink);border-color:var(--accent);white-space:nowrap;max-width:calc(100% + 10px);overflow:hidden;text-overflow:ellipsis}
 .tag.outic{font-size:.85rem;padding:0 8px;border-color:var(--cr)}
-.rail.many .fan{height:26px}
+.rail.many .fan{height:30px}
 .rail.many .fan i{width:12px;height:18px;margin-left:-6px}
+.rail.many .fan .cnt{top:11px;font-size:.9rem}
+.rail.many .tag.stat{font-size:.62rem;padding:0 4px}
 .pring{position:fixed;z-index:9;pointer-events:none}
 .pring i{position:absolute;inset:0;border-radius:50%;border:3px solid #8a4fd8;box-shadow:0 0 12px #8a4fd8,inset 0 0 12px rgba(22,179,194,.6);opacity:0;animation:pring .9s ease-out forwards}
 .pring i:nth-child(2){animation-delay:.25s;border-color:#16b3c2}
@@ -257,7 +259,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .iconbtn{background:none;border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.9rem;font-weight:500}
 
 /* turn-order rail */
-.rail{position:relative;padding:8px 10px 12px;overflow-x:auto;scrollbar-width:none}
+.rail{position:relative;padding:8px 10px 16px;overflow-x:auto;scrollbar-width:none}
 .seatrow{display:flex;align-items:center;justify-content:center;gap:3px;width:100%}
 .rail::-webkit-scrollbar{display:none}
 .seat{flex:1 1 0;min-width:0;max-width:132px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:7px 6px 6px;position:relative;text-align:center;transition:border-color .2s,transform .25s,opacity .3s}
@@ -271,8 +273,6 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @keyframes again{50%{transform:scale(1.12)}}
 .ct.shiny{color:var(--ink);font-weight:700}
 .ct.shiny::before{content:'✨ '}
-.seat.shiny{border-color:#f0b21f;animation:shinyGlow 1.8s ease-in-out infinite}
-@keyframes shinyGlow{50%{box-shadow:0 0 12px 2px rgba(240,178,31,.55)}}
 @keyframes shimmer{to{background-position:-200% 0}}
 .tdot{position:absolute;top:6px;left:6px;width:9px;height:9px;border-radius:50%}
 .seat.partner{border-style:dashed;border-color:var(--accent)}
@@ -2122,7 +2122,11 @@ function applySpecial(pi,card){
   return 'done';
 }
 function humanAsk(card){
-  const T=card.type;S.busy=true;render();
+  S.busy=true;render();const g=S.gen;
+  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')humanAskOpen(card)},480);
+}
+function humanAskOpen(card){
+  const T=card.type;
   const fin=r=>{S.busy=false;if(r==='win')return;endTurn()};
   const others=alive().filter(i=>i!==0);
   if(T==='trade')openTarget('Trocar de mão com…','Escolha com quem trocar todas as cartas.',others,t=>{swapHands(0,t);fin('done')});
@@ -2360,11 +2364,12 @@ function morphCard(card,prev){
 }
 const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simon'];
 const needsAnn=(pi,card)=>card.type==='random'||card.type==='clone'||(pi!==0&&(isWildPick(card)||ASK_TYPES.includes(card.type)));
-function announce(pi,card,cont){
+function announce(pi,card,cont,wait){
   clearFlash();
   const p=S.players[pi];const rect=srcRect(pi,card);
   p.hand=p.hand.filter(c=>c.id!==card.id);
   card.rot=Math.random()*24-12;S.discard.push(card);S.ann=card;
+  if(p.bot&&p.hand.length===target())afterOneCard(pi);
   S.animPlay=rect;S.busy=true;S.announcing=true;S.annText=`${who(pi)} ${pi===0?'jogou':'jogou'} ${label(card)}`;sfx('play');
   render();
   const g=S.gen;
@@ -2378,7 +2383,7 @@ function announce(pi,card,cont){
       fx(og,`Virou ${card.color==='w'?label(card):cardName(card)}`,CVAR[card.color]||'var(--accent)','stamp');
       render();setTimeout(done,S.spectate?400:950);
     }else done();
-  },S.spectate?400:950);
+  },wait||(S.spectate?400:950));
 }
 function botPlay(card){
   const pi=S.turn;
@@ -2416,7 +2421,7 @@ function humanClick(id,el){
 function humanPlay(card){
   S.mull=false;
   if(S.peace>0&&card.color==='w'){finishHuman(card,null);return}
-  if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card);return}
+  if(isWildPick(card)){announce(0,card,()=>{S.busy=true;render();openColors(col=>finishHuman(card,col),card)},480);return}
   if(card.type==='clone'||card.type==='random'){
     announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else finishHuman(card,null)});
     return;
@@ -2564,7 +2569,7 @@ function statusText(){
   if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
   if(S.announcing)return S.annText;
   if(p.bot)return '';
-  if(S.busy)return 'Escolha…';
+  if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
     const parts=[];if(R.stack)parts.push(`outro ${S.comboValue}`);if(R.sequence)parts.push('continue a sequência');
     return `Combo: ${parts.join(' ou ')} — ou encerre`;
@@ -2594,13 +2599,21 @@ function renderRail(){
     const fanN=hidden?1:Math.min(n,8);
     const shiny=R.shiny&&!p.out&&(p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col)));
     if(i>1)parts.push(a);
-    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${shiny?'shiny':''} ${near?'near':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
+    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
       <div class="nm">${p.name}</div>
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
-      ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${shiny?'shiny':''} ${ctCls}">${badge}</span></div>`}${(p.batata&&p.hand.some(c=>c.type==='batata'))||p.treasure||p.confuse||p.luck?`<span class="mini">${p.hand.some(c=>c.type==='batata')&&p.batata?`🥔${p.batata}/5 `:''}${p.treasure?`🧭${p.treasure}/3 `:''}${p.confuse?'🍄':''}${p.luck?'🍀':''}</span>`:''}${p.hand2&&p.hand2.length&&!p.out?`<span class="mini">✋+${p.hand2.length}</span>`:''}${S.other&&!p.out?`<span class="mini oside">🌀${S.other.players[i].hand.length}</span>`:''}
-      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" title="eliminado">${p.outIcon||'✖'}</span>`:partner(i)===0?'<span class="tag next">dupla</span>':''}</div>`);
+      ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${ctCls}">${badge}</span></div>`}
+      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" title="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const st=[];
+        if(partner(i)===0)st.push('🤝');
+        if(shiny)st.push('✨');
+        if(p.hand.some(c=>c.type==='batata')&&p.batata)st.push(`🥔${p.batata}/5`);
+        if(p.treasure)st.push(`🧭${p.treasure}/3`);
+        if(p.confuse)st.push('🍄');if(p.luck)st.push('🍀');
+        if(p.hand2&&p.hand2.length)st.push(`✋+${p.hand2.length}`);
+        if(S.other)st.push(`🌀${S.other.players[i].hand.length}`);
+        return st.length?`<span class="tag stat">${st.join(' ')}</span>`:''})()}</div>`);
   });
   parts.push(edge);
   row.innerHTML=parts.join('');
