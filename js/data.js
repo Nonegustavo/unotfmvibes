@@ -1,0 +1,251 @@
+/* unotfm solo: dados do jogo (cores, regras, cartas especiais, maldições, climas, dificuldades, configuração salva) */
+const $=id=>document.getElementById(id);
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COLORS=['r','y','g','b'];
+const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Preto'};
+const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'#0d0a14'};
+function applyBg(){
+  const sb=!!(S&&S.side==='b');
+  document.documentElement.classList.toggle('side-b',sb);
+  document.documentElement.classList.toggle('bgmerge',!!R.bg&&!sb);
+  const def=(k,v)=>Object.defineProperty(CNAME,k,{configurable:true,enumerable:true,get:typeof v==='function'?v:()=>v});
+  if(sb){def('r','Rosa');def('y','Laranja');def('g','Ciano');def('b','Roxo');return}
+  def('r','Vermelho');def('y','Amarelo');
+  if(R.bg){const q=()=>Math.random()<.5?'Azul?':'Verde?';def('b',q);def('g',q)}else{def('b','Azul');def('g','Verde')}
+}
+const TEAMCOL=['var(--accent)','#e08a2b','#2b9aa0'];
+const BOTNAMES=['Snowy','Buffy','Elise','Jingle','Charlotte','Papaille','Drekkemaus','Icemice','Elisah'];
+const AVCOL=['#d9534f','#2b8a9e','#8e5bd0','#d4892b','#3c9d5d','#c2477f','#4a6fd1','#7c8b2a','#b0563a'];
+
+const RULES=[
+  {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho é formado apenas por números e curingas comuns (sem +4).'},
+  {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho é formado apenas por cartas de ação.'},
+  {g:'Baralho e mão',k:'revelation',n:'Revelação',d:'A carta no topo do baralho é visível para todos.'},
+  {g:'Baralho e mão',k:'mulligan',n:'Segunda chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
+  {g:'Baralho e mão',k:'camouflage',n:'Camuflagem',d:'Você não enxerga quantas cartas os adversários têm até que fiquem com 1 carta.'},
+  {g:'Baralho e mão',k:'mini',n:'Mini',d:'Todos começam com 4 cartas (ignora a quantidade de cartas iniciais escolhida).'},
+  {g:'Baralho e mão',k:'maxi',n:'Maxi',d:'Todos começam com 9 cartas (ignora a quantidade de cartas iniciais escolhida).'},
+  {g:'Baralho e mão',k:'twohands',n:'Duas mãos',d:'Você tem duas mãos de cartas para jogar. Termine uma primeiro para poder usar a outra e ganhar o jogo!'},
+  {g:'Jogadas',k:'stack',n:'Empilhar',d:'Você pode jogar várias cartas do mesmo número de uma só vez.'},
+  {g:'Jogadas',k:'sequence',n:'Sequência',d:'Você pode jogar várias cartas da mesma cor, desde que formem uma sequência numérica.'},
+  {g:'Jogadas',k:'neighbor',n:'Vizinho',d:'Números iguais não combinam mais. Números só combinam com um número acima ou abaixo.'},
+  {g:'Jogadas',k:'hell',n:'Inferno',d:'Cartas de ação podem ser jogadas em cima de outras cartas de ação de qualquer cor.'},
+  {g:'Jogadas',k:'jumpin',n:'Corte',d:'Se você tiver uma carta idêntica à da mesa, pode jogá-la mesmo que não seja sua vez!'},
+  {g:'Jogadas',k:'black',n:'Cartas pretas',d:'Se jogar uma carta idêntica à da mesa, ela fica preta. Em cima dela, só vale uma carta com o mesmo número ou símbolo, ou um curinga.'},
+  {g:'Jogadas',k:'perfection',n:'Perfeccionista',d:'Se jogar um número igual ao número de cartas na mão, jogue novamente.'},
+  {g:'Jogadas',k:'clean',n:'Final limpo',d:'Você só pode vencer se sua última carta for numérica.'},
+  {g:'Compras',k:'nou',n:'Contra-ataque',d:'Você pode jogar cartas Inverter para devolver compras de carta.'},
+  {g:'Compras',k:'satisfaction',n:'Satisfação',d:'Compre cartas até poder jogar uma.'},
+  {g:'Compras',k:'insatisfaction',n:'Insatisfação',d:'Comprar carta fará você passar a vez automaticamente.'},
+  {g:'Compras',k:'fastdraw',n:'Compra rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem com a mesa (exceto a Carta Bomba e compras de penalidade).'},
+  {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
+  {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
+  {g:'Pressão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
+  {g:'Pressão',k:'limbo',n:'Limbo',d:'Quem ultrapassar o limite de cartas na mão será eliminado. O limite começa em 12 e reduz em 1 a cada minuto.'},
+  {g:'Pressão',k:'hard',n:'Modo rigoroso',d:'Clicar em carta errada faz comprar 1 e passar a vez. Não falar UNO faz comprar 4 cartas.'},
+  {g:'Mesa',k:'dos',n:'DOS!',d:'Ao invés de declarar UNO, você precisa declarar DOS quando tiver duas cartas na mão.'},
+  {g:'Mesa',k:'shiny',n:'Mão brilhante',d:'Quem tiver um curinga ou as 4 cores na mão fica com o número de cartas brilhando.'},
+  {g:'Mesa',k:'team',n:'Jogo em duplas',d:'Cada jogador tem uma dupla (quem senta à frente). Se um vencer, a equipe toda vence.'},
+];
+const C4=['r','b','y','g'],C8=[...C4,...C4];
+const SP={
+  trade:{n:'Carta da Troca',g:'🔀',d:'Ao jogar esta carta, escolha um adversário para trocar de cartas com ele.',deck:['r','b','y','g']},
+  carousel:{n:'Carta do Carrossel',g:'🎠',d:'Ao jogar esta carta, todos passam suas cartas para o próximo jogador.',deck:['r','b','y','g']},
+  gift:{n:'Carta da Doação',g:'🎁',d:'Ao jogar esta carta, escolha um adversário para doar uma carta aleatória para ele.',deck:['r','b','y','g']},
+  web:{n:'Carta da Teia',g:'🕸️',d:'Ao jogar esta carta, escolha um jogador para ficar 1 turno sem jogar.',deck:['r','b','y','g']},
+  rain:{n:'Carta da Chuva',g:'🌧️',d:'Ao jogar esta carta, seus adversários compram 1 carta.',deck:['r','b']},
+  thunder:{n:'Carta do Trovão',g:'⚡',d:'Ao jogar esta carta, dois jogadores aleatórios compram de 1 a 5 cartas.',deck:['g','y']},
+  equality:{n:'Carta da Igualdade',g:'🟰',d:'Ao jogar esta carta, todos compram ou descartam até terem 3 cartas.',deck:['r','b','y','g']},
+  justice:{n:'Carta da Justiça',g:'⚖️',d:'Ao jogar esta carta, descarte 1 carta por cada jogador com menos cartas que você.',deck:['r','b','y','g']},
+  magnet:{n:'Carta do Imã',g:'🧲',d:'Ao jogar esta carta, descarte todas as cartas da mesma cor que esta.',deck:['r','b','y','g','r','b','y','g']},
+  tornado:{n:'Carta do Tornado',g:'🌪️',d:'Ao jogar esta carta, embaralhe as cartas dos outros jogadores.',deck:['r','b','y','g','r','b','y','g']},
+  steal:{n:'Carta da Reciclagem',g:'♻️',d:'Ao jogar esta carta, todos os outros descartam uma carta de ação aleatória e compram 1 carta para repor.',deck:['r','b','y','g']},
+  wish:{n:'Carta do Desejo',g:'☄️',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
+  peace:{n:'Carta da Paz',g:'🌼',d:'Ao jogar esta carta, cartas de ação não terão efeito por alguns turnos.',deck:['r','b','y','g']},
+  luck:{n:'Carta da Sorte',g:'🍀',d:'Ao jogar esta carta, a sua próxima carta comprada será uma carta jogável naquele turno.',deck:['r','b','y','g','r','b','y','g']},
+  random:{n:'Carta Misteriosa',g:'❓',d:'Esta carta ativa um efeito aleatório quando jogada.',deck:['w','w','w','w']},
+  clone:{n:'Carta da Clonagem',g:'🧬',d:'Esta carta ativa o mesmo efeito da carta anterior.',deck:['w','w','w','w']},
+  bomb:{n:'Carta Bomba',g:'💣',d:'Se comprar esta carta, você perde.',deck:[]},
+  batata:{n:'Carta da Batata',g:'🥔',d:'Ao jogar esta carta, coloque-a na mão de um jogador. Quem ficar com esta carta na mão por 5 turnos perde.',deck:['r']},
+  curse:{n:'Carta da Maldição',g:'😈',d:'Ao jogar esta carta, aplique uma maldição aleatória que dura alguns turnos.',deck:C4},
+  dice:{n:'Carta do Dado',g:'🎲',d:'Ao jogar esta carta, force o próximo jogador a rolar o dado e sofrer uma consequência.',deck:C4},
+  oddeven:{n:'Carta do Semáforo',g:'🚦',d:'Ao jogar esta carta, será proibido vencer com cartas pares ou ímpares (escolhido aleatoriamente). Ao jogar isso de novo, mude.',deck:C8},
+  half:{n:'Carta da Autoridade',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
+  death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado.',deck:['r','b']},
+  share:{n:'Carta da Partilha',g:'🤲',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
+  simon:{n:'Carta da Memorização',g:'🧠',d:'Ao jogar esta carta, repita as cores escolhidas por outras cartas desta. Se errar, compre 1 carta. Se acertar, escolha a próxima cor.',deck:['w','w','w','w','w','w','w','w']},
+  chair:{n:'Carta da Dança das Cadeiras',g:'🪑',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente.',deck:C4},
+  view:{n:'Carta da Clarividência',g:'👁️',d:'Ao jogar esta carta, todos mostram uma de suas cartas.',deck:C8},
+  treasure:{n:'Carta da Busca',g:'🧭',d:'Ao jogar esta carta 3 vezes, receba a Carta do Tesouro, que faz você vencer o jogo.',deck:C8},
+  chest:{n:'Carta do Tesouro',g:'💰',hide:1,rule:'treasure',deck:[]},
+  lock:{n:'Carta da Tranca',g:'🔒',d:'Ao jogar esta carta, bloqueie duas cartas na mão de cada outro jogador por 1 turno.',deck:C4},
+  theft:{n:'Carta do Roubo',g:'🧤',d:'Ao jogar esta carta, force um jogador a dar uma carta curinga para você (se ele tiver uma).',deck:C8},
+  ban:{n:'Carta do Banimento',g:'🚫',d:'Ao jogar esta carta, escolha uma entre 3 cartas da sua mão. Tire do jogo TODAS as cartas com o mesmo símbolo da carta escolhida.',deck:C4},
+  box:{n:'Carta do Presente',g:'📦',d:'Ao jogar esta carta, todos ganham uma Carta Misteriosa, que ativa um efeito aleatório.',deck:['r','b']},
+  confuse:{n:'Carta da Confusão',g:'🍄',d:'Ao jogar esta carta, você jogará de forma aleatória no próximo turno.',deck:C8},
+  ink:{n:'Carta da Tinta',g:'🖌️',d:'Ao jogar esta carta, pinte todas as cartas do próximo jogador com a cor desta carta.',deck:C4},
+  mix1:{n:'Combo Inverter + Bloqueio',g:'⇄⊘',small:1,hide:1,rule:'mix',deck:C4},
+  mix2:{n:'Combo Inverter + +2',g:'⇄+2',small:1,hide:1,rule:'mix',deck:C4},
+  mix3:{n:'Combo Bloqueio + +2',g:'⊘+2',small:1,hide:1,rule:'mix',deck:C4},
+  d99:{n:'Curinga +99',g:'+99',small:1,rule:'plus99',d:'Ao jogar esta carta, o próximo jogador morre de tanto comprar cartas. Esta carta pode ser desafiada.',deck:['w']},
+  sun:{n:'Clima: Ensolarado',g:'☀️',hide:1,rule:'weather',deck:C4},
+  fog:{n:'Clima: Nevoeiro',g:'☁️',hide:1,rule:'weather',deck:C4},
+  storm:{n:'Clima: Tempestade',g:'⛈️',hide:1,rule:'weather',deck:C4},
+  blizzard:{n:'Clima: Nevasca',g:'❄️',hide:1,rule:'weather',deck:C4},
+  portal:{n:'Carta do Portal',g:'🌀',d:'Duas partidas estão acontecendo ao mesmo tempo. Jogue esta carta para alternar entre elas.',deck:C8},
+  rule:{n:'Carta da Regra',g:'📜',d:'Ao jogar esta carta, adicione uma nova regra à partida atual.',deck:C4},
+};
+Object.entries(SP).forEach(([k,v])=>{if(!v.hide)RULES.push({g:'Cartas especiais',k:v.rule||k,n:v.n,d:v.d})});
+RULES.push({g:'Cartas especiais',k:'weather',n:'Cartas de clima',d:'Cada carta de clima tem um efeito global que perdura até que outra carta de clima seja jogada.'});
+RULES.push({g:'Cartas especiais',k:'mix',n:'Cartas Combo',d:'Estas cartas ativam os dois efeitos correspondentes aos símbolos delas (Inverter+Bloqueio, Inverter+2, Bloqueio+2).'});
+RULES.splice(RULES.findIndex(r=>r.k==='hell'),0,{g:'Jogadas',k:'bg',n:'Azul e Verde',d:'Cartas azuis e verdes serão tratadas como se fossem da mesma cor.'});
+RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem desafiar',d:'Os +4 não podem mais ser desafiados. (Sem esta regra, quem recebe um +4 ou +99 pode desafiar o último jogado: se foi blefe, quem jogou compra as cartas dessa carta e o desafiante compra o restante acumulado; se não foi, o desafiante compra tudo e mais 2.)'});
+RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'time',n:'Tempo reduzido',d:'Após 6 minutos, vence quem tiver menos pontos na mão.'});
+RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'limitless',n:'Sem limite',d:'Os jogadores agora podem ter mais de 30 cartas na mão. (Sem esta regra, quem passar de 30 cartas é eliminado.)'});
+RULES.push(
+  {g:'Partida',k:'poker',n:'Mix de regras',d:'No início do jogo, cada jogador escolhe uma regra para colocar na partida.'},
+  {g:'Partida',k:'addrules',n:'Mais regras',d:'O jogo adiciona outras regras de vez em quando (a cada 75 segundos).'},
+  {g:'Partida',k:'tournament',n:'Torneio',d:'Várias partidas ocorrerão. Quando um jogador atingir 500 pontos, ele será o vencedor. Quem vence a rodada ganha os pontos das cartas que sobraram na mão dos outros.'},
+  {g:'Partida',k:'survivor',n:'Torneio de sobrevivência',d:'Várias partidas ocorrerão. Quando um jogador atingir 300 pontos, ele será eliminado do torneio. Vence quem sobrar. Cada um soma os pontos das cartas que sobraram na própria mão.'},
+);
+const BOTRULES=['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise'];
+const WEATHER={
+  sun:{g:'☀️',n:'Ensolarado',t:'Pode jogar fora da cor, mas compra 1',c:'#e8a317'},
+  fog:{g:'☁️',n:'Nevoeiro',t:'Cartas dos adversários ocultas, sem UNO',c:'#8a86a0'},
+  storm:{g:'⛈️',n:'Tempestade',t:'Jogar um 0 faz todos os outros comprarem 1',c:'#4b4f8f'},
+  blizzard:{g:'❄️',n:'Nevasca',t:'Ninguém compra e +2/+4 não valem. Acaba se todos passarem a vez',c:'#5aa9d6'},
+};
+const CURSES={
+  anvil:{nm:'Bigorna',g:'⚒️',t:'Quem comprar cartas comprará 1 carta a mais',n:4},
+  ice:{nm:'Gelo',g:'🧊',t:'Ninguém pode comprar cartas',n:3},
+  shoe:{nm:'Bota',g:'👢',t:'Quem jogar carta de ação compra 1 carta',n:3},
+  thorn:{nm:'Espinho',g:'🌵',t:'Quem comprar cartas será eliminado',n:1},
+  poison:{nm:'Veneno',g:'🧪',t:'Todos ficam confusos',n:2},
+};
+const RULE_POOL=['limitless','stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','hard','dos','shiny','black','revelation','camouflage','bg','overload'];
+['flash','time','limbo','addrules'].forEach(k=>{const i=RULES.findIndex(r=>r.k===k);if(i>=0)RULES.splice(i,1)});
+const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw']];
+const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
+const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
+const MODE_DESC={classic:'UNO tradicional, sem nenhuma regra especial.',mix:'Antes de distribuir as cartas, cada jogador escolhe uma regra para colocar na partida.',custom:'Você escolhe todas as regras da partida na lista abaixo.'};
+const TIPS=[
+  'Toque nas cartas jogadas para ver o histórico de jogadas.',
+  'Toque em um ícone de regra abaixo dos jogadores para ver o que ela faz.',
+  'Aperte "UNO!" quando for jogar sua penúltima carta. Se um adversário perceber, você compra 2 cartas.',
+  'Um adversário esqueceu de dizer UNO? Toque em "Pegar!" para forçá-lo a comprar 2 cartas.',
+  'Blefar com +4 é arriscado: se jogar um +4 mesmo tendo outra carta da cor para jogar e for desafiado, você é que comprará as cartas.',
+  'Recebeu um +4 suspeito? Desafie! Se foi blefe, quem jogou é que comprará as cartas. Mas se não foi, você compra 2 cartas a mais.',
+  'O ranking do fim da partida é por pontos: guarde números baixos e livre-se dos curingas (50) e ações (20) quando alguém estiver perto de vencer.',
+  'Selos nos topos das cartas indicam por que elas podem ser jogadas ou não e algumas outras informações especiais.',
+  'Cartas com borda vermelha estão bloqueadas por alguma regra. O ícone no topo mostra qual.',
+  'A seta e a moldura brilhante nas cadeiras mostram a ordem da vez. Quando a moldura sai pela ponta, é sua vez.',
+  'Na Paz, cartas de ação não fazem efeito e curingas não trocam a cor. Às vezes vale guardar suas ações para depois.',
+  'Durante o clima Nevasca, ninguém compra cartas. Caso todos passem a vez, a nevasca acaba.',
+  'Com a regra Azul e Verde, as cartas azuis e verdes são da mesma cor. Azul?! Verde?! Já nem sei que cores são essas.',
+  'O ícone 🍀 na cadeira de um adversário mostra que ele guardou uma Carta da Sorte: a próxima compra dele vai ser jogável.',
+  'Os efeitos 3D podem ser desligados aqui se o seu celular ficar lento.',
+  'Dizem que existe um nível acima do Difícil…',
+];
+const COMBO_DESC={rise:'Crescente: você pode se defender com outra carta de compra de mesmo valor ou maior: +2 em +2, +4 em +2 ou +4, +99 em qualquer um. As compras se acumulam para o próximo jogador.',normal:'Igual: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.',super:'Super combo: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.',none:'Sem combo: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'};
+const SEGS={
+  sound:[[true,'Ligado'],[false,'Desligado']],
+  mode:[['classic','Clássico'],['mix','Mix de regras'],['custom','Personalizado']],
+  fx3d:[[true,'Ligados'],[false,'Desligados']],
+  bots:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],
+  diff:[['easy','Fácil'],['normal','Normal'],['hard','Difícil'],['master','Mestre']],
+  start:[3,4,5,6,7,8,9,10].map(n=>[n,String(n)]),
+  combo:[['normal','Igual'],['rise','Crescente'],['super','Super combo'],['none','Sem combo']],
+};
+const DIFF={
+  easy:{call:.65,catchP:.45,catchMs:2600,jump:.2},
+  normal:{call:.88,catchP:.8,catchMs:1700,jump:.45},
+  hard:{call:1,catchP:1,catchMs:1000,jump:.8},
+  master:{call:1,catchP:1,catchMs:1300,jump:.85},
+};
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+
+const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
+let MESTRE=load('unotfm-solo-master',false);if(CFG.diff==='master'&&!MESTRE)CFG.diff='hard';
+let hardClicks={n:0,t:0};
+['flash','time','limbo','addrules'].forEach(k=>{CFG[k]=false});
+['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise','red','blue','yellow','green'].forEach(k=>{delete CFG[k]});
+RULES.forEach(r=>{if(CFG[r.k]&&(CONFLICT[r.k]||[]).some(x=>CFG[x]&&RULES.findIndex(q=>q.k===x)<RULES.findIndex(q=>q.k===r.k)))CFG[r.k]=false});
+if(!CFG.mode)CFG.mode=RULES.some(r=>r.k!=='poker'&&CFG[r.k])?'custom':'mix';
+function rulesForMode(){const r={...CFG};if(CFG.mode!=='custom'){RULES.forEach(x=>r[x.k]=false);if(CFG.mode==='mix')r.poker=true;r.bots=3;r.start=7}return r}
+let R=rulesForMode();
+let SCORE=load('unotfm-solo-score',{});
+let S=null,uid=0,flashT=null,limboT=null,timeT=null,addT=null,TOUR=null,stormT=null;
+const CARRY={};
+const fmtTime=ms=>{const t=Math.ceil(ms/1000);return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`};
+function timeUp(){
+  if(timeT){clearInterval(timeT);timeT=null}
+  const pts=i=>S.players[i].hand.reduce((a,c)=>a+cardPoints(c),0);
+  const w=alive().reduce((a,b)=>pts(b)<pts(a)||(pts(b)===pts(a)&&S.players[b].hand.length<S.players[a].hand.length)?b:a);
+  S.timeWin=true;fx('⏰','Tempo esgotado!','var(--cr)','slam');endRound(w);
+}
+const target=()=>R.dos?2:1;
+const word=()=>R.dos?'DOS':'UNO';
+const partner=i=>R.team?(i+S.players.length/2)%S.players.length:-1;
+const teamOf=i=>i%(S.players.length/2);
+
+const rand=a=>a[Math.floor(Math.random()*a.length)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const mk=(color,type,value=null)=>({id:uid++,color,type,value,rot:Math.random()*24-12});
+function buildDeck(){
+  const d=[];const copies=R.mess?2:1;
+  for(let k=0;k<copies;k++){
+    for(const c of COLORS){
+      if(!R.mess){d.push(mk(c,'num',0));for(let v=1;v<=9;v++)d.push(mk(c,'num',v),mk(c,'num',v))}
+      if(!R.noaction)for(const t of['skip','rev','d2'])d.push(mk(c,t),mk(c,t));
+    }
+    for(let i=0;i<4;i++){d.push(mk('w','wild'));if(!R.noaction)d.push(mk('w','d4'))}
+  }
+  if(!R.noaction)Object.entries(SP).forEach(([t,v])=>{if(R[v.rule||t])v.deck.forEach(c=>d.push(mk(c,t)))});
+  return shuffle(d);
+}
+const isDraw=c=>c.type==='d2'||c.type==='d4'||c.type==='d99';
+const drawVal=c=>c.type==='d2'?2:c.type==='d4'?4:99;
+const curseIs=k=>!!(S&&S.curse&&S.curse.k===k);
+const sameCol=(a,b)=>a===b||(R.bg&&((a==='b'&&b==='g')||(a==='g'&&b==='b')));
+const holds=(pi,t)=>S.players[pi].hand.some(c=>c.type===t);
+function drawAmt(pi,n){let k=n;if(holds(pi,'half'))k=Math.ceil(k/2);if(curseOn('anvil',pi))k+=1;return k}
+const confused=pi=>!!(S.players[pi].confuse||curseOn('poison',pi));
+const ab=(pi,k)=>pi!=null&&pi>=0&&!!R[k]&&S.players[pi]&&S.players[pi].name.toLowerCase()===k;
+const curseOn=(k,pi)=>curseIs(k)&&!ab(pi,'elisah');
+const immune=pi=>ab(pi,'charlotte');
+const noDraw=pi=>(S.death||curseOn('thorn',pi))&&!immune(pi);
+function nextHand(pi){
+  const p=S.players[pi];if(!p.hand2||!p.hand2.length)return false;
+  p.hand=p.hand2;p.hand2=[];p.called=false;
+  if(pi===0){S.newIds=p.hand.map(c=>c.id);S.handFrom=$('deck').getBoundingClientRect()}else ghost($('deck').getBoundingClientRect(),targetRect(pi),0);
+  fx('✋',`${pi===0?'Você pega':who(pi)+' pega'} a segunda mão`,'var(--accent)','slam');log(`${who(pi)} terminou a primeira mão.`);
+  return true;
+}
+function icemiceHook(pi){
+  if(!ab(pi,'icemice'))return;
+  const o=alive().filter(i=>i!==pi);if(!o.length)return;const t=rand(o);
+  drawN(t,1);floatOn(t,'+1','var(--cb)');log(`Icemice comprou, então ${who(t)} comprou 1.`);
+}
+const topCard=()=>S.discard[S.discard.length-1];
+const cur=()=>S.players[S.turn];
+const N=()=>S.players.length;
+const alive=()=>S.players.map((p,i)=>i).filter(i=>!S.players[i].out);
+const nextIdx=(from,steps)=>{let i=from;for(let k=0;k<steps;k++){do{i=(i+S.dir+N())%N()}while(S.players[i].out)}return i};
+const label=c=>SP[c.type]?SP[c.type].n:c.type==='num'?String(c.value):c.type==='skip'?'Bloqueio':c.type==='rev'?'Inverter':c.type==='d2'?'+2':c.type==='wild'?'Coringa':'+4';
+const isWildPick=c=>c.type==='wild'||c.type==='d4'||c.type==='d99'||c.type==='half';
+const cardName=c=>c.color==='w'?label(c):SP[c.type]?`${label(c)} (${CNAME[c.color].toLowerCase()})`:`${label(c)} ${CNAME[c.color]}`;
+const cardPoints=c=>c.type==='num'?c.value:(c.color==='w'?50:20);
+const identical=(a,b)=>a.color!=='w'&&a.color===b.color&&a.type===b.type&&a.value===b.value;
+const who=pi=>pi===0?'Você':S.players[pi].name;
+
+function log(msg){S.log.unshift(msg);S.log=S.log.slice(0,2);if(S.histCur)S.histCur.notes.push(msg)}
+const snap=c=>({type:c.type,color:c.color,value:c.value,chosen:c.chosen,orig:c.orig,rot:0});
+function toast(msg,bg){
+  const t=$('toast');t.textContent=msg;t.style.background=bg||'';t.style.color=bg?'#fff':'';
+  t.classList.remove('show');void t.offsetWidth;t.classList.add('show');
+}
+
+const ARROWS='<svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"><path d="M100 22A78 78 0 0 1 168 139" marker-end="url(#ah2)"/><path d="M100 178A78 78 0 0 1 32 61" marker-end="url(#ah2)"/></g><defs><marker id="ah2" viewBox="0 0 10 10" refX="4" refY="5" markerWidth="2.4" markerHeight="2.4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs></svg>';
+function hold(ms){S.fxUntil=Math.max(S.fxUntil||0,Date.now()+ms)}
