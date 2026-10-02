@@ -45,9 +45,10 @@ Os arquivos JS são **scripts clássicos carregados em ordem** e compartilham o 
 ## Como testar
 
 ```bash
-python3 -m http.server 8000   # na raiz do repositório
+python -m http.server 8000    # na raiz do repositório (no Windows é "python"; "python3" abre a Microsoft Store)
 ```
-- Abra `http://localhost:8000`. Para testes automáticos, use Playwright (Chromium headless) jogando partidas: clicar em cartas `.card.ok`, Comprar, UNO, e fechar as janelas de escolha.
+- Abra `http://localhost:8000` (no app do Claude, a configuração `unotfm` em `.claude/launch.json` faz isso).
+- Teste automático: `npm test` (3 partidas) ou `npm test -- 10`; `--ver` abre o navegador visível. O script `tests/smoke.mjs` sobe o próprio servidor, joga clicando em cartas `.card.ok`, Comprar, UNO e nas janelas de escolha, e falha se houver `pageerror` ou travamento (captura em `tests/travou-N.png`). Na primeira vez: `npm install` e `npx playwright install chromium`.
 - Confira se não há `pageerror` e se a partida não trava. Uma boa verificação de travamento é ver se status, mão e cadeiras ficam mais de 15 s sem mudar.
 - Os efeitos 3D precisam de WebGL. No headless, use `--use-gl=swiftshader` e sirva o `three.min.js` localmente se o CDN não estiver acessível.
 - Para mudanças visuais, tire capturas da área afetada (viewport 390×800, celular).
