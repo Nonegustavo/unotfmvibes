@@ -26,7 +26,7 @@ const FX3D=(()=>{
     if(gl.drawingBufferWidth<Math.floor(W*pr)-2||gl.drawingBufferHeight<Math.floor(H*pr)-2){pr=Math.min(gl.drawingBufferWidth/W,gl.drawingBufferHeight/H);renderer.setPixelRatio(pr);renderer.setSize(W,H)}
     camera.aspect=W/H;camera.updateProjectionMatrix();
     visH=2*Math.tan(17.5*Math.PI/180)*20;
-    if(wkind){const k=wkind;clearWeather();setWeather(k)}
+    if(wkind){const k=wkind;clearWeather(true);setWeather(k,true)}
   }
   const wx=x=>(x-W/2)/H*visH,wy=y=>-(y-H/2)/H*visH,ws=p=>p/H*visH;
   function loop(t){
@@ -160,26 +160,28 @@ const FX3D=(()=>{
 
   /* weather */
   let dying=[];
-  function clearWeather(){if(wsys){dying.push(wsys);wsys=null}wkind=null}
+  function clearWeather(now){if(now){if(wsys)wsys.dispose();dying.forEach(d=>d.dispose());dying=[]}else if(wsys)dying.push(wsys);wsys=null;wkind=null}
   let wRect='';
-  function setWeather(k){
-    if(!k||!on()){if(wkind)clearWeather();return}
+  // instant: troca sem transição (usado ao atravessar o Portal)
+  function setWeather(k,instant){
+    if(!k||!on()){if(wkind||(instant&&dying.length))clearWeather(instant);return}
     const tb=document.querySelector('.table').getBoundingClientRect(),key=[tb.left,tb.top,tb.width,tb.height,innerWidth,innerHeight].map(Math.round).join();
     if(k===wkind&&key===wRect)return;wRect=key;
     if(ok&&(W!==innerWidth||H!==innerHeight))resize();
     if(!init())return;
-    clearWeather();wkind=k;const THREE=T();
+    clearWeather(instant);wkind=k;const THREE=T();
     const tr=document.querySelector('.table').getBoundingClientRect();
     const L=wx(tr.left),Rr=wx(tr.right),Tp=wy(tr.top),B=wy(tr.bottom),Wd=Rr-L,Ht=Tp-B;
     const objs=[];let tt=0;let upd=()=>{};
     const rx=()=>L+Math.random()*Wd,ry=()=>B+Math.random()*Ht;
     if(k==='blizzard'||k==='sun'){
       const n=k==='blizzard'?150:45;const pos=new Float32Array(n*3),v=[];
-      for(let i=0;i<n;i++){pos[i*3]=rx();pos[i*3+1]=ry();pos[i*3+2]=0;v.push({vy:k==='blizzard'?-(.5+Math.random()*.9):(.25+Math.random()*.45),ph:Math.random()*6,f:.6+Math.random()})}
+      const enter=k==='blizzard'&&!instant;
+      for(let i=0;i<n;i++){pos[i*3]=enter?1e5:rx();pos[i*3+1]=ry();pos[i*3+2]=0;v.push({vy:k==='blizzard'?-(.5+Math.random()*.9):(.25+Math.random()*.45),ph:Math.random()*6,f:.6+Math.random(),wait:enter?Math.random()*2.5:0})}
       const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
       const mat=new THREE.PointsMaterial({size:k==='blizzard'?.27:.22,map:dotTex(),color:k==='blizzard'?0xbcd8f7:0xffd36b,transparent:true,depthWrite:false,opacity:k==='blizzard'?.95:.8,blending:k==='sun'?THREE.AdditiveBlending:THREE.NormalBlending});
       const p=new THREE.Points(geo,mat);p.frustumCulled=false;scene.add(p);objs.push(p);
-      upd=dt=>{const a=geo.attributes.position.array;for(let i=0;i<n;i++){a[i*3+1]+=v[i].vy*dt;a[i*3]+=Math.sin(tt*v[i].f+v[i].ph)*.35*dt;
+      upd=dt=>{const a=geo.attributes.position.array;for(let i=0;i<n;i++){if(v[i].wait>0){v[i].wait-=dt;if(v[i].wait<=0){a[i*3]=rx();a[i*3+1]=Tp}continue}a[i*3+1]+=v[i].vy*dt;a[i*3]+=Math.sin(tt*v[i].f+v[i].ph)*.35*dt;
         if(v[i].vy<0&&a[i*3+1]<B){a[i*3+1]=Tp;a[i*3]=rx()}else if(v[i].vy>0&&a[i*3+1]>Tp){a[i*3+1]=B;a[i*3]=rx()}
         if(a[i*3]<L)a[i*3]=Rr;else if(a[i*3]>Rr)a[i*3]=L}geo.attributes.position.needsUpdate=true;
         if(k==='sun')mat.userData.base=.55+.25*Math.sin(tt*2)};
@@ -199,7 +201,9 @@ const FX3D=(()=>{
     }
     if(!objs.length){wkind=k;return}
     const mats=objs.map(o=>o.material);mats.forEach(m=>{if(m.userData.base==null)m.userData.base=m.opacity;m.opacity=0});
-    wsys={alpha:0,mats,update(dt){tt+=dt;upd(dt);this.alpha=Math.min(1,this.alpha+dt*.8);mats.forEach(m=>m.opacity=m.userData.base*this.alpha)},dispose(){objs.forEach(o=>{scene.remove(o);o.geometry&&o.geometry.dispose();o.material&&o.material.dispose()})}};
+    const fade=k==='blizzard'?.4:.8;
+    if(instant)mats.forEach(m=>m.opacity=m.userData.base);
+    wsys={alpha:instant?1:0,mats,update(dt){tt+=dt;upd(dt);this.alpha=Math.min(1,this.alpha+dt*fade);mats.forEach(m=>m.opacity=m.userData.base*this.alpha)},dispose(){objs.forEach(o=>{scene.remove(o);o.geometry&&o.geometry.dispose();o.material&&o.material.dispose()})}};
     run();
   }
   function reset(){systems.forEach(()=>{});clearWeather();dying.forEach(d=>d.dispose());dying=[];if(ok){scene.children.filter(o=>!o.isLight).forEach(o=>scene.remove(o));systems=[]}}

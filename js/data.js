@@ -113,7 +113,7 @@ const WEATHER={
   sun:{g:'☀️',n:'Ensolarado',t:'Pode jogar fora da cor, mas compra 1',c:'#e8a317'},
   fog:{g:'☁️',n:'Nevoeiro',t:'Cartas dos adversários ocultas, sem UNO',c:'#8a86a0'},
   storm:{g:'⛈️',n:'Tempestade',t:'Jogar um 0 faz todos os outros comprarem 1',c:'#4b4f8f'},
-  blizzard:{g:'❄️',n:'Nevasca',t:'Ninguém compra e +2/+4 não valem. Acaba se todos passarem a vez',c:'#5aa9d6'},
+  blizzard:{g:'❄️',n:'Nevasca',t:'Ninguém compra. Acaba se todos passarem a vez.',c:'#5aa9d6'},
 };
 const CURSES={
   anvil:{nm:'Bigorna',g:'⚒️',t:'Quem comprar cartas comprará 1 carta a mais',n:4},
@@ -145,6 +145,10 @@ const TIPS=[
   'O ícone 🍀 na cadeira de um adversário mostra que ele guardou uma Carta da Sorte: a próxima compra dele vai ser jogável.',
   'Os efeitos 3D podem ser desligados aqui se o seu celular ficar lento.',
   'Dizem que existe um nível acima do Difícil…',
+  'Só tem um 0 de cada cor no baralho. Os outros números têm dois de cada cor.',
+  'Toque nos adversários para entender as condições dos ícones deles.',
+  'Toque nos ícones da mesa para ver mais detalhes do que está acontecendo durante a partida.',
+  'Toque e segure uma carta sua para ver o que ela faz.',
 ];
 const COMBO_DESC={rise:'Crescente: você pode se defender com outra carta de compra de mesmo valor ou maior: +2 em +2, +4 em +2 ou +4, +99 em qualquer um. As compras se acumulam para o próximo jogador.',normal:'Igual: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.',super:'Super combo: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.',none:'Sem combo: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'};
 const SEGS={

@@ -41,6 +41,7 @@
 .topbtns{display:flex;gap:6px}
 .wxl{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none}
 .wxl>div{position:absolute;inset:0;opacity:0;transition:opacity 1.3s ease}
+.table.wxnow .wxl>div{transition:none}
 .table[data-weather="sun"] .w-sun,.table[data-weather="storm"] .w-storm,.table[data-weather="fog"] .w-fog,.table[data-weather="blizzard"] .w-snow{opacity:1}
 .w-sun{background:radial-gradient(circle at 88% 6%,rgba(255,200,60,.42),transparent 55%)}
 .w-sun i{position:absolute;width:150%;aspect-ratio:1;right:-75%;top:-75%;border-radius:50%;
@@ -49,11 +50,20 @@
 .w-storm{background:linear-gradient(180deg,rgba(40,40,80,.35),transparent 75%)}
 .w-fog i{position:absolute;left:0;width:75%;height:34%;opacity:.85;animation:fogmove linear infinite;
   background:radial-gradient(ellipse 40% 50% at 30% 60%,rgba(255,255,255,.95),rgba(225,225,238,.55) 45%,rgba(255,255,255,0) 70%),radial-gradient(ellipse 35% 55% at 55% 45%,rgba(255,255,255,.95),rgba(220,220,235,.5) 45%,rgba(250,250,255,0) 70%),radial-gradient(ellipse 30% 45% at 75% 62%,rgba(255,255,255,.9),rgba(220,220,235,.45) 45%,rgba(245,245,252,0) 70%);filter:drop-shadow(0 2px 3px rgba(80,70,120,.15))}
-.w-fog i:nth-child(1){top:4%;animation-duration:34s;animation-delay:-6s}
-.w-fog i:nth-child(2){top:30%;animation-duration:46s;animation-delay:-28s;opacity:.7}
-.w-fog i:nth-child(3){top:55%;animation-duration:40s;animation-delay:-16s}
-.w-fog i:nth-child(4){top:74%;animation-duration:52s;animation-delay:-40s;opacity:.65}
+.w-fog{background:linear-gradient(180deg,rgba(215,212,235,.16),rgba(215,212,235,.09))}
+.w-fog i:nth-child(1){top:-4%;animation-duration:34s;animation-delay:-6s}
+.w-fog i:nth-child(2){top:12%;width:60%;animation-duration:58s;animation-delay:-33s;opacity:.6}
+.w-fog i:nth-child(3){top:24%;animation-duration:46s;animation-delay:-28s;opacity:.7}
+.w-fog i:nth-child(4){top:36%;width:55%;height:26%;animation-duration:38s;animation-delay:-4s;opacity:.55}
+.w-fog i:nth-child(5){top:47%;animation-duration:40s;animation-delay:-16s}
+.w-fog i:nth-child(6){top:58%;width:65%;animation-duration:62s;animation-delay:-50s;opacity:.6}
+.w-fog i:nth-child(7){top:70%;animation-duration:52s;animation-delay:-40s;opacity:.65}
+.w-fog i:nth-child(8){top:82%;width:58%;height:28%;animation-duration:44s;animation-delay:-22s;opacity:.7}
+.w-fog i:nth-child(9){top:5%;width:50%;height:24%;animation-duration:70s;animation-delay:-12s;opacity:.5}
+.w-fog i:nth-child(10){top:40%;width:85%;animation-duration:66s;animation-delay:-45s;opacity:.45}
+.w-fog i:nth-child(11){top:63%;width:48%;height:24%;animation-duration:36s;animation-delay:-30s;opacity:.55}
 @keyframes fogmove{from{transform:translateX(-90%)}to{transform:translateX(140%)}}
+.wxl>.w-snow{transition-duration:2.5s}
 .w-snow i{position:absolute;inset:0;background-repeat:repeat}
 .w-snow i:nth-child(1){background-image:radial-gradient(circle at 20% 30%,#fff 0 2.6px,rgba(110,150,210,.85) 3.3px,transparent 4px),radial-gradient(circle at 70% 75%,#fff 0 2px,rgba(110,150,210,.8) 2.7px,transparent 3.3px);background-size:64px 64px;animation:snowA 5s linear infinite}
 .w-snow i:nth-child(2){background-image:radial-gradient(circle at 35% 60%,#fff 0 1.6px,rgba(110,150,210,.75) 2.2px,transparent 2.8px),radial-gradient(circle at 80% 15%,#fff 0 1.2px,rgba(110,150,210,.7) 1.8px,transparent 2.3px);background-size:41px 41px;background-position:13px 9px;animation:snowB 3.4s linear infinite;opacity:.95}
@@ -171,7 +181,7 @@
 .hbody b{font-size:.95rem}
 .hbody span{color:var(--muted)}
 .rulestrip{cursor:grab}
-.hand .card.blocked{border-color:var(--cr);box-shadow:0 0 0 2px var(--cr),0 3px 0 rgba(0,0,0,.22)}
+.hand .card.blocked{border-color:#e0433a;box-shadow:0 0 0 2px #e0433a,0 3px 0 rgba(0,0,0,.22)}
 .card .cb.bad{border-color:var(--cr);background:#fde8e6;color:#8a1f18}
 .deckbtn.frozen{background-image:linear-gradient(160deg,rgba(235,247,255,.85),rgba(160,210,250,.55) 55%,rgba(210,236,255,.8)),repeating-linear-gradient(135deg,#3b2f6b 0 7px,#46397d 7px 14px);border-color:#d8efff;box-shadow:0 0 0 2px #9fd3ff,0 0 16px rgba(120,190,255,.7),0 3px 0 rgba(0,0,0,.22)}
 .deckbtn.frozen .face{background:#e8f6ff;color:#2b6bd6}
@@ -307,7 +317,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @keyframes pop{0%{transform:scale(.4) rotate(6deg)}70%{transform:scale(1.2) rotate(6deg)}}
 
 /* table */
-.table{position:relative;margin:4px 12px 0;border-radius:28px;background:var(--table);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0;padding:12px;overflow:hidden}
+.table{position:relative;margin:4px 0 0;border-radius:0;background:var(--table);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0;padding:12px;overflow:hidden}
 .arena{position:relative;display:grid;place-items:center;flex:none;width:min(calc(var(--cw)*3.9),36vh,80vw);aspect-ratio:1}
 .dirring{position:absolute;inset:0;color:var(--arrow);pointer-events:none;opacity:.32}
 .dirring path{stroke-width:2.5}
@@ -454,3 +464,5 @@ button.card:disabled{cursor:default}
 .score td:last-child{text-align:right;font-weight:600}
 .row2{display:flex;gap:10px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.ci-desc{margin:0 0 4px;font-size:.9rem;line-height:1.35}
+.hand .card{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}

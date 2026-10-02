@@ -180,7 +180,7 @@ function buildSideB(startOf){
 function switchSide(pi){
   endTurnHook(pi);
   const here=captureSide();applySide(S.other);S.other=here;
-  S.side=S.side==='b'?'a':'b';S.crossed=true;
+  S.side=S.side==='b'?'a':'b';S.crossed=true;S.wxNow=true;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.lastTop=null;
   applyBg();
   $('hand').innerHTML='';S.newIds=[];$('fx').innerHTML='';
@@ -275,7 +275,7 @@ function playCard(pi,card,chosen){
   if(card.color==='w'&&chosen&&peaceOn){card.chosen=chosen}
   else if(card.color==='w'&&chosen){card.chosen=chosen;burst(CVAR[chosen]);FX3D.sparks(discardRect(),CVAR[chosen]);if(!isDraw(card))fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,CNAME[chosen],CVAR[chosen],'stamp')}
   log(msg+'.');
-  if(sunPen){drawN(pi,1);floatOn(pi,'+1 ☀️','#e8a317');log(`${who(pi)} jogou fora da cor com sol e comprou 1.`)}
+  if(sunPen){const k=drawN(pi,curseOn('anvil',pi)?2:1);floatOn(pi,'+1 ☀️','#e8a317');log(`${who(pi)} jogou fora da cor com sol e comprou ${k}.`)}
   if(p.hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
   if(p.hand.length===target())afterOneCard(pi);
   if(card.type==='num'&&R.perfection&&card.value===before){S.extra=true;log(`Perfeição! ${who(pi)} joga de novo.`);fx('★','Joga de novo','var(--cg)','stamp')}

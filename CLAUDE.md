@@ -79,6 +79,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - `seatStatus(i)` para jogadores: selo na borda de baixo da cadeira e o seu selo acima da mão.
   - `tableStatus()` para a mesa: selos abaixo do baralho.
   - `infoPopup()` abre a janela explicativa com seta. Essas janelas não têm botão Ok e fecham ao tocar em qualquer lugar.
+  - Segurar uma carta da mão por 0,5 s (`showCardInfo`) abre essa janela com o que a carta faz e a explicação de cada selo. Cartas numéricas só abrem se tiverem selo, e segurar nunca joga a carta.
 - **Cartas na mão:** os selos no topo (`cardBadges`) indicam por que a carta pode ser jogada (🛡️ defesa, ✂️ corte, 📚/🔢 combo, ↕️ vizinho, 🔥 inferno, ☀️+1, 💯, 🌼, 👢, ⛈️) ou o que a bloqueia, com borda vermelha (🔒, 🧼, 🚦, ↕️).
 
 ## Removido de propósito (não reintroduzir sem pedir)

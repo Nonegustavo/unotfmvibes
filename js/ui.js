@@ -168,7 +168,7 @@ function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
   const p=cur();
   if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
-  if(S.announcing)return S.annText;
+  if(S.announcing&&S.annText)return S.annText;
   if(p.bot)return '';
   if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
@@ -220,9 +220,9 @@ function tableStatus(){
   if(TOUR){const goal=TOUR.mode==='tournament'?500:300;L.push({short:`🏆${TOUR.pts['Você']||0}`,ic:'🏆',name:TOUR.mode==='tournament'?'Torneio':'Sobrevivência',txt:`você tem ${TOUR.pts['Você']||0} de ${goal} pontos`})}
   return L;
 }
-function infoPopup(key,head,items,anchor,up){
+function infoPopup(key,head,items,anchor,up,force){
   const box=$('notices');const open=box.querySelector(`[data-info="${key}"]`);box.innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));
-  if(open||!items.length)return;
+  if(open||(!items.length&&!force))return;
   const el=document.createElement('div');el.className='notice seatinfo pointed';el.dataset.info=key;
   el.innerHTML=`${head}${items.map(x=>`<div class="si-row"><span class="si-ic">${x.ic}</span><span><b>${x.name}:</b> ${x.txt}</span></div>`).join('')}`;
   el.onclick=()=>el.remove();
@@ -361,11 +361,12 @@ function render(){
     S.morph=false;
   }
   S.animPlay=null;
-  document.querySelector('.table').dataset.weather=S.weather||'';
+  const wxNow=S.wxNow;S.wxNow=false;
+  {const tb=document.querySelector('.table');if(wxNow)tb.classList.add('wxnow');tb.dataset.weather=S.weather||'';if(wxNow){void tb.offsetWidth;tb.classList.remove('wxnow')}}
   if(S.weather==='storm'&&S.phase!=='over'&&!RM&&!stormT){const g=S.gen;const tick=()=>{stormT=null;if(!S||S.gen!==g||S.weather!=='storm'||S.phase==='over')return;
       const t=document.querySelector('.table');if(!t.classList.contains('bolt')){t.classList.remove('flick');void t.offsetWidth;t.classList.add('flick')}
       if(Math.random()<.5)noise(1.2,{f:120,filter:'lowpass',vol:.12});stormT=setTimeout(tick,6000+Math.random()*9000)};
-    stormT=setTimeout(tick,4000+Math.random()*6000)}FX3D.setWeather(S.phase==='over'?null:S.weather);
+    stormT=setTimeout(tick,4000+Math.random()*6000)}FX3D.setWeather(S.phase==='over'?null:S.weather,wxNow);
   $('meta').innerHTML=tableStatus().map((x,k)=>`<button type="button" class="tst ${x.warn?'warn':''}" data-k="${k}" aria-label="${x.name}">${x.short}</button>`).join('');
   {const pe=$('pend'),show=S.pending>0&&S.phase!=='over';
    if(!show){pe.hidden=true;pe.dataset.v=''}
@@ -542,8 +543,65 @@ function openSettings(){
   $('endOv').classList.remove('show');$('settingsOv').classList.add('show');
 }
 
+/* ---------- segurar uma carta da mão: o que ela faz ---------- */
+const BASIC_DESC={
+  skip:'O próximo jogador perde a vez.',
+  rev:'Inverte o sentido do jogo.',
+  d2:'O próximo jogador compra 2 cartas e perde a vez, a não ser que se defenda.',
+  wild:'Pode ser jogada sobre qualquer carta. Ao jogar, escolha a cor.',
+  d4:'O próximo jogador compra 4 cartas e perde a vez, a não ser que se defenda. Ao jogar, escolha a cor. Se você tinha carta da cor atual e for desafiado, quem compra é você.',
+  chest:'Ao jogar esta carta, você vence a partida.',
+  mix1:'Inverte o sentido do jogo e o próximo jogador perde a vez.',
+  mix2:'Inverte o sentido do jogo e o próximo jogador compra 2 cartas.',
+  mix3:'O próximo jogador perde a vez e o jogador seguinte compra 2 cartas.',
+};
+function cardDesc(c){
+  if(WEATHER[c.type]&&SP[c.type])return `Muda o clima para ${WEATHER[c.type].n}: ${WEATHER[c.type].t.replace(/\.$/,'').toLowerCase()}. Dura até outra carta de clima ser jogada.`;
+  return BASIC_DESC[c.type]||(SP[c.type]&&SP[c.type].d)||'';
+}
+function badgeInfo(b,c,blocked){
+  const r=k=>({ic:b,name:RNAME[k],txt:(RULES.find(x=>x.k===k)||{}).d||''});
+  const ic=b.split(' ')[0];
+  switch(ic){
+    case '🛡️':return {ic,name:'Defesa',txt:`pode ser jogada para se defender do +${S.pending} acumulado`};
+    case '↩️':return r('nou');
+    case '✂️':return {ic,name:'Corte',txt:'é igual à carta da mesa e pode ser jogada mesmo fora da sua vez'};
+    case '📚':return r('stack');
+    case '🔢':return r('sequence');
+    case '↕️':return blocked?{ic,name:'Vizinho',txt:'números iguais não combinam mais, só um número acima ou abaixo'}:r('neighbor');
+    case '🔥':return r('hell');
+    case '☀️+1':return {ic:'☀️',name:'Ensolarado',txt:`está fora da cor. Pode ser jogada, mas você compra ${curseOn('anvil',0)?2:1}`};
+    case '🥔':return {ic,name:'Batata',txt:`você está com ela há ${S.players[0].batata||0}/5 turnos. No quinto, você é eliminado`};
+    case '💯':return r('perfection');
+    case '🌼':return {ic,name:'Paz',txt:'cartas de ação não têm efeito enquanto a Paz durar'};
+    case '⛈️':return {ic,name:'Tempestade',txt:'jogar um 0 faz todos os outros jogadores comprarem 1 carta'};
+    case '👢':return {ic,name:'Maldição da bota',txt:'jogar uma carta de ação faz você comprar 1 carta'};
+    case '🔒':return {ic,name:'Tranca',txt:'esta carta está bloqueada por 1 turno'};
+    case '🧼':return r('clean');
+    case '🚦':return {ic,name:'Semáforo',txt:`é proibido vencer com cartas ${S.traffic==='odd'?'ímpares':'pares'}`};
+  }
+  return null;
+}
+function showCardInfo(id,el){
+  const me=S&&S.players[0];const c=me&&me.hand.find(x=>x.id===id);if(!c)return false;
+  const bs=S.phase==='over'?[]:cardBadges(me,c,myTurn());
+  const rows=bs.map(b=>badgeInfo(b,c,bs.blocked)).filter(Boolean);
+  const desc=c.type==='num'?'':cardDesc(c);
+  if(!desc&&!rows.length)return false;
+  const name=c.type==='num'?`${c.value} ${CNAME[c.color]||''}`.trim():label(c);
+  infoPopup('card'+id,`<div class="si-head"><b>${name}</b></div>${desc?`<p class="ci-desc">${desc}</p>`:''}`,rows,el,true,true);
+  if(navigator.vibrate)try{navigator.vibrate(15)}catch(e){}
+  return true;
+}
 /* ---------- wiring ---------- */
-$('hand').addEventListener('click',e=>{const b=e.target.closest('.card');if(b)humanClick(+b.dataset.id,b)});
+{let lp=null,fired=false;
+ const cancel=()=>{if(lp){clearTimeout(lp.t);lp=null}};
+ $('hand').addEventListener('pointerdown',e=>{const b=e.target.closest('.card');fired=false;cancel();if(!b||!S)return;
+   lp={x:e.clientX,y:e.clientY,t:setTimeout(()=>{lp=null;fired=true;showCardInfo(+b.dataset.id,b)},500)}});
+ $('hand').addEventListener('pointermove',e=>{if(lp&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10)cancel()});
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('hand').addEventListener(ev,cancel));
+ $('hand').addEventListener('contextmenu',e=>{if(e.target.closest('.card'))e.preventDefault()});
+ $('hand').addEventListener('click',e=>{const b=e.target.closest('.card');if(fired){fired=false;return}if(b)humanClick(+b.dataset.id,b)});}
 ['pointerdown','click'].forEach(ev=>$('rail').addEventListener(ev,e=>{const b=e.target.closest('[data-catch]');if(b){e.preventDefault();humanCatch(+b.dataset.catch)}}));
 $('rail').addEventListener('click',e=>{if(e.target.closest('[data-catch]')||!S)return;const seat=e.target.closest('.seat');if(!seat)return;showSeatInfo(+seat.dataset.seat,seat)});
 document.addEventListener('pointerdown',e=>{if(e.target.closest('.seat')&&!e.target.closest('[data-catch]'))e.stopPropagation()},true);
