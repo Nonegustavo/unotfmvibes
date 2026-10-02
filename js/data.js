@@ -19,7 +19,7 @@ const AVCOL=['#d9534f','#2b8a9e','#8e5bd0','#d4892b','#3c9d5d','#c2477f','#4a6fd
 
 const RULES=[
   {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho é formado apenas por números e curingas comuns (sem +4).'},
-  {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho é formado apenas por cartas de ação.'},
+  {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho tem só cartas de ação: as comuns e as especiais de todas as regras.'},
   {g:'Baralho e mão',k:'revelation',n:'Revelação',d:'A carta no topo do baralho é visível para todos.'},
   {g:'Baralho e mão',k:'mulligan',n:'Segunda chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
   {g:'Baralho e mão',k:'camouflage',n:'Camuflagem',d:'Você não enxerga quantas cartas os adversários têm até que fiquem com 1 carta.'},
@@ -51,12 +51,12 @@ const C4=['r','b','y','g'],C8=[...C4,...C4];
 const SP={
   trade:{n:'Carta da Troca',g:'🔀',d:'Ao jogar esta carta, escolha um adversário para trocar de cartas com ele.',deck:['r','b','y','g']},
   carousel:{n:'Carta do Carrossel',g:'🎠',d:'Ao jogar esta carta, todos passam suas cartas para o próximo jogador.',deck:['r','b','y','g']},
-  gift:{n:'Carta da Doação',g:'🎁',d:'Ao jogar esta carta, escolha um adversário para doar uma carta aleatória para ele.',deck:['r','b','y','g']},
+  gift:{n:'Carta da Doação',g:'❤️‍🔥',d:'Ao jogar esta carta, escolha um adversário para doar uma carta aleatória para ele.',deck:['r','b','y','g']},
   web:{n:'Carta da Teia',g:'🕸️',d:'Ao jogar esta carta, escolha um jogador para ficar 1 turno sem jogar.',deck:['r','b','y','g']},
-  rain:{n:'Carta da Chuva',g:'🌧️',d:'Ao jogar esta carta, seus adversários compram 1 carta.',deck:['r','b']},
+  rain:{n:'Carta da Chuva',g:'💧',d:'Ao jogar esta carta, seus adversários compram 1 carta.',deck:['r','b']},
   thunder:{n:'Carta do Trovão',g:'⚡',d:'Ao jogar esta carta, dois jogadores aleatórios compram de 1 a 5 cartas.',deck:['g','y']},
-  equality:{n:'Carta da Igualdade',g:'🟰',d:'Ao jogar esta carta, todos compram ou descartam até terem 3 cartas.',deck:['r','b','y','g']},
-  justice:{n:'Carta da Justiça',g:'⚖️',d:'Ao jogar esta carta, descarte 1 carta por cada jogador com menos cartas que você.',deck:['r','b','y','g']},
+  equality:{n:'Carta da Igualdade',g:'⚖️',d:'Ao jogar esta carta, todos compram ou descartam até terem 3 cartas.',deck:['r','b','y','g']},
+  justice:{n:'Carta da Misericórdia',g:'🙏',d:'Ao jogar esta carta, descarte 1 carta por cada jogador com menos cartas que você.',deck:['r','b','y','g']},
   magnet:{n:'Carta do Imã',g:'🧲',d:'Ao jogar esta carta, descarte todas as cartas da mesma cor que esta.',deck:['r','b','y','g','r','b','y','g']},
   tornado:{n:'Carta do Tornado',g:'🌪️',d:'Ao jogar esta carta, embaralhe as cartas dos outros jogadores.',deck:['r','b','y','g','r','b','y','g']},
   steal:{n:'Carta da Reciclagem',g:'♻️',d:'Ao jogar esta carta, todos os outros descartam uma carta de ação aleatória e compram 1 carta para repor.',deck:['r','b','y','g']},
@@ -70,7 +70,7 @@ const SP={
   curse:{n:'Carta da Maldição',g:'😈',d:'Ao jogar esta carta, aplique uma maldição aleatória que dura alguns turnos.',deck:C4},
   dice:{n:'Carta do Dado',g:'🎲',d:'Ao jogar esta carta, force o próximo jogador a rolar o dado e sofrer uma consequência.',deck:C4},
   oddeven:{n:'Carta do Semáforo',g:'🚦',d:'Ao jogar esta carta, será proibido vencer com cartas pares ou ímpares (escolhido aleatoriamente). Ao jogar isso de novo, mude.',deck:C8},
-  half:{n:'Carta da Autoridade',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
+  half:{n:'Carta do Rei',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
   death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado.',deck:['r','b']},
   share:{n:'Carta da Partilha',g:'🤲',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
   simon:{n:'Carta da Memorização',g:'🧠',d:'Ao jogar esta carta, repita as cores escolhidas por outras cartas desta. Se errar, compre 1 carta. Se acertar, escolha a próxima cor.',deck:['w','w','w','w','w','w','w','w']},
@@ -80,7 +80,7 @@ const SP={
   chest:{n:'Carta do Tesouro',g:'💰',hide:1,rule:'treasure',deck:[]},
   lock:{n:'Carta da Tranca',g:'🔒',d:'Ao jogar esta carta, bloqueie duas cartas na mão de cada outro jogador por 1 turno.',deck:C4},
   theft:{n:'Carta do Roubo',g:'🧤',d:'Ao jogar esta carta, force um jogador a dar uma carta curinga para você (se ele tiver uma).',deck:C8},
-  ban:{n:'Carta do Banimento',g:'🚫',d:'Ao jogar esta carta, escolha uma entre 3 cartas da sua mão. Tire do jogo TODAS as cartas com o mesmo símbolo da carta escolhida.',deck:C4},
+  ban:{n:'Carta do Banimento',g:'✖️',d:'Ao jogar esta carta, escolha uma entre 3 cartas da sua mão. Tire do jogo TODAS as cartas com o mesmo símbolo da carta escolhida.',deck:C4},
   box:{n:'Carta do Presente',g:'📦',d:'Ao jogar esta carta, todos ganham uma Carta Misteriosa, que ativa um efeito aleatório.',deck:['r','b']},
   confuse:{n:'Carta da Confusão',g:'🍄',d:'Ao jogar esta carta, você jogará de forma aleatória no próximo turno.',deck:C8},
   ink:{n:'Carta da Tinta',g:'🖌️',d:'Ao jogar esta carta, pinte todas as cartas do próximo jogador com a cor desta carta.',deck:C4},
@@ -122,9 +122,10 @@ const CURSES={
   thorn:{nm:'Espinho',g:'🌵',t:'Quem comprar cartas será eliminado',n:1},
   poison:{nm:'Veneno',g:'🧪',t:'Todos ficam confusos',n:2},
 };
-const RULE_POOL=['limitless','stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','hard','dos','shiny','black','revelation','camouflage','bg','overload'];
-['flash','time','limbo','addrules'].forEach(k=>{const i=RULES.findIndex(r=>r.k===k);if(i>=0)RULES.splice(i,1)});
+const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload'];
+['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{const i=RULES.findIndex(r=>r.k===k);if(i>=0)RULES.splice(i,1)});
 const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw']];
+RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k]));
 const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
 const MODE_DESC={classic:'UNO tradicional, sem nenhuma regra especial.',mix:'Antes de distribuir as cartas, cada jogador escolhe uma regra para colocar na partida.',custom:'Você escolhe todas as regras da partida na lista abaixo.'};
@@ -173,7 +174,7 @@ const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k
 let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
 let MESTRE=load('unotfm-solo-master',false);if(CFG.diff==='master'&&!MESTRE)CFG.diff='hard';
 let hardClicks={n:0,t:0};
-['flash','time','limbo','addrules'].forEach(k=>{CFG[k]=false});
+['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{CFG[k]=false});
 ['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise','red','blue','yellow','green'].forEach(k=>{delete CFG[k]});
 RULES.forEach(r=>{if(CFG[r.k]&&(CONFLICT[r.k]||[]).some(x=>CFG[x]&&RULES.findIndex(q=>q.k===x)<RULES.findIndex(q=>q.k===r.k)))CFG[r.k]=false});
 if(!CFG.mode)CFG.mode=RULES.some(r=>r.k!=='poker'&&CFG[r.k])?'custom':'mix';
@@ -197,16 +198,16 @@ const teamOf=i=>i%(S.players.length/2);
 const rand=a=>a[Math.floor(Math.random()*a.length)];
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 const mk=(color,type,value=null)=>({id:uid++,color,type,value,rot:Math.random()*24-12});
+// Carta especial em jogo: pela regra dela ou pela Bagunça (que tem todas, menos o Semáforo, já que não há números)
+const spOn=t=>R.mess?t!=='oddeven':!!R[SP[t].rule||t];
 function buildDeck(){
-  const d=[];const copies=R.mess?2:1;
-  for(let k=0;k<copies;k++){
-    for(const c of COLORS){
-      if(!R.mess){d.push(mk(c,'num',0));for(let v=1;v<=9;v++)d.push(mk(c,'num',v),mk(c,'num',v))}
-      if(!R.noaction)for(const t of['skip','rev','d2'])d.push(mk(c,t),mk(c,t));
-    }
-    for(let i=0;i<4;i++){d.push(mk('w','wild'));if(!R.noaction)d.push(mk('w','d4'))}
+  const d=[];
+  for(const c of COLORS){
+    if(!R.mess){d.push(mk(c,'num',0));for(let v=1;v<=9;v++)d.push(mk(c,'num',v),mk(c,'num',v))}
+    if(!R.noaction)for(const t of['skip','rev','d2'])d.push(mk(c,t),mk(c,t));
   }
-  if(!R.noaction)Object.entries(SP).forEach(([t,v])=>{if(R[v.rule||t])v.deck.forEach(c=>d.push(mk(c,t)))});
+  for(let i=0;i<4;i++){d.push(mk('w','wild'));if(!R.noaction)d.push(mk('w','d4'))}
+  if(!R.noaction)Object.entries(SP).forEach(([t,v])=>{if(spOn(t))v.deck.forEach(c=>d.push(mk(c,t)))});
   return shuffle(d);
 }
 const isDraw=c=>c.type==='d2'||c.type==='d4'||c.type==='d99';

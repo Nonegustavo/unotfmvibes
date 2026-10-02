@@ -43,7 +43,7 @@ function masterBonus(p,c,nn){
   const wilds=p.hand.filter(x=>x.color==='w'&&x.type!=='bomb').length;
   if(c.color==='w'&&wilds===1&&p.hand.length>2&&!threats().length)s-=15;
   if(S.pending===0&&(c.type==='skip'||c.type==='d2'||c.type==='rev')&&!threats().length&&nn>3&&p.hand.length>3)s-=6;
-  if(isDraw(c)&&S.pending===0){const total=(R.noaction?0:8*(R.mess?2:1)),left=total-(S.mem.played['d2:']||0);if(left<=0&&nn<=3)s+=8}
+  if(isDraw(c)&&S.pending===0){const total=R.noaction?0:8,left=total-(S.mem.played['d2:']||0);if(left<=0&&nn<=3)s+=8}
   if(c.type==='num'&&R.perfection&&c.value===p.hand.length)s+=10;
   if(c.type==='num'&&R.perfection&&!threats().length){const nxtLen=p.hand.length-1;if(p.hand.some(x=>x!==c&&x.type==='num'&&x.value===nxtLen))s+=4}
   if(c.type==='trade'){const opp=alive().filter(i=>i!==pi);const mn=opp.length?Math.min(...opp.map(i=>S.players[i].hand.length)):99;if(p.hand.length-mn<2)s-=25}
@@ -140,7 +140,7 @@ function botAct(){
 function randomPool(){
   const ex=['random','clone','bomb','chest','d99','half','simon','batata'];
   const pool=R.noaction?[]:['skip','rev','d2'];
-  if(!R.noaction)Object.entries(SP).forEach(([k,v])=>{if(!ex.includes(k)&&R[v.rule||k])pool.push(k)});
+  if(!R.noaction)Object.entries(SP).forEach(([k,v])=>{if(!ex.includes(k)&&spOn(k))pool.push(k)});
   return pool.length?pool:['skip','rev','d2'];
 }
 function morphCard(card,prev){

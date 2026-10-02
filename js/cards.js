@@ -23,7 +23,7 @@ function giftCard(pi,t){
     S.players[t].hand.push(c);S.players[t].called=false;
     if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),k*90);
   }
-  fx('🎁',`${who(pi)} doou uma carta para ${t===0?'você':who(t)}`,'var(--cg)','stamp');
+  fx('❤️‍🔥',`${who(pi)} doou uma carta para ${t===0?'você':who(t)}`,'var(--cg)','stamp');
   log(`${who(pi)} doou uma carta para ${t===0?'você':who(t)}.`);
   if(massCheck()==='win')return 'win';
   return selfCheck(pi);
@@ -103,7 +103,7 @@ function banType(pi,c){
   const keep=S.discard.slice(0,-1).filter(x=>!m(x));n+=S.discard.length-1-keep.length;S.discard=[...keep,t];
   S.players.forEach((q,i)=>{if(q.out)return;const k=q.hand.filter(m).length;if(k){n+=k;q.hand=q.hand.filter(x=>!m(x));ghost(targetRect(i),discardRect(),0);floatOn(i,`-${k}`,'var(--cg)')}});
   if(SP[c.type]){const rk=SP[c.type].rule||c.type;if(R[rk]){R[rk]=false;S.removed.push({k:rk,by:pi===0?'você':who(pi)})}}
-  fx('🚫',`${label(c)} banido do jogo (${n} carta${n===1?'':'s'})`,'var(--cr)','slam');log(`${who(pi)} baniu ${label(c)}: ${n} cartas saíram do jogo.`);
+  fx('✖️',`${label(c)} banido do jogo (${n} carta${n===1?'':'s'})`,'var(--cr)','slam');log(`${who(pi)} baniu ${label(c)}: ${n} cartas saíram do jogo.`);
   if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
   const empty=alive().find(i=>S.players[i].hand.length===0&&!nextHand(i));if(empty!=null){endRound(empty);return 'win'}
   graceCalls();return 'done';
@@ -206,8 +206,8 @@ function addRule(pi,k,quiet){
 }
 const RICON={stack:'📚',sequence:'🔢',neighbor:'↕️',hell:'🔥',jumpin:'✂️',perfection:'💯',clean:'🧼',nou:'↩️',satisfaction:'😋',insatisfaction:'😒',
   fastdraw:'⏩',tracking:'🔎',flash:'🏃',overload:'🏋️',limbo:'🪜',hard:'🎯',dos:'✌️',shiny:'✨',team:'🤝',black:'⬛',noaction:'🧮',mess:'🎭',
-  revelation:'🔦',mini:'🤏',maxi:'🗃️',mulligan:'🆕',camouflage:'🥷',bg:'🩵',nochallenge:'🤐',time:'⏰',limitless:'♾️',twohands:'✋',poker:'🃏',addrules:'➕',
-  tournament:'🏆',survivor:'🏅',drekkemaus:'🐉',jingle:'🔔',papaille:'🦋',charlotte:'🕷️',elisah:'🔮',buffy:'🐣',snowy:'⛄',icemice:'🐭',elise:'⚜️',red:'🔴',blue:'🔵',yellow:'🟡',green:'🟢',weather:'🌡️',mix:'⇄⊘',plus99:'+99'};
+  revelation:'🔦',mini:'🤏',maxi:'🤌',mulligan:'🆕',camouflage:'😶‍🌫️',bg:'🩵',nochallenge:'🤐',time:'⏰',limitless:'♾️',twohands:'✋',poker:'🃏',addrules:'➕',
+  tournament:'🏆',survivor:'🏅',drekkemaus:'🐉',jingle:'🔔',papaille:'🦋',charlotte:'🕷️',elisah:'🔮',buffy:'🐣',snowy:'⛄',icemice:'🐭',elise:'⚜️',red:'🔴',blue:'🔵',yellow:'🟡',green:'🟢',weather:'🌤️',mix:'⇄⊘',plus99:'+99'};
 function ruleIcon(k){
   if(RICON[k])return RICON[k];
   if(BOTRULES.includes(k))return k[0].toUpperCase();
@@ -332,7 +332,7 @@ function applySpecial(pi,card){
     case 'web':{if(pi===0)return 'ask';const o=opponents(pi);const n=nextIdx(pi,1);const t=o.includes(n)?n:(o.length?fewest(o):-1);if(t<0)return 'done';const l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{webOn(pi,t);return 'done'})}
     case 'wish':if(!p.hand.length||S.discard.length<2)return 'done';if(pi===0)return 'ask';{
       const opts=wishOptions();const best=opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0];return botDefer(pi,'up',opts,opts.indexOf(best),()=>{wishSwap(pi,best);return 'done'})}
-    case 'rain':opp.forEach(i=>{drawN(i,1);floatOn(i,'+1','var(--cb)')});fx('🌧️','Adversários compram 1','var(--cb)','slam');log('Chuva: todos os adversários compraram 1.');return massCheck();
+    case 'rain':opp.forEach(i=>{drawN(i,1);floatOn(i,'+1','var(--cb)')});fx('💧','Adversários compram 1','var(--cb)','slam');log('Chuva: todos os adversários compraram 1.');return massCheck();
     case 'thunder':{
       const vs=shuffle(alive().filter(i=>!ab(i,'drekkemaus'))).slice(0,2);
       vs.forEach(i=>{const n=1+Math.floor(Math.random()*5);drawN(i,n);floatOn(i,`+${n}`,'var(--cy)');stampOn(i,'⚡','var(--cy)')});
@@ -344,7 +344,7 @@ function applySpecial(pi,card){
     case 'justice':{
       const k=Math.max(0,Math.min(opp.filter(i=>S.players[i].hand.length<p.hand.length).length,p.hand.length-1));
       for(let j=0;j<k;j++)discardCard(pi,rand(p.hand),j);
-      fx('⚖️',k?`${who(pi)} descartou ${k} carta${k>1?'s':''}`:'Ninguém tem menos cartas',col,'stamp');log(`Justiça: ${who(pi)} descartou ${k}.`);
+      fx('🙏',k?`${who(pi)} descartou ${k} carta${k>1?'s':''}`:'Ninguém tem menos cartas',col,'stamp');log(`Misericórdia: ${who(pi)} descartou ${k}.`);
       return selfCheck(pi)}
     case 'magnet':{FX3D.sparks(targetRect(pi),col);
       const same=p.hand.filter(c=>c.color===card.color);same.forEach((c,j)=>discardCard(pi,c,j));
@@ -363,7 +363,7 @@ function applySpecial(pi,card){
     case 'peace':{const n=alive().length*2+2;S.peace=n+1;fx('🌼','Ações sem efeito por alguns turnos','var(--cg)','stamp');log('Paz: cartas de ação sem efeito por alguns turnos.');return 'done'}
     case 'batata':if(pi===0)return 'ask';{const o=opponents(pi);const t=o.length?rand(o):rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{giveBatata(pi,card,t);return 'done'})}
     case 'curse':{
-      const keys=Object.keys(CURSES),k=rand(keys),g=S.gen,sp=S.spectate?.35:1;
+      const keys=Object.keys(CURSES).filter(c=>!(R.mess&&c==='shoe')),k=rand(keys),g=S.gen,sp=S.spectate?.35:1;
       S.busy=true;clearFlash();hold(99999);
       $('fx').innerHTML='<div class="fxin roul" style="--fxc:#6b2fa3"><div class="fxg" id="roulG" style="color:#6b2fa3"></div><div class="fxcap">Sorteando a maldição…</div></div>';
       const steps=[];let t=0;for(let j=0;j<16;j++){t+=(55+j*j*1.4)*sp;steps.push(t)}

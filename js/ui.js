@@ -6,12 +6,7 @@ function humanClick(id,el){
   const me=S.players[0];const card=me.hand.find(c=>c.id===id);if(!card)return;
   if(!myTurn()){if(canJump(0,card))doJumpIn(0,card);return}
   if(!canPlay(me,card)){
-    if(R.hard&&S.phase==='play'){
-      if(noDraw(0)){if(!markOut(0,S.death?'errou na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))endTurn();return}
-      drawN(0,1);log('Carta inválida: você comprou 1 e passou a vez.');toast('Carta inválida! +1','var(--cr)');
-      if(overloaded(0)&&markOut(0))return;
-      endTurn();
-    }else{el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');sfx('error')}
+    el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');sfx('error');
     return;
   }
   humanPlay(card);
@@ -196,7 +191,7 @@ function seatStatus(i){
   if(shiny)L.push({ic:'✨',short:'✨',name:'Mão brilhante',txt:'tem todas as cores ou um curinga'});
   if(p.luck)L.push({ic:'🍀',short:'🍀',name:'Sorte',txt:'a próxima compra será uma carta jogável'});
   if(p.confuse)L.push({ic:'🍄',short:'🍄',name:'Confusão',txt:'a próxima jogada será aleatória'});
-  if(camo&&!fog)L.push({ic:'🥷',short:'🥷',name:'Camuflagem',txt:'quantidade de cartas ocultada até ter 1 carta'});
+  if(camo&&!fog)L.push({ic:'😶‍🌫️',short:'😶‍🌫️',name:'Camuflagem',txt:'quantidade de cartas ocultada até ter 1 carta'});
   if(fog)L.push({ic:'☁️',short:'☁️',name:'Nevoeiro',txt:'quantidade de cartas ocultada até mudar o clima'});
   return L;
 }
@@ -233,7 +228,7 @@ function infoPopup(key,head,items,anchor,up,force){
 }
 function showSeatInfo(i,anchor){
   const p=S.players[i];
-  const items=i===0?seatStatus(0).filter(x=>x.ic!=='🥷'&&x.ic!=='☁️'):seatInfoItems(i);
+  const items=i===0?seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️'):seatInfoItems(i);
   infoPopup('seat'+i,i===0?'<div class="si-head"><b>Você</b></div>':`<div class="si-head"><span class="si-av" style="background:${p.col}">${p.name[0]}</span><b>${p.name}</b>${p.out?'<em>eliminado</em>':''}</div>`,items,anchor,i===0);
 }
 function showSeatInfoOld(i,anchor){
@@ -331,7 +326,7 @@ function render(){
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
   hw.classList.toggle('webbed',!!S.players[0].webbed&&S.phase!=='over');
   {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);
-   const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='🥷'&&x.ic!=='☁️');
+   const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️');
    const ms=$('mystat');ms.hidden=!st.length;ms.textContent=st.map(x=>x.short).join(' ');}
   {const me0=S.players[0],lim=limit(),thr=Math.max(3,Math.round(lim*.25)),n=me0.hand.length,rem=lim-n;
    const near=S.phase!=='over'&&!me0.out&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
@@ -350,6 +345,8 @@ function render(){
    if(ic.length){const sp=document.createElement('span');sp.className='cb deckcb';sp.textContent=ic.join(' ');deck.appendChild(sp)}
    deck.classList.toggle('frozen',S.weather==='blizzard'||curseIs('ice'));deck.classList.toggle('gone',!!S.death);}
   $('deckCount').textContent=`${S.deck.length} no monte`;
+  // altura do monte: 1 px a cada 8 cartas, até 14 px
+  deck.parentElement.style.setProperty('--stk',(S.death?0:Math.min(14,Math.ceil(S.deck.length/8)))+'px');
   // discard
   const t=topCard();const dis=$('discard');
   dis.style.setProperty('--ring',S.color?CVAR[S.color]:'transparent');
@@ -501,12 +498,32 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
     if(r.g!==g){g=r.g;html+=`<div class="group">${g}</div>`}
     const block=(CONFLICT[r.k]||[]).filter(x=>CFG[x]);
     let why=block.length?`Incompatível com ${block.map(x=>RNAME[x]).join(', ')}`:'';
-    if(r.k==='team'&&CFG.bots%2===0)why='Precisa de 1, 3 ou 5 bots';
-    html+=`<label class="rule ${why?'off':''}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${[...ruleIcon(r.k)].length>2?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${why?`<em>${why}</em>`:''}</div></label>`;
+    if(r.k==='team'&&CFG.bots%2===0)why='Precisa de 1, 3 ou 5 adversários';
+    html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${[...ruleIcon(r.k)].length>2?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${why?`<em>${why}</em>`:''}</div></label>`;
   });
   $('ruleList').innerHTML=html;
   $('ruleList').onchange=e=>{const k=e.target.dataset.k;if(!k)return;CFG[k]=e.target.checked;buildSettings()};
+  const cats=[['all','Todas'],['on','Ativadas'],...[...new Set(RULES.map(r=>r.g))].map(x=>[x,x])];
+  $('ruleCats').innerHTML=cats.map(([v,l])=>`<button type="button" class="rcat" data-v="${v}" aria-pressed="${RF.cat===v}">${l}</button>`).join('');
+  $('ruleCats').onclick=e=>{const b=e.target.closest('.rcat');if(!b)return;RF.cat=b.dataset.v;buildSettings()};
+  filterRules();
 }
+/* filtro das regras da casa: categoria, ativadas e busca pelo nome (volta para "Todas" ao abrir) */
+const RF={cat:'all',q:''};
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function filterRules(){
+  const q=norm(RF.q.trim());let any=false;
+  const list=$('ruleList');let head=null,headOn=false;
+  [...list.children].forEach(el=>{
+    if(el.classList.contains('group')){if(head)head.hidden=!headOn;head=el;headOn=false;return}
+    const inp=el.querySelector('input');
+    const ok=(RF.cat==='all'||(RF.cat==='on'?inp.checked:el.dataset.g===RF.cat))&&(!q||norm(el.querySelector('b').textContent).includes(q));
+    el.hidden=!ok;if(ok){headOn=true;any=true}
+  });
+  if(head)head.hidden=!headOn;
+  $('ruleNone').hidden=any;
+}
+$('ruleSearch').addEventListener('input',e=>{RF.q=e.target.value;filterRules()});
 function openActive(){
   if(!S){openSettings();return}
   const segName=(k,v)=>{const e=SEGS[k].find(x=>String(x[0])===String(v));return e?e[1]:v};
@@ -515,7 +532,6 @@ function openActive(){
   const on=RULES.filter(r=>R[r.k]);
   let html=`<div class="act-basics">${basics.map(b=>`<span class="chip">${b}</span>`).join('')}</div><p class="legend">${COMBO_DESC[R.combo]}</p>`;
   if(!R.nochallenge)html+=`<div class="act"><b>Desafio do +4</b><span>Quem recebe um +4 pode desafiar: se foi blefe, quem jogou compra; se não, quem desafiou compra 2 a mais.</span></div>`;
-  if(!R.limitless)html+=`<div class="act"><b>Limite de 30 cartas</b><span>Quem passar de 30 cartas na mão é eliminado.</span></div>`;
   let g='';
   on.forEach(r=>{
     if(r.g!==g){g=r.g;html+=`<div class="act-group">${g}</div>`}
@@ -539,6 +555,7 @@ function openHistory(){
 function openSettings(){
   updateInstallUI();
   $('tipBox').innerHTML=`<b>💡 Dica</b>${rand(TIPS)}`;
+  RF.cat='all';RF.q='';$('ruleSearch').value='';
   buildSettings();$('closeSettings').style.display=S&&S.phase!=='over'?'':'none';
   $('endOv').classList.remove('show');$('settingsOv').classList.add('show');
 }

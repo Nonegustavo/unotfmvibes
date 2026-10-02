@@ -48,7 +48,7 @@ Os arquivos JS são **scripts clássicos carregados em ordem** e compartilham o 
 python -m http.server 8000    # na raiz do repositório (no Windows é "python"; "python3" abre a Microsoft Store)
 ```
 - Abra `http://localhost:8000` (no app do Claude, a configuração `unotfm` em `.claude/launch.json` faz isso).
-- Teste automático: `npm test` (3 partidas) ou `npm test -- 10`; `--ver` abre o navegador visível (usa o Chrome/Edge instalado); `--vel=5` encurta as esperas do jogo em 5x para rodar mais rápido. O script `tests/smoke.mjs` sobe o próprio servidor, joga clicando em cartas `.card.ok`, Comprar, UNO e nas janelas de escolha, e falha se houver `pageerror` ou travamento (captura em `tests/travou-N.png`). Na primeira vez: `npm install` e `npx playwright install chromium`.
+- Teste automático: `npm test` (3 partidas) ou `npm test -- 10`; `--ver` abre o navegador visível (usa o Chrome/Edge instalado); `--vel=5` encurta as esperas do jogo em 5x para rodar mais rápido; `--regras=mess,weather` joga no modo Personalizado só com essas regras. O script `tests/smoke.mjs` sobe o próprio servidor, joga clicando em cartas `.card.ok`, Comprar, UNO e nas janelas de escolha, e falha se houver `pageerror` ou travamento (captura em `tests/travou-N.png`). Na primeira vez: `npm install` e `npx playwright install chromium`.
 - Confira se não há `pageerror` e se a partida não trava. Uma boa verificação de travamento é ver se status, mão e cadeiras ficam mais de 15 s sem mudar.
 - Os efeitos 3D precisam de WebGL. No headless, use `--use-gl=swiftshader` e sirva o `three.min.js` localmente se o CDN não estiver acessível.
 - Para mudanças visuais, tire capturas da área afetada (viewport 390×800, celular).
@@ -64,7 +64,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Os adversários mostram a decisão num balão perto da cadeira (`botThink`).
 - **Portal:** são dois lados independentes. `SIDE_KEYS` e `PLAYER_KEYS` definem o que é separado por lado, e o sentido do jogo é compartilhado. O outro lado tem cores rosa, laranja, ciano e roxo, borda e símbolos pretos e coringas brancos. A mesa não muda de cor. Azul e Verde só vale no lado normal.
 - **Eliminação por erro** (ser pego sem UNO, blefe desafiado, desafio errado) **só acontece com a Morte súbita**. Fora dela:
-  - Pego sem UNO compra 2 (4 no Modo rigoroso).
+  - Pego sem UNO compra 2.
   - O desafio vale só para o **último** +4/+99. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.
 - **Nevasca e Gelo:** ninguém compra. Os +2/+4 continuam acumulando, e quem não se defende perde a vez sem comprar. No desafio:
   - Se foi blefe, o desafiante segue jogando.
@@ -85,6 +85,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 ## Removido de propósito (não reintroduzir sem pedir)
 - Regras baseadas em tempo: Rápido, Tempo reduzido, Limbo, Mais regras e a maldição de 3 segundos. Funcionam mal no solo, porque só o humano sofre pressão de tempo.
 - Carta do Paradoxo.
+- Regras Sem limite e Modo rigoroso. Também não existe mais limite geral de cartas na mão (só a Sobrecarga limita).
 - Regras de bots específicos (Drekkemaus, Charlotte etc.). O código ainda existe, mas inativo (`BOTRULES`, `ab()`).
 - Botão "Regras" no topo. As regras são vistas tocando nos ícones abaixo dos jogadores.
 

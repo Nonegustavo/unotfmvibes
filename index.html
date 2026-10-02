@@ -47,6 +47,7 @@
     <div class="piles">
       <div class="pile">
         <div class="pend" id="pend" hidden></div>
+        <div class="stack" id="deckStack" aria-hidden="true"></div>
         <button class="card back deckbtn" id="deck" aria-label="Monte de compra"></button>
         <div class="count" id="deckCount"></div>
       </div>
@@ -75,7 +76,7 @@
     <div class="field" id="botsField"><div class="lb">Adversários</div><div class="seg" data-key="bots"></div></div>
     <div class="field" id="startField"><div class="lb">Cartas iniciais</div><div class="seg" data-key="start"></div></div>
     <div class="field"><div class="lb">Defesa contra compras</div><div class="seg" data-key="combo"></div><p class="legend" id="comboLegend"></p></div>
-    <div class="field" id="rulesField"><div class="lb">Regras da casa</div><div id="ruleList"></div></div>
+    <div class="field" id="rulesField"><div class="lb">Regras da casa</div><div class="rfilter"><input type="search" id="ruleSearch" placeholder="Buscar regra pelo nome" autocomplete="off"><div class="rcats" id="ruleCats"></div></div><div id="ruleList"></div><p class="legend rnone" id="ruleNone" hidden>Nenhuma regra encontrada.</p></div>
     <div class="row2 stick">
       <button class="btn" id="closeSettings">Voltar</button>
       <button class="btn main" id="startBtn">Jogar</button>

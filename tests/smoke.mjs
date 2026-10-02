@@ -3,6 +3,7 @@
 //      npm test -- 10      (10 partidas)
 //      npm test -- 3 --ver (abre o navegador visível)
 //      npm test -- 10 --vel=5 (encurta as esperas do jogo em 5x; o padrão é 1, a velocidade normal)
+//      npm test -- 5 --regras=mess,weather (modo Personalizado só com essas regras; chaves de RULES em js/data.js)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +15,7 @@ const args = process.argv.slice(2);
 const GAMES = Number(args.find(a => /^\d+$/.test(a)) || 3);
 const HEADED = args.includes('--ver');
 const SPEED = Math.max(1, Number((args.find(a => a.startsWith('--vel=')) || '').slice(6)) || 1);
+const RULES_ARG = (args.find(a => a.startsWith('--regras=')) || '').slice(9);
 const STALL_MS = 15000;
 const GAME_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -47,6 +49,11 @@ if (SPEED > 1) await page.addInitScript(v => {
   const st = window.setTimeout;
   window.setTimeout = (fn, ms, ...a) => st(fn, (ms || 0) / v, ...a);
 }, SPEED);
+
+// Regras escolhidas: grava a configuração salva antes de o jogo carregar
+if (RULES_ARG) await page.addInitScript(keys => {
+  try { localStorage.setItem('unotfm-solo-cfg', JSON.stringify({ mode: 'custom', poker: false, ...Object.fromEntries(keys.split(',').map(k => [k.trim(), true])) })); } catch (e) {}
+}, RULES_ARG);
 
 await page.goto(URL_BASE);
 
@@ -108,6 +115,6 @@ const webgl = await page.evaluate(() => typeof THREE !== 'undefined');
 await browser.close();
 server.close();
 
-console.log(`\nPartidas: ${played} | Velocidade: ${SPEED}x | Travamentos: ${stalls} | Erros: ${errors.length} | three.js carregou: ${webgl ? 'sim' : 'não'}`);
+console.log(`\nPartidas: ${played} | Velocidade: ${SPEED}x |${RULES_ARG ? ` Regras: ${RULES_ARG} |` : ''} Travamentos: ${stalls} | Erros: ${errors.length} | three.js carregou: ${webgl ? 'sim' : 'não'}`);
 for (const e of [...new Set(errors)]) console.log('  - ' + e);
 process.exit(stalls || errors.length ? 1 : 0);
