@@ -2154,6 +2154,7 @@ function applySpecial(pi,card){
 }
 function humanAsk(card){
   S.busy=true;render();const g=S.gen;
+  if(S.preLanded===card){S.preLanded=null;humanAskOpen(card);return}
   setTimeout(()=>{if(g===S.gen&&S.phase!=='over')humanAskOpen(card)},480);
 }
 function humanAskOpen(card){
@@ -2221,11 +2222,15 @@ function doJumpIn(pi,card){
   if(pi===0)S.mull=false;
   fx('✂',pi===0?'Você cortou!':`Corte de ${who(pi)}!`,'var(--cy)','stamp');
   log(`${who(pi)} cortou a vez!`);
-  const r=playCard(pi,card,null);
-  if(r==='win'||r==='defer')return;
-  if(r==='ask'){humanAsk(card);return}
-  if(r==='combo'){S.tok++;render();if(S.players[pi].bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();return}
-  endTurn();
+  const go=()=>{
+    const r=playCard(pi,card,null);
+    if(r==='win'||r==='defer')return;
+    if(r==='ask'){if(S.players[pi].bot){endTurn();return}S.preLanded=card;humanAsk(card);return}
+    if(r==='combo'){S.tok++;render();if(S.players[pi].bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();return}
+    endTurn();
+  };
+  if(card.type!=='num'){announce(pi,card,go,S.spectate?250:480);return}
+  go();
 }
 function scheduleJumps(){
   if(!R.jumpin||S.phase!=='play')return;
@@ -2397,7 +2402,7 @@ const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simo
 const needsAnn=(pi,card)=>card.type==='random'||card.type==='clone'||(pi!==0&&(isWildPick(card)||ASK_TYPES.includes(card.type)));
 function announce(pi,card,cont,wait){
   clearFlash();
-  const p=S.players[pi];const rect=srcRect(pi,card);
+  const p=S.players[pi];const rect=S.fastSrc||srcRect(pi,card);S.fastSrc=null;
   p.hand=p.hand.filter(c=>c.id!==card.id);
   card.rot=Math.random()*24-12;S.discard.push(card);S.ann=card;
   if(p.bot&&p.hand.length===target())afterOneCard(pi);
@@ -2419,6 +2424,7 @@ function announce(pi,card,cont,wait){
 function botPlay(card){
   const pi=S.turn;
   if(needsAnn(pi,card)){announce(pi,card,()=>botPlayNow(card,pi));return}
+  if(card.type!=='num'){announce(pi,card,()=>botPlayNow(card,pi),S.spectate?250:480);return}
   botPlayNow(card,pi);
 }
 function botPlayNow(card,pi0){
@@ -2451,12 +2457,13 @@ function humanClick(id,el){
 }
 function humanPlay(card){
   S.mull=false;
-  if(S.peace>0&&card.color==='w'){finishHuman(card,null);return}
+  if(S.peace>0&&card.color==='w'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
   if(isWildPick(card)){announce(0,card,()=>{S.busy=true;render();openColors(col=>finishHuman(card,col),card)},480);return}
   if(card.type==='clone'||card.type==='random'){
-    announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else finishHuman(card,null)});
+    announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else{S.preLanded=card;finishHuman(card,null)}});
     return;
   }
+  if(card.type!=='num'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
   finishHuman(card,null);
 }
 function finishHuman(card,col){
