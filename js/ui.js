@@ -694,4 +694,23 @@ $('iosClose').onclick=()=>$('iosOv').classList.remove('show');
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)){
   addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
 }
+/* passar o mouse (computador): abre a mesma janela de informação das cartas da mão e dos selos de status */
+{const FINE=matchMedia('(hover:hover) and (pointer:fine)');let hov=null,hovT=null;
+ const openKey=k=>$('notices').querySelector(`[data-info="${k}"]`);
+ function hoverTarget(t){
+   const c=t.closest('#hand .card');if(c)return {key:'card'+c.dataset.id,open:()=>showCardInfo(+c.dataset.id,c)};
+   const st=t.closest('.seat .tag.stat,.seat .outic');if(st){const seat=st.closest('.seat'),i=+seat.dataset.seat;return {key:'seat'+i,open:()=>showSeatInfo(i,seat)}}
+   if(t.closest('#mystat'))return {key:'seat0',open:()=>showSeatInfo(0,$('mystat'))};
+   const b=t.closest('.tst');if(b)return {key:'tst'+b.dataset.k,open:()=>{const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',[x],b)}};
+   return null;
+ }
+ document.addEventListener('pointerover',e=>{
+   if(e.pointerType!=='mouse'||!FINE.matches||!S||e.target.closest('#notices'))return;
+   const h=hoverTarget(e.target),k=h&&h.key;
+   if(k===hov)return;
+   clearTimeout(hovT);
+   if(hov&&openKey(hov))$('notices').innerHTML='';
+   hov=k;
+   if(h)hovT=setTimeout(()=>{if(hov===k&&!openKey(k))h.open()},300);
+ });}
 openSettings();
