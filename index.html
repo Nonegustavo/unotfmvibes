@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>unotfm solo</title>
+<meta name="description" content="O jogo de cartas do unotfm para jogar sozinho contra adversários, com regras e cartas especiais.">
+<meta name="theme-color" content="#6a47cf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="unotfm">
+<meta name="application-name" content="unotfm">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2829,6 +2840,10 @@ $('startBtn').onclick=()=>{save('unotfm-solo-cfg',CFG);R=rulesForMode();TOUR=nul
 $('againBtn').onclick=()=>{$('endOv').classList.remove('show');R=rulesForMode();newGame()};
 window.addEventListener('resize',()=>{if(!S)return;render();if(S.turn!==0&&S.phase!=='over')placeMarker(S.turn,false)});
 openSettings();
+/* PWA: registra o service worker quando hospedado (GitHub Pages etc.) */
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)){
+  addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+}
 })();
 </script>
 </body>
