@@ -65,12 +65,27 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
-.sunrays{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .8s}
-.table[data-weather="sun"] .sunrays{opacity:1}
-.sunrays i{position:absolute;width:150%;aspect-ratio:1;right:-75%;top:-75%;border-radius:50%;
+.wxl{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none}
+.wxl>div{position:absolute;inset:0;opacity:0;transition:opacity 1.3s ease}
+.table[data-weather="sun"] .w-sun,.table[data-weather="storm"] .w-storm,.table[data-weather="fog"] .w-fog,.table[data-weather="blizzard"] .w-snow{opacity:1}
+.w-sun{background:radial-gradient(circle at 88% 6%,rgba(255,200,60,.42),transparent 55%)}
+.w-sun i{position:absolute;width:150%;aspect-ratio:1;right:-75%;top:-75%;border-radius:50%;
   background:repeating-conic-gradient(from 0deg,rgba(255,214,110,.42) 0 5deg,rgba(255,214,110,0) 5deg 15deg);
-  -webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.85) 25%,transparent 68%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.85) 25%,transparent 68%);
-  animation:spin 60s linear infinite}
+  -webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.85) 25%,transparent 68%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.85) 25%,transparent 68%);animation:spin 60s linear infinite}
+.w-storm{background:linear-gradient(180deg,rgba(40,40,80,.35),transparent 75%)}
+.w-fog i{position:absolute;left:0;width:75%;height:34%;opacity:.85;animation:fogmove linear infinite;
+  background:radial-gradient(ellipse 40% 50% at 30% 60%,rgba(255,255,255,.95),rgba(225,225,238,.55) 45%,rgba(255,255,255,0) 70%),radial-gradient(ellipse 35% 55% at 55% 45%,rgba(255,255,255,.95),rgba(220,220,235,.5) 45%,rgba(250,250,255,0) 70%),radial-gradient(ellipse 30% 45% at 75% 62%,rgba(255,255,255,.9),rgba(220,220,235,.45) 45%,rgba(245,245,252,0) 70%);filter:drop-shadow(0 2px 3px rgba(80,70,120,.15))}
+.w-fog i:nth-child(1){top:4%;animation-duration:34s;animation-delay:-6s}
+.w-fog i:nth-child(2){top:30%;animation-duration:46s;animation-delay:-28s;opacity:.7}
+.w-fog i:nth-child(3){top:55%;animation-duration:40s;animation-delay:-16s}
+.w-fog i:nth-child(4){top:74%;animation-duration:52s;animation-delay:-40s;opacity:.65}
+@keyframes fogmove{from{transform:translateX(-90%)}to{transform:translateX(140%)}}
+.w-snow i{position:absolute;inset:0;background-repeat:repeat}
+.w-snow i:nth-child(1){background-image:radial-gradient(circle at 20% 30%,#fff 0 2.6px,rgba(110,150,210,.85) 3.3px,transparent 4px),radial-gradient(circle at 70% 75%,#fff 0 2px,rgba(110,150,210,.8) 2.7px,transparent 3.3px);background-size:64px 64px;animation:snowA 5s linear infinite}
+.w-snow i:nth-child(2){background-image:radial-gradient(circle at 35% 60%,#fff 0 1.6px,rgba(110,150,210,.75) 2.2px,transparent 2.8px),radial-gradient(circle at 80% 15%,#fff 0 1.2px,rgba(110,150,210,.7) 1.8px,transparent 2.3px);background-size:41px 41px;background-position:13px 9px;animation:snowB 3.4s linear infinite;opacity:.95}
+@keyframes snowA{to{background-position:-64px 640px}}
+@keyframes snowB{to{background-position:-41px 410px}}
+.w-snow b{position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 26px 8px rgba(225,242,255,.9),inset 0 0 4px 2px rgba(255,255,255,.95)}
 .fxin.roul{animation:none}
 .roul .fxg{min-width:1.2em;text-align:center}
 .seat .nm{margin-bottom:3px}
@@ -80,7 +95,7 @@
 .side-b .fan i{background:repeating-linear-gradient(135deg,#1a0f2e 0 3px,#4a2a7a 3px 6px);border-color:#0b0712}
 .fan .mist{position:absolute;left:50%;top:8px;width:30px;height:18px;margin-left:-15px;border-radius:50%;background:radial-gradient(ellipse,rgba(235,232,245,.9) 0,rgba(235,232,245,.55) 50%,rgba(235,232,245,0) 75%);filter:blur(1px);pointer-events:none;z-index:1}
 .fan.fog i{filter:saturate(.7) brightness(1.05)}
-.fan .cnt{position:absolute;left:50%;top:22px;transform:none;translate:-50% -50%;z-index:2;font-size:2rem;font-weight:900;line-height:1;color:#fff;text-align:center;white-space:nowrap;
+.fan .cnt{position:absolute;left:50%;top:18px;transform:none;translate:-50% -50%;z-index:2;font-size:2rem;font-weight:900;line-height:1;color:#fff;text-align:center;white-space:nowrap;
   text-shadow:0 0 2px #1d1435,1px 1px 0 #1d1435,-1px -1px 0 #1d1435,1px -1px 0 #1d1435,-1px 1px 0 #1d1435,0 2px 3px rgba(0,0,0,.4)}
 .fan .cnt.c4{color:#ffd24d}
 .fan .cnt.c3{color:#ffa94d}
@@ -91,6 +106,8 @@
 @keyframes cntPop{0%{scale:.4}70%{scale:1.2}100%{scale:1}}
 @keyframes cntPulse{50%{scale:1.08}}
 .tag,.catch{z-index:4}
+#mystat{top:-11px;bottom:auto;cursor:pointer;font-family:inherit;z-index:6;height:auto}
+.notice.up.pointed::before{top:auto;bottom:-9px;transform:translateX(-50%) rotate(225deg)}
 .tag.top{bottom:auto;top:-11px;font-size:.72rem;padding:0 7px;border-color:var(--accent)}
 .seat{cursor:pointer}
 .notice.seatinfo{display:block;cursor:pointer}
@@ -104,7 +121,7 @@
 .tag.outic{font-size:.85rem;padding:0 8px;border-color:var(--cr)}
 .rail.many .fan{height:30px}
 .rail.many .fan i{width:12px;height:18px;margin-left:-6px}
-.rail.many .fan .cnt{top:19px;font-size:1.6rem}
+.rail.many .fan .cnt{top:16px;font-size:1.6rem}
 .rail.many .fan .cnt.said{top:20px;font-size:.7rem}
 .rail.many .tag.stat{font-size:.62rem;padding:0 4px}
 .pring{position:fixed;z-index:9;pointer-events:none}
@@ -200,7 +217,6 @@
 .hand .card.perf{box-shadow:0 0 0 3px #f0b21f,0 0 14px rgba(240,178,31,.7),0 3px 0 rgba(0,0,0,.22)}
 .hand .card.calm .face,.hand .card.calm .cn,.hand .card.calm .wheel{opacity:.55;filter:saturate(.5)}
 #fx3d{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:24}
-html.fx3d-on .table[data-weather="blizzard"]::before{background:rgba(225,240,255,.18);animation:none}
 .sheet{scrollbar-width:thin;scrollbar-color:var(--accent) transparent;overscroll-behavior:contain}
 .sheet::-webkit-scrollbar{width:8px}
 .sheet::-webkit-scrollbar-track{background:transparent;margin:18px 0}
@@ -233,7 +249,7 @@ html.fx3d-on .table[data-weather="blizzard"]::before{background:rgba(225,240,255
 .seat.near .ct{color:var(--cr);font-weight:700}
 .handwrap.near::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 calc(12px + 50px*var(--lv)) rgba(224,67,58,calc(.25 + .6*var(--lv)));animation:nearPulse calc(1.8s - 1.2s*var(--lv)) ease-in-out infinite}
 @keyframes nearPulse{50%{opacity:.45}}
-.limitwarn{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;background:rgba(224,67,58,calc(.7 + .3*var(--lv)));color:#fff;font-weight:700;font-size:calc(.72rem + .12rem*var(--lv));padding:2px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(224,67,58,.4)}
+.limitwarn{position:absolute;top:-24px;left:50%;transform:translateX(-50%);z-index:3;background:rgba(224,67,58,calc(.7 + .3*var(--lv)));color:#fff;font-weight:700;font-size:calc(.72rem + .12rem*var(--lv));padding:2px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(224,67,58,.4)}
 .limitwarn.hot{animation:warnShake .5s ease-in-out infinite}
 @keyframes warnShake{25%{transform:translateX(calc(-50% - 3px)) rotate(-2deg)}75%{transform:translateX(calc(-50% + 3px)) rotate(2deg)}}
 .ov.lite{background:rgba(15,10,30,.12);align-items:flex-end;padding-top:calc(env(safe-area-inset-top,0px) + 50px);padding-bottom:var(--liteBottom,220px);pointer-events:none}
@@ -333,7 +349,9 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .discard{width:var(--cw);aspect-ratio:2/3;position:relative}
 .discard::before{content:"";position:absolute;inset:-22px;border-radius:50%;background:var(--ring,transparent);opacity:.6;filter:blur(12px);transition:background .35s}
 .dc{position:absolute;inset:0;transform:rotate(var(--rot))}
-.meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.meta{position:absolute;left:50%;top:calc(50% + var(--cw)*.75 + 26px);transform:translateX(-50%);display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;z-index:2;white-space:nowrap}
+.meta .tst{background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:1px 8px;font-size:.8rem;font-weight:700;cursor:pointer;color:var(--ink)}
+.meta .tst.warn{border-color:var(--cr)}
 .chip{background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:3px 11px;font-size:.84rem;font-weight:500;display:flex;align-items:center;gap:6px}
 .chip .dot{width:11px;height:11px;border-radius:50%}
 .chip.warn{background:var(--cr);color:#fff;border-color:transparent;font-weight:600}
@@ -374,11 +392,6 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 /* weather */
 .table{transition:background .6s}
 .table::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .6s}
-.table[data-weather="sun"]::before{opacity:1;background:radial-gradient(circle at 85% 8%,rgba(255,200,60,.45),transparent 55%)}
-.table[data-weather="fog"]::before{opacity:1;background:linear-gradient(180deg,rgba(200,200,215,.35),rgba(200,200,215,.1) 50%,rgba(200,200,215,.35));backdrop-filter:blur(1px)}
-.table[data-weather="storm"]::before{opacity:1;background:linear-gradient(180deg,rgba(40,40,80,.35),transparent 70%)}
-.table[data-weather="blizzard"]::before{opacity:.9;background-image:radial-gradient(#fff 1.3px,transparent 1.6px),radial-gradient(#fff 1px,transparent 1.4px);background-size:38px 38px,24px 24px;background-position:0 0,12px 17px;animation:snow 7s linear infinite}
-@keyframes snow{to{background-position:0 380px,12px 257px}}
 .table.bolt::after{content:"";position:absolute;inset:0;border-radius:inherit;background:#fff;pointer-events:none;animation:bolt .7s ease-out forwards;z-index:4}
 @keyframes bolt{0%,20%{opacity:.45}10%,40%{opacity:0}30%{opacity:.3}100%{opacity:0}}
 .table.flick::after{content:"";position:absolute;inset:0;border-radius:inherit;background:#fff;pointer-events:none;animation:flick 1.1s ease-out forwards;z-index:4}
@@ -478,7 +491,7 @@ button.card:disabled{cursor:default}
 <section class="rulestrip" id="rulestrip" aria-label="Regras em jogo"></section>
 <div class="notices" id="notices" aria-live="polite"></div>
 <main class="table">
-  <div class="sunrays" aria-hidden="true"><i></i></div>
+  <div class="wxl" aria-hidden="true"><div class="w-sun"><i></i></div><div class="w-storm"></div><div class="w-fog"><i></i><i></i><i></i><i></i></div><div class="w-snow"><i></i><i></i><b></b></div></div>
   <div class="toast" id="toast" role="status"></div>
   <div class="arena">
     <div class="dirring" id="dirring" aria-hidden="true">
@@ -491,6 +504,7 @@ button.card:disabled{cursor:default}
       </svg>
     </div>
         <div class="fx" id="fx"></div>
+    <div class="meta" id="meta"></div>
     <div class="piles">
       <div class="pile">
         <div class="pend" id="pend" hidden></div>
@@ -500,12 +514,11 @@ button.card:disabled{cursor:default}
       <div class="pile"><div class="discard" id="discard"></div></div>
     </div>
   </div>
-  <div class="meta" id="meta"></div>
-  <div class="status" id="status"></div>
+    <div class="status" id="status"></div>
   <div class="log" id="log" aria-live="polite" hidden></div>
   <div class="flash" id="flash"><b id="flashBar"></b></div>
 </main>
-<section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><div class="dizzytag" id="dizzytag" hidden>🍄 Confuso: sua próxima jogada será aleatória</div><div class="hand" id="hand" aria-label="Sua mão"></div></section>
+<section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><button type="button" class="tag stat mystat" id="mystat" hidden></button><div class="hand" id="hand" aria-label="Sua mão"></div></section>
 <nav class="actions">
   <button class="btn mull" id="mullBtn" hidden>Trocar mão</button>
   <button class="btn mull" id="chalBtn" hidden>Desafiar</button>
@@ -864,8 +877,9 @@ const FX3D=(()=>{
   function loop(t){
     const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;
     systems=systems.filter(s=>s.update(dt)!==false);if(wsys)wsys.update(dt);
+    dying=dying.filter(d=>{d.alpha-=dt*.9;d.mats.forEach(m=>m.opacity=m.userData.base*Math.max(0,d.alpha));if(d.alpha<=0){d.dispose();return false}return true});
     renderer.render(scene,camera);
-    if(systems.length||wsys)raf=requestAnimationFrame(loop);else{raf=0;renderer.clear()}
+    if(systems.length||wsys||dying.length)raf=requestAnimationFrame(loop);else{raf=0;renderer.clear()}
   }
   function run(){if(!raf){last=performance.now();raf=requestAnimationFrame(loop)}}
   function add(s){systems.push(s);run()}
@@ -990,7 +1004,8 @@ const FX3D=(()=>{
   const aura=color=>{if(!init())return;const r=arenaRect(),c=center(r);burst({x:c.x,y:c.y,ring:ws(r.width*.42),count:70,colors:[color,'#d6b3ff'],speed:[.3,1.2],dir:Math.PI/2,spread:1,life:1.6,size:.32,gravity:.8,add:true})};
 
   /* weather */
-  function clearWeather(){if(wsys){wsys.dispose();wsys=null}wkind=null}
+  let dying=[];
+  function clearWeather(){if(wsys){dying.push(wsys);wsys=null}wkind=null}
   let wRect='';
   function setWeather(k){
     if(!k||!on()){if(wkind)clearWeather();return}
@@ -1012,7 +1027,7 @@ const FX3D=(()=>{
       upd=dt=>{const a=geo.attributes.position.array;for(let i=0;i<n;i++){a[i*3+1]+=v[i].vy*dt;a[i*3]+=Math.sin(tt*v[i].f+v[i].ph)*.35*dt;
         if(v[i].vy<0&&a[i*3+1]<B){a[i*3+1]=Tp;a[i*3]=rx()}else if(v[i].vy>0&&a[i*3+1]>Tp){a[i*3+1]=B;a[i*3]=rx()}
         if(a[i*3]<L)a[i*3]=Rr;else if(a[i*3]>Rr)a[i*3]=L}geo.attributes.position.needsUpdate=true;
-        if(k==='sun')mat.opacity=.55+.25*Math.sin(tt*2)};
+        if(k==='sun')mat.userData.base=.55+.25*Math.sin(tt*2)};
 
     }else if(k==='storm'){
       const n=100;const pos=new Float32Array(n*6),sp=[];
@@ -1026,16 +1041,13 @@ const FX3D=(()=>{
       upd=dt=>{const a=geo.attributes.position.array;for(let i=0;i<n;i++){const vy=-sp[i]*dt,vx=vy*.24;
         for(const o of [0,3]){a[i*6+o]+=vx;a[i*6+o+1]+=vy}
         if(a[i*6+4]<B||a[i*6+3]<L){const [x,y]=spawn();a.set([x,y,0,x+dx,y+dy,0],i*6)}}geo.attributes.position.needsUpdate=true};
-    }else if(k==='fog'){
-      const n=7;const sp=[];
-      for(let i=0;i<n;i++){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex(),color:0xdedbe8,transparent:true,depthWrite:false,opacity:.42}));
-        const sc=Wd*(.55+Math.random()*.35);m.scale.set(sc,sc*.6,1);m.position.set(rx(),ry(),.2);scene.add(m);objs.push(m);sp.push(.25+Math.random()*.4)}
-      upd=dt=>{objs.forEach((m,i)=>{m.position.x+=sp[i]*dt;if(m.position.x-m.scale.x/2>Rr)m.position.x=L-m.scale.x/2;m.material.opacity=.32+.1*Math.sin(tt*.7+i)})};
     }
-    wsys={update(dt){tt+=dt;upd(dt)},dispose(){objs.forEach(o=>{scene.remove(o);o.geometry&&o.geometry.dispose();o.material&&o.material.dispose()})}};
+    if(!objs.length){wkind=k;return}
+    const mats=objs.map(o=>o.material);mats.forEach(m=>{if(m.userData.base==null)m.userData.base=m.opacity;m.opacity=0});
+    wsys={alpha:0,mats,update(dt){tt+=dt;upd(dt);this.alpha=Math.min(1,this.alpha+dt*.8);mats.forEach(m=>m.opacity=m.userData.base*this.alpha)},dispose(){objs.forEach(o=>{scene.remove(o);o.geometry&&o.geometry.dispose();o.material&&o.material.dispose()})}};
     run();
   }
-  function reset(){systems.forEach(()=>{});clearWeather();if(ok){scene.children.filter(o=>!o.isLight).forEach(o=>scene.remove(o));systems=[]}}
+  function reset(){systems.forEach(()=>{});clearWeather();dying.forEach(d=>d.dispose());dying=[];if(ok){scene.children.filter(o=>!o.isLight).forEach(o=>scene.remove(o));systems=[]}}
   return {available:()=>on()&&init(),rollDie,confetti,swirl,explode,sparks,smoke,steam,aura,setWeather,reset};
 })();
 
@@ -1177,10 +1189,11 @@ function floatOn(pi,text,color){
 }
 
 /* ---------- deck ops ---------- */
+function restoreCard(c){if(c.orig){c.type=c.orig;c.color='w';c.value=null;delete c.orig}if(c.baseColor!=null){c.color=c.baseColor;delete c.baseColor}c.chosen=null;c.lock=false;c.flipped=false;return c}
+const returnable=cards=>cards.filter(c=>!c.extra).map(restoreCard);
 function popDeck(){
   if(!S.deck.length){
-    const t=S.discard.pop();S.deck=shuffle(S.discard);S.discard=[t];
-    S.deck.forEach(c=>{if(c.orig){c.type=c.orig;c.color='w';c.value=null;delete c.orig}c.chosen=null});
+    const t=S.discard.pop();S.deck=shuffle(returnable(S.discard));S.discard=[t];
     if(!S.deck.length)return null;
   }
   return S.deck.pop();
@@ -1209,12 +1222,12 @@ function markOut(pi,reason,icon){
   const p=S.players[pi];
   if(immune(pi)){if(S.boom===pi)S.boom=null;toast('Charlotte não pode ser eliminada!','var(--cg)');return false}
   FX3D.smoke(targetRect(pi));p.out=true;sfx('out');
-  if(S.other){const o=S.other.players[pi];S.other.deck.unshift(...o.hand,...(o.hand2||[]));o.hand=[];o.hand2=[]}
+  if(S.other){const o=S.other.players[pi];S.other.deck.unshift(...returnable([...o.hand,...(o.hand2||[])]));o.hand=[];o.hand2=[]}
   const cards=[...p.hand,...(p.hand2||[])];p.hand=[];p.hand2=[];
   if(ab(pi,'snowy')&&alive().length){
     cards.forEach((c,k)=>{const t=rand(alive());S.players[t].hand.push(c);S.players[t].called=false;if(t===0)S.newIds.push(c.id);else if(k<8)ghost(targetRect(pi),targetRect(t),k*60)});
     S.handFrom=targetRect(pi);log('Snowy distribuiu as cartas dele para os outros.');
-  }else{S.deck.unshift(...cards);shuffle(S.deck)}
+  }else{S.deck.unshift(...returnable(cards));shuffle(S.deck)}
   const why=reason||(S.boom===pi?'explodiu com a bomba':`passou de ${limit()} cartas`);
   p.outIcon=icon||(S.boom===pi?'💣':/morte súbita/.test(why)?'☠️':/espinho/.test(why)?'🌵':/batata/.test(why)?'🥔':(R.overload&&limit()<=10?'🏋️':String(limit())));
   if(S.boom===pi)S.boom=null;
@@ -1238,7 +1251,6 @@ function comboOk(c){
 }
 function canPlay(p,c){
   if(S.phase==='combo')return comboOk(c);
-  if(S.phase==='drawn'&&c.id!==S.drawnId)return false;
   if(c.type==='bomb'||c.lock)return false;
   if(S.numOnly===1&&c.type!=='num')return false;
   if(S.traffic&&p.hand.length===1&&c.type==='num'&&((c.value%2===1)===(S.traffic==='odd')))return false;
@@ -1407,7 +1419,7 @@ function srcRect(pi,card){
 }
 function playCard(pi,card,chosen){
   const p=S.players[pi];
-  const annc=S.ann===card;if(annc){S.discard=S.discard.filter(c=>c!==card);S.ann=null;S.lastTop=null;S.morph=true}
+  const annc=S.ann===card;if(annc){S.discard=S.discard.filter(c=>c!==card);S.ann=null;S.lastTop=null}
   const before=p.hand.length+(p.hand.includes(card)?0:1);if(!annc)sfx('play');S.passes=0;
   S.animPlay=annc?null:(S.fastSrc||srcRect(pi,card));S.fastSrc=null;
   const inCombo=S.phase==='combo';
@@ -1421,6 +1433,7 @@ function playCard(pi,card,chosen){
   const orig=card.orig||card.type;
   if(card.color==='w'&&!chosen&&orig!==card.type)chosen=S.color==='k'?rand(COLORS):S.color;
   if(peaceOn&&card.color==='w')chosen=S.color;
+  if(annc&&((card.color==='w'&&chosen)||(orig!==card.type&&!card.flipped)))S.morph=true;
   p.hand=p.hand.filter(c=>c.id!==card.id);
   card.rot=Math.random()*24-12;
   S.discard.push(card);
@@ -1442,9 +1455,7 @@ function playCard(pi,card,chosen){
     else{fx(ARROWS,'Sentido invertido',S.dir===1?'var(--accent)':'var(--accent)',S.dir===1?'cw':'ccw');if(alive().length===2)S.skip=true}
     const r=$('dirring');r.classList.remove('flipped');void r.offsetWidth;r.classList.add('flipped');
   }
-  if(on&&isDraw(card)&&S.weather==='blizzard'){
-    msg+=' (sem efeito: nevasca)';fx('❄️',`+${drawVal(card)} congelado: ninguém compra`,'#5aa9d6','stamp');
-  }else if(on&&isDraw(card)){
+  if(on&&isDraw(card)){
     S.pending+=drawVal(card);S.pendingType=card.type;
     S.chal=(card.type!=='d2'&&!R.nochallenge)?{by:pi,bluff:hadColor,amt:drawVal(card),col:colBefore}:null;
     if(S.pending>drawVal(card))msg+=` (acumulado +${S.pending})`;
@@ -1519,7 +1530,7 @@ function endTurnHook(pi){
         fp.hand=fp.hand.filter(c=>c!==bt);fp.batata=0;
         fx('🥔',`${who(pi)} ficou com a batata por 5 turnos!`,'var(--cr)','slam');stampOn(pi,'🥔','var(--cr)');
         if(markOut(pi,'ficou 5 turnos com a batata','🥔'))return true;
-        const t=rand(alive());bt.color=rand(COLORS);S.players[t].hand.push(bt);S.players[t].batata=0;
+        const t=rand(alive());if(bt.baseColor==null)bt.baseColor=bt.color;bt.color=rand(COLORS);S.players[t].hand.push(bt);S.players[t].batata=0;
         if(t===0){S.newIds.push(bt.id)}else ghost(targetRect(pi),targetRect(t),0);
         hold(1200);
       }
@@ -1542,7 +1553,7 @@ function endTurn(){
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
   if(S.pending>0&&R.combo==='none'&&!R.nou){
     const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
-    if(noDraw(v)||curseOn('ice',v)){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
+    if(noDraw(v)||curseOn('ice',v)||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     drawN(v,n);floatOn(v,`+${n}`,'var(--cr)');stampOn(v,'⊘','var(--cr)');hold(900);
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
     S.pending=0;S.pendingType=null;
@@ -1570,6 +1581,11 @@ function startTurn(){
 function takeDraw(pi){
   const p=S.players[pi];
   if(pi===0)S.mull=false;
+  if(S.pending>0&&(S.weather==='blizzard'||curseOn('ice',pi))){
+    const n=S.pending;S.pending=0;S.pendingType=null;S.chal=null;
+    fx(S.weather==='blizzard'?'❄️':'🧊',`${pi===0?'Você perde':who(pi)+' perde'} a vez (+${n} congelado)`,'#5aa9d6','stamp');stampOn(pi,'⊘','var(--cr)');
+    log(`${who(pi)} perdeu a vez sem comprar (+${n} congelado).`);endTurn();return;
+  }
   if(S.weather==='blizzard'){
     if(S.color&&S.pending===0)memLack(pi,S.color);
     S.pending=0;S.pendingType=null;S.chal=null;
@@ -1624,8 +1640,7 @@ function takeDraw(pi){
     const idx=S.deck.map((c,i)=>i).reverse().find(i=>S.deck[i].type!=='bomb'&&canPlay(p,S.deck[i]));
     if(idx!=null){const [c]=S.deck.splice(idx,1);S.deck.push(c);fx('🍀','Sorte!','var(--cg)','stamp')}
   }
-  if(R.satisfaction){do{drawn=drawOne(pi);if(drawn)count++}while(drawn&&!canPlay(p,drawn)&&!overloaded(pi))}
-  else{drawn=drawOne(pi);if(drawn)count=1}
+  drawn=drawOne(pi);if(drawn)count=1;
   if(curseOn('anvil',pi)&&drawOne(pi))count++;
   icemiceHook(pi);
   afterDraw(pi,drawn,count);
@@ -1635,7 +1650,10 @@ function afterDraw(pi,drawn,count){
   log(`${who(pi)} comprou ${count} carta${count===1?'':'s'}.`);
   if(overloaded(pi)){if(markOut(pi))return;endTurn();return}
   const fast=(R.fastdraw||ab(pi,'papaille'))&&drawn&&drawn.type!=='bomb'&&p.hand.includes(drawn);
-  if(!fast&&(!drawn||R.insatisfaction||!canPlay(p,drawn))){endTurn();return}
+  if(!fast&&(!drawn||R.insatisfaction)){endTurn();return}
+  if(!fast&&R.satisfaction&&!p.hand.some(c=>canPlay(p,c))&&S.deck.length+S.discard.length>1){
+    S.phase='play';S.drawnId=drawn.id;S.tok++;render();if(p.bot)scheduleBot();return;
+  }
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
     S.forcedPlay=true;fx('⏩',`Compra rápida: ${pi===0?'você joga':who(pi)+' joga'} a carta comprada`,'var(--accent)','stamp');
@@ -1741,7 +1759,7 @@ function giveBatata(pi,card,t){
   if(t!=null&&t>=0)setTimeout(()=>FX3D.steam(targetRect(t)),250);
   if(t==null||t<0)return;
   S.discard=S.discard.filter(x=>x!==card);S.color=S.colBefore||S.color;S.lastTop=null;
-  card.color=rand(COLORS);card.chosen=null;
+  if(card.baseColor==null)card.baseColor=card.color;card.color=rand(COLORS);card.chosen=null;
   S.players[t].hand.push(card);S.players[t].batata=0;S.players[t].called=false;
   if(t===0){S.newIds.push(card.id);S.handFrom=discardRect()}else ghost(discardRect(),targetRect(t),0);
   stampOn(t,'🥔','var(--cy)');fx('🥔',`A batata foi para ${t===0?'você':who(t)}!`,'var(--cy)','slam');log(`${who(pi)} passou a batata para ${t===0?'você':who(t)}.`);
@@ -1828,20 +1846,20 @@ function doChallenge(pi){
 function challengeResolve(pi){
   const c=S.chal;S.chal=null;if(!c)return;const n=S.pending;S.pending=0;S.pendingType=null;
   const amt=Math.min(n,c.amt||n),rest=n-amt;
-  const frozen=S.weather==='blizzard';
+  const frozenBy=S.weather==='blizzard'||curseOn('ice',c.by),frozen=S.weather==='blizzard'||curseOn('ice',pi);
   if(c.bluff){
     if(S.death&&!immune(c.by)){
       fx('⚔️',`Blefe! ${c.by===0?'Você foi eliminado':who(c.by)+' foi eliminado'}`,'var(--cg)','slam');stampOn(c.by,'⚔️','var(--cr)');
       log(`${who(pi)} desafiou: ${who(c.by)} blefou com +${amt} na morte súbita e foi eliminado.`);
       if(markOut(c.by,`foi pego blefando com +${amt} na morte súbita`))return;
     }else{
-      const k=frozen?0:drawAmt(c.by,amt);if(k){drawN(c.by,k);floatOn(c.by,`+${k}`,'var(--cr)')}
+      const k=frozenBy?0:drawAmt(c.by,amt);if(k){drawN(c.by,k);floatOn(c.by,`+${k}`,'var(--cr)')}
       fx('⚔️',`Blefe! ${c.by===0?'Você compra':who(c.by)+' compra'} ${k}`+(rest?`, ${pi===0?'você compra':who(pi)+' compra'} o resto (+${rest})`:''),'var(--cg)','slam');
       log(`${who(pi)} desafiou: ${who(c.by)} blefou com +${amt} e comprou ${k}.`);
       if(massCheck()==='win')return;
     }
-    if(rest>0){
-      const k2=frozen?0:drawAmt(pi,rest);if(k2){drawN(pi,k2);floatOn(pi,`+${k2}`,'var(--cr)')}
+    if(rest>0&&!frozen){
+      const k2=drawAmt(pi,rest);if(k2){drawN(pi,k2);floatOn(pi,`+${k2}`,'var(--cr)')}
       log(`${who(pi)} comprou o restante acumulado: ${k2}.`);
       if(overloaded(pi)&&markOut(pi))return;endTurn();return;
     }
@@ -2085,7 +2103,7 @@ function applySpecial(pi,card){
       fx('🚦',`Proibido vencer com cartas ${S.traffic==='odd'?'ímpares':'pares'}`,col,'stamp');log(`Semáforo: proibido vencer com ${S.traffic==='odd'?'ímpares':'pares'}.`);return 'done';
     case 'death':S.death=true;fx('☠️','Morte súbita! Quem comprar ou errar é eliminado','#0d0a14','slam');log('Morte súbita ativada.');return 'done';
     case 'share':{
-      const copies=shuffle([...p.hand]).slice(0,10).map(c=>mk(c.color,c.type,c.value));
+      const copies=shuffle([...p.hand]).slice(0,10).map(c=>{const n=mk(c.color,c.type,c.value);n.extra=true;return n});
       copies.forEach((c,k)=>{const t=rand(opp);if(t==null)return;S.players[t].hand.push(c);S.players[t].called=false;if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),k*50)});
       fx('🤲',`${who(pi)} partilhou ${copies.length} cópia${copies.length===1?'':'s'}`,col,'slam');log(`${who(pi)} deu ${copies.length} cópias das suas cartas.`);return massCheck()}
     case 'simon':
@@ -2108,7 +2126,7 @@ function applySpecial(pi,card){
       fx('👁️','Todos mostram uma carta',col,'stamp');log('Clarividência: todos mostraram uma carta.');return 'done';
     case 'treasure':{
       p.treasure=(p.treasure||0)+1;
-      if(p.treasure>=3){p.treasure=0;const c=mk(card.color,'chest');p.hand.push(c);p.called=false;if(pi===0){S.newIds.push(c.id);S.handFrom=discardRect()}
+      if(p.treasure>=3){p.treasure=0;const c=mk(card.color,'chest');c.extra=true;p.hand.push(c);p.called=false;if(pi===0){S.newIds.push(c.id);S.handFrom=discardRect()}
         fx('💰',`${who(pi)} achou a Carta do Tesouro!`,'var(--cy)','slam');log(`${who(pi)} recebeu a Carta do Tesouro.`)}
       else{fx('🧭',`Busca de ${pi===0?'você':who(pi)}: ${p.treasure}/3`,col,'stamp')}
       return 'done'}
@@ -2118,11 +2136,11 @@ function applySpecial(pi,card){
     case 'theft':if(pi===0)return 'ask';{const o=opponents(pi);const t=o.length?(R.diff==='easy'?rand(o):o.reduce((a,b)=>S.players[b].hand.length>S.players[a].hand.length?b:a)):rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>stealWild(pi,t))}
     case 'ban':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o3=shuffle([...p.hand]).slice(0,3),pk=rand(o3);return botDefer(pi,'down',o3,o3.indexOf(pk),()=>banType(pi,pk))}
     case 'box':
-      alive().forEach((i,k)=>{const c=mk('w','random');S.players[i].hand.push(c);S.players[i].called=false;if(i===0){S.newIds.push(c.id)}else ghost($('deck').getBoundingClientRect(),targetRect(i),k*60)});
+      alive().forEach((i,k)=>{const c=mk('w','random');c.extra=true;S.players[i].hand.push(c);S.players[i].called=false;if(i===0){S.newIds.push(c.id)}else ghost($('deck').getBoundingClientRect(),targetRect(i),k*60)});
       fx('📦','Todos ganham uma Carta Misteriosa',col,'slam');log('Presente: todos ganharam uma Carta Misteriosa.');return massCheck();
     case 'confuse':p.confuseNext=true;fx('🍄',`${pi===0?'Você jogará':who(pi)+' jogará'} aleatoriamente na próxima vez`,col,'stamp');log(`${who(pi)} ficará confuso.`);return 'done';
     case 'ink':{
-      const t=nextIdx(pi,1);S.players[t].hand.forEach(c=>{if(c.color!=='w')c.color=card.color});
+      const t=nextIdx(pi,1);S.players[t].hand.forEach(c=>{if(c.color!=='w'){if(c.baseColor==null)c.baseColor=c.color;c.color=card.color}});
       stampOn(t,'🖌️',col);fx('🖌️',`Cartas de ${t===0?'você':who(t)} pintadas de ${CNAME[card.color].toLowerCase()}`,col,'slam');log(`Tinta: cartas de ${who(t)} pintadas.`);return 'done'}
     case 'mix1':case 'mix2':case 'mix3':{
       if(T!=='mix3'){S.dir*=-1;S.flipArrows=true;const r=$('dirring');r.classList.remove('flipped');void r.offsetWidth;r.classList.add('flipped')}
@@ -2230,7 +2248,7 @@ function doJumpIn(pi,card){
     if(r==='combo'){S.tok++;render();if(S.players[pi].bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();return}
     endTurn();
   };
-  if(card.type!=='num'){announce(pi,card,go,S.spectate?250:480);return}
+  if(card.type!=='num'||(S.weather==='storm'&&card.value===0)){announce(pi,card,go,S.spectate?250:480);return}
   go();
 }
 function scheduleJumps(){
@@ -2377,7 +2395,7 @@ function botAct(){
     opts.sort((a,b)=>cc[a.color]-cc[b.color]);
     botPlay(opts[0]);return;
   }
-  if(S.phase==='drawn'){botPlay(p.hand.find(c=>c.id===S.drawnId));return}
+  if(S.phase==='drawn'){const o=p.hand.filter(c=>canPlay(p,c));if(o.length)botPlay(botChoose(p,o));else endTurn();return}
   const opts=p.hand.filter(c=>canPlay(p,c));
   if(S.pending>0&&S.chal&&S.chal.by!==pi&&!opts.length){
     const ah=S.players[S.chal.by].hand.length;let pr=R.diff==='master'?masterChallenge(S.chal):{easy:.15,normal:ah>=5?.35:.22,hard:ah>=5?.5:ah>=3?.3:.15}[R.diff];if(S.death&&R.diff!=='master')pr*=ah>=6?.8:.35;
@@ -2415,7 +2433,7 @@ function announce(pi,card,cont,wait){
     if(g!==S.gen||S.phase==='over')return;
     if(S.peace<=0&&(card.type==='clone'||card.type==='random')){
       const og=SP[card.type].g;
-      morphCard(card,S.discard[S.discard.length-2]);S.lastTop=null;S.morph=true;
+      morphCard(card,S.discard[S.discard.length-2]);S.lastTop=null;S.morph=true;card.flipped=true;
       S.annText=`${SP[card.orig].n} virou ${label(card)}`;
       fx(og,`Virou ${card.color==='w'?label(card):cardName(card)}`,CVAR[card.color]||'var(--accent)','stamp');
       render();setTimeout(done,S.spectate?400:950);
@@ -2425,7 +2443,7 @@ function announce(pi,card,cont,wait){
 function botPlay(card){
   const pi=S.turn;
   if(needsAnn(pi,card)){announce(pi,card,()=>botPlayNow(card,pi));return}
-  if(card.type!=='num'){announce(pi,card,()=>botPlayNow(card,pi),S.spectate?250:480);return}
+  if(card.type!=='num'||(S.weather==='storm'&&card.value===0)){announce(pi,card,()=>botPlayNow(card,pi),S.spectate?250:480);return}
   botPlayNow(card,pi);
 }
 function botPlayNow(card,pi0){
@@ -2464,7 +2482,7 @@ function humanPlay(card){
     announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else{S.preLanded=card;finishHuman(card,null)}});
     return;
   }
-  if(card.type!=='num'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
+  if(card.type!=='num'||(S.weather==='storm'&&card.value===0)){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
   finishHuman(card,null);
 }
 function finishHuman(card,col){
@@ -2596,6 +2614,7 @@ function cardBadges(p,c,turn){
   if(c.type==='batata')b.push(`🥔 ${p.batata||0}/5`);
   if(R.perfection&&c.type==='num'&&c.value===p.hand.length)b.push('💯');
   if(S.peace>0&&c.type!=='num')b.push('🌼');
+  if(S.weather==='storm'&&c.type==='num'&&c.value===0)b.push('⛈️');
   if(curseOn('shoe',0)&&c.type!=='num')b.push('👢');
   return b;
 }
@@ -2614,7 +2633,8 @@ function statusText(){
     const parts=[];if(R.stack)parts.push(`outro ${S.comboValue}`);if(R.sequence)parts.push('continue a sequência');
     return `Combo: ${parts.join(' ou ')} — ou encerre`;
   }
-  if(S.phase==='drawn')return 'Jogue a carta comprada ou passe';
+  if(S.phase==='drawn')return 'Jogue uma carta ou passe';
+  if(R.satisfaction&&S.drawnId!=null&&S.phase==='play')return 'Satisfação: compre até poder jogar';
   if(S.pending>0){
     const any=S.players[0].hand.some(c=>canPlay(S.players[0],c));
     return any?`Defenda o +${S.pending} ou compre`:`Você compra ${S.pending}`;
@@ -2646,7 +2666,35 @@ function seatInfoItems(i){
   if(partner(i)===0)L.unshift({ic:'🤝',name:'Sua dupla',txt:'se ele vencer, você vence junto'});
   return L;
 }
+function tableStatus(){
+  const L=[];
+  if(S.weather){const w=WEATHER[S.weather];L.push({short:w.g,ic:w.g,name:`Clima ${w.n}`,txt:w.t})}
+  if(S.curse){const c=CURSES[S.curse.k];L.push({short:`${c.g}${S.curse.left}`,ic:c.g,name:`Maldição ${c.nm}`,txt:`${c.t.toLowerCase()}. Faltam ${S.curse.left} turno${S.curse.left===1?'':'s'}`,warn:1})}
+  if(S.peace>0)L.push({short:`🌼${S.peace}`,ic:'🌼',name:'Paz',txt:`cartas de ação não têm efeito. Faltam ${S.peace} turno${S.peace===1?'':'s'}`});
+  if(S.death)L.push({short:'☠️',ic:'☠️',name:'Morte súbita',txt:'quem precisar comprar ou cometer um erro é eliminado',warn:1});
+  if(S.traffic)L.push({short:`🚦${S.traffic==='odd'?'ímpar':'par'}`,ic:'🚦',name:'Semáforo',txt:`proibido vencer com carta ${S.traffic==='odd'?'ímpar':'par'}`});
+  if(R.overload)L.push({short:`🏋️${limit()}`,ic:'🏋️',name:'Sobrecarga',txt:`quem passar de ${limit()} cartas na mão é eliminado`});
+  if(S.simon&&S.simon.length)L.push({short:`🧠${S.simon.length}`,ic:'🧠',name:'Memorização',txt:`a sequência a repetir tem ${S.simon.length} cor${S.simon.length===1?'':'es'}`});
+  if(TOUR){const goal=TOUR.mode==='tournament'?500:300;L.push({short:`🏆${TOUR.pts['Você']||0}`,ic:'🏆',name:TOUR.mode==='tournament'?'Torneio':'Sobrevivência',txt:`você tem ${TOUR.pts['Você']||0} de ${goal} pontos`})}
+  return L;
+}
+function infoPopup(key,head,items,anchor,up){
+  const box=$('notices');const open=box.querySelector(`[data-info="${key}"]`);box.innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));
+  if(open||!items.length)return;
+  const el=document.createElement('div');el.className='notice seatinfo pointed';el.dataset.info=key;
+  el.innerHTML=`${head}${items.map(x=>`<div class="si-row"><span class="si-ic">${x.ic}</span><span><b>${x.name}:</b> ${x.txt}</span></div>`).join('')}`;
+  el.onclick=()=>el.remove();
+  const r=anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);
+  requestAnimationFrame(()=>{const rr=anchor.getBoundingClientRect();let br=el.getBoundingClientRect();
+    if(up||br.bottom>innerHeight-8){box.style.top=Math.max(8,rr.top-12-br.height)+'px';el.classList.add('up');br=el.getBoundingClientRect()}
+    el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
+}
 function showSeatInfo(i,anchor){
+  const p=S.players[i];
+  const items=i===0?seatStatus(0).filter(x=>x.ic!=='🥷'&&x.ic!=='☁️'):seatInfoItems(i);
+  infoPopup('seat'+i,i===0?'<div class="si-head"><b>Você</b></div>':`<div class="si-head"><span class="si-av" style="background:${p.col}">${p.name[0]}</span><b>${p.name}</b>${p.out?'<em>eliminado</em>':''}</div>`,items,anchor,i===0);
+}
+function showSeatInfoOld(i,anchor){
   const items=seatInfoItems(i);if(!items.length)return;
   const box=$('notices');const open=box.querySelector(`[data-seat-info="${i}"]`);box.innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));
   if(open)return;
@@ -2740,8 +2788,9 @@ function render(){
   }else if(S.turn!==0&&Date.now()>MK.until)placeMarker(S.turn,true);
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
   hw.classList.toggle('webbed',!!S.players[0].webbed&&S.phase!=='over');
-  {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);$('dizzytag').hidden=!dz||!$('limitwarn').hidden;
-   if(dz)$('dizzytag').textContent=S.turn===0?'🍄 Confuso: jogando no aleatório…':'🍄 Confuso: sua próxima jogada será aleatória';}
+  {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);
+   const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='🥷'&&x.ic!=='☁️');
+   const ms=$('mystat');ms.hidden=!st.length;ms.textContent=st.map(x=>x.short).join(' ');}
   {const me0=S.players[0],lim=limit(),thr=Math.max(3,Math.round(lim*.25)),n=me0.hand.length,rem=lim-n;
    const near=S.phase!=='over'&&!me0.out&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
    hw.classList.toggle('near',near);hw.style.setProperty('--lv',lv.toFixed(2));
@@ -2775,17 +2824,7 @@ function render(){
       const t=document.querySelector('.table');if(!t.classList.contains('bolt')){t.classList.remove('flick');void t.offsetWidth;t.classList.add('flick')}
       if(Math.random()<.5)noise(1.2,{f:120,filter:'lowpass',vol:.12});stormT=setTimeout(tick,6000+Math.random()*9000)};
     stormT=setTimeout(tick,4000+Math.random()*6000)}FX3D.setWeather(S.phase==='over'?null:S.weather);
-  $('meta').innerHTML=(S.weather?`<span class="chip" style="border-color:${WEATHER[S.weather].c}">${WEATHER[S.weather].g} ${WEATHER[S.weather].n}: ${WEATHER[S.weather].t}</span>`:'')+(R.limbo||R.overload?`<span class="chip">Limite: ${limit()} cartas</span>`:'')+(S.peace>0?`<span class="chip">🌼 Paz: ${S.peace} turno${S.peace>1?'s':''}</span>`:'')
-    +(S.curse?`<span class="chip warn" title="${CURSES[S.curse.k].t}">${CURSES[S.curse.k].g} ${CURSES[S.curse.k].nm}: ${CURSES[S.curse.k].t} · ${S.curse.left} turno${S.curse.left===1?'':'s'}</span>`:'')
-    +(S.death?'<span class="chip warn">☠️ Morte súbita</span>':'')
-    +(S.traffic?`<span class="chip">🚦 Proibido vencer com ${S.traffic==='odd'?'ímpar':'par'}</span>`:'')
-    +(R.time?`<span class="chip">⏰ <span id="timeLeft">${fmtTime(Math.max(0,S.timeEnd-Date.now()))}</span></span>`:'')
-    
-    +(me.treasure?`<span class="chip">🧭 ${me.treasure}/3</span>`:'')
-    +(S.simon.length?`<span class="chip">🧠 ${S.simon.length}</span>`:'')
-    +(me.hand2&&me.hand2.length?`<span class="chip">✋ Segunda mão: ${me.hand2.length}</span>`:'')
-    +(S.numOnly===1?'<span class="chip">🕊️ Só numéricas</span>':'')
-    +(TOUR?`<span class="chip">🏆 ${TOUR.pts['Você']||0}/${TOUR.mode==='tournament'?500:300}</span>`:'');
+  $('meta').innerHTML=tableStatus().map((x,k)=>`<button type="button" class="tst ${x.warn?'warn':''}" data-k="${k}" aria-label="${x.name}">${x.short}</button>`).join('');
   {const pe=$('pend'),show=S.pending>0&&S.phase!=='over';
    if(!show){pe.hidden=true;pe.dataset.v=''}
    else{const v=String(S.pending),tgt=S.turn,lbl=tgt===0?'para você':'para '+who(tgt);
@@ -2831,7 +2870,7 @@ function render(){
   const main=$('drawBtn');
   if(S.phase==='combo'&&S.turn===0)main.textContent='Encerrar jogada';
   else if(S.phase==='drawn'&&S.turn===0)main.textContent='Passar';
-  else if(S.pending>0&&S.turn===0)main.textContent=S.weather==='blizzard'?`Ignorar +${S.pending}`:`Comprar ${S.pending}`;
+  else if(S.pending>0&&S.turn===0)main.textContent=(S.weather==='blizzard'||curseOn('ice',0))?`Perder a vez (+${S.pending})`:`Comprar ${S.pending}`;
   else main.textContent=S.weather==='blizzard'&&S.turn===0?'Passar':'Comprar';
   main.disabled=!turn;
   const unoOk=S.weather!=='fog'&&!me.called&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0));
@@ -2972,7 +3011,10 @@ $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
 $('chalBtn').onclick=()=>{if(myTurn()&&S.chal)doChallenge(0)};
 $('openSettings').onclick=openSettings;
-$('discard').addEventListener('click',openHistory);$('histClose').onclick=()=>$('histOv').classList.remove('show');
+$('discard').addEventListener('click',openHistory);
+$('mystat').addEventListener('click',e=>{e.stopPropagation();showSeatInfo(0,$('mystat'))});
+$('meta').addEventListener('click',e=>{const b=e.target.closest('.tst');if(!b)return;e.stopPropagation();const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',[x],b)});
+document.addEventListener('pointerdown',e=>{if(e.target.closest('#mystat')||e.target.closest('.tst'))e.stopPropagation()},true);$('histClose').onclick=()=>$('histOv').classList.remove('show');
 document.addEventListener('pointerdown',e=>{
   if(e.target.closest('#notices')||e.target.closest('.ri'))return;
   if($('notices').children.length){$('notices').innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))}
