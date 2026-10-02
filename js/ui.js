@@ -136,7 +136,8 @@ function blockReason(p,c){
 }
 function cardBadges(p,c,turn){
   const b=[];
-  if(turn&&!canPlay(p,c)){const br=blockReason(p,c);if(br){b.push(br);b.blocked=true}}
+  if(c.lock){b.push('🔒');b.blocked=true}
+  else if(turn&&!canPlay(p,c)){const br=blockReason(p,c);if(br){b.push(br);b.blocked=true}}
   if(turn&&canPlay(p,c)){
     if(S.phase==='combo')b.push(R.stack&&c.type==='num'&&c.value===S.comboValue?'📚':'🔢');
     else if(S.pending>0)b.push(R.nou&&c.type==='rev'&&!isDraw(c)?'↩️':'🛡️');
@@ -218,11 +219,13 @@ function tableStatus(){
 function infoPopup(key,head,items,anchor,up,force){
   const box=$('notices');const open=box.querySelector(`[data-info="${key}"]`);box.innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));
   if(open||(!items.length&&!force))return;
-  const el=document.createElement('div');el.className='notice seatinfo pointed';el.dataset.info=key;
+  const arrow=!key.startsWith('card');
+  const el=document.createElement('div');el.className='notice seatinfo'+(arrow?' pointed':'');el.dataset.info=key;
   el.innerHTML=`${head}${items.map(x=>`<div class="si-row"><span class="si-ic">${x.ic}</span><span><b>${x.name}:</b> ${x.txt}</span></div>`).join('')}`;
   el.onclick=()=>el.remove();
   const r=anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);
-  requestAnimationFrame(()=>{const rr=anchor.getBoundingClientRect();let br=el.getBoundingClientRect();
+  // usa a posição do ícone no momento da abertura: o render() pode trocar o elemento antes do próximo quadro
+  requestAnimationFrame(()=>{const rr=r;let br=el.getBoundingClientRect();
     if(up||br.bottom>innerHeight-8){box.style.top=Math.max(8,rr.top-12-br.height)+'px';el.classList.add('up');br=el.getBoundingClientRect()}
     el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
 }
@@ -337,14 +340,13 @@ function render(){
   // deck
   const deck=$('deck');const dtop=S.deck[S.deck.length-1];
   const mine=myTurn()&&S.phase==='play';
-  if(R.revelation&&dtop){deck.className=`card deckbtn reveal c-${dtop.color}`;deck.innerHTML=faceHTML(dtop)+'<span class="eye">topo</span>'}
+  if(R.revelation&&dtop){deck.className=`card deckbtn reveal c-${dtop.color}`;deck.innerHTML=faceHTML(dtop)}
   else{deck.className='card back deckbtn';deck.innerHTML='<span class="face">unotfm</span>'}
   deck.classList.toggle('can',mine);deck.disabled=!mine;
   {const ic=[];if(R.satisfaction)ic.push('😋');if(R.insatisfaction)ic.push('😒');if(R.tracking)ic.push('🔎');if(R.fastdraw)ic.push('⏩');
    if(S.death)ic.push('☠️');if(S.curse&&S.curse.k!=='shoe')ic.push(CURSES[S.curse.k].g);if(S.weather==='blizzard')ic.push('❄️');
    if(ic.length){const sp=document.createElement('span');sp.className='cb deckcb';sp.textContent=ic.join(' ');deck.appendChild(sp)}
    deck.classList.toggle('frozen',S.weather==='blizzard'||curseIs('ice'));deck.classList.toggle('gone',!!S.death);}
-  $('deckCount').textContent=`${S.deck.length} no monte`;
   // altura do monte: 1 px a cada 8 cartas, até 14 px
   deck.parentElement.style.setProperty('--stk',(S.death?0:Math.min(14,Math.ceil(S.deck.length/8)))+'px');
   // discard
@@ -650,10 +652,13 @@ $('rulestrip').addEventListener('click',e=>{
   const open=$('notices').querySelector(`[data-k="${k}"]`);
   document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));
   if(open){open.remove();return}
-  b.classList.add('on');b.classList.remove('fresh');
+  openRuleIcon(b);
+});
+function openRuleIcon(b){
+  const k=b.dataset.k;b.classList.add('on');b.classList.remove('fresh');
   const a=(S&&S.added||[]).find(x=>x.k===k);
   notice(k,a?`Em jogo, adicionada por ${a.by}`:'Em jogo desde o início',{info:true,title:RNAME[k],anchor:b});
-});
+}
 function showRuleInfo(k){
   const b=$('rulestrip').querySelector(`[data-k="${k}"]`);if(!b)return;
   document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));b.classList.add('on');
@@ -696,8 +701,9 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
 }
 /* passar o mouse (computador): abre a mesma janela de informação das cartas da mão e dos selos de status */
 {const FINE=matchMedia('(hover:hover) and (pointer:fine)');let hov=null,hovT=null;
- const openKey=k=>$('notices').querySelector(`[data-info="${k}"]`);
+ const openKey=k=>k.startsWith('rule:')?$('notices').querySelector(`[data-k="${k.slice(5)}"]`):$('notices').querySelector(`[data-info="${k}"]`);
  function hoverTarget(t){
+   const ri=t.closest('#rulestrip .ri');if(ri)return {key:'rule:'+ri.dataset.k,open:()=>openRuleIcon(ri)};
    const c=t.closest('#hand .card');if(c)return {key:'card'+c.dataset.id,open:()=>showCardInfo(+c.dataset.id,c)};
    const st=t.closest('.seat .tag.stat,.seat .outic');if(st){const seat=st.closest('.seat'),i=+seat.dataset.seat;return {key:'seat'+i,open:()=>showSeatInfo(i,seat)}}
    if(t.closest('#mystat'))return {key:'seat0',open:()=>showSeatInfo(0,$('mystat'))};
@@ -709,8 +715,14 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
    const h=hoverTarget(e.target),k=h&&h.key;
    if(k===hov)return;
    clearTimeout(hovT);
-   if(hov&&openKey(hov))$('notices').innerHTML='';
-   hov=k;
-   if(h)hovT=setTimeout(()=>{if(hov===k&&!openKey(k))h.open()},300);
+   if(hov&&openKey(hov)){$('notices').innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))}
+   hov=k;const x=e.clientX,y=e.clientY;
+   // reabre a partir do elemento atual sob o mouse: o render() pode ter trocado o ícone nesse intervalo
+   if(h)hovT=setTimeout(()=>{if(hov!==k||openKey(k))return;const el=document.elementFromPoint(x,y),h2=el&&hoverTarget(el);if(h2&&h2.key===k)h2.open()},300);
  });}
+/* neve 2D: flocos individuais com posição, tamanho, velocidade e balanço sorteados */
+{const box=document.querySelector('.w-snow'),R1=(a,b)=>a+Math.random()*(b-a);
+ for(let i=0;i<60;i++){const f=document.createElement('i'),d=R1(5,11);
+   f.style.cssText=`--x:${R1(-2,100).toFixed(1)}%;--sz:${R1(.25,.7).toFixed(2)}rem;--o:${R1(.55,1).toFixed(2)};--d:${d.toFixed(1)}s;--dl:${(-R1(0,d)).toFixed(1)}s;--sd:${R1(1.6,3.2).toFixed(1)}s;--sw:${R1(.3,1.4).toFixed(2)}rem`;
+   box.insertBefore(f,box.lastElementChild)}}
 openSettings();

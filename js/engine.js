@@ -467,7 +467,7 @@ function afterDraw(pi,drawn,count){
   }
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
-    S.forcedPlay=true;fx('⏩',`Compra rápida: ${pi===0?'você joga':who(pi)+' joga'} a carta comprada`,'var(--accent)','stamp');
+    S.forcedPlay=true;toast('Compra rápida!');
     S.fastSrc=$('deck').getBoundingClientRect();S.newIds=S.newIds.filter(id=>id!==drawn.id);if(S.botDraw[pi]){S.botDraw[pi]--;if(!S.botDraw[pi])delete S.botDraw[pi]}
     if(p.bot)botPlay(drawn);else humanPlay(drawn);return}
   if(!p.bot&&!p.hand.some(c=>canPlay(p,c))){
