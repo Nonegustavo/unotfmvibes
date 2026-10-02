@@ -1,17 +1,12 @@
 /* unotfm solo: estilos */
 :root{
-  --bg:#ece6f5; --table:#ddd3ee; --ink:#241c3a; --muted:#65597e; --line:#c4b7dc; --panel:#f8f5fc; --accent:#6a47cf; --accent-ink:#fff; --arrow:#9a86cf;
+  --bg:#16122a; --table:#231c3f; --ink:#f0eaff; --muted:#a597c7; --line:#3a3062; --panel:#1d1735; --accent:#a28aff; --accent-ink:#16122a; --arrow:#6b5aa8;
   --cr:#e0433a; --cy:#f0b21f; --cg:#2c9a57; --cb:#2b6bd6; --ck:#1d1829;
   --cw:clamp(54px,15.5vw,78px);
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){--bg:#16122a;--table:#231c3f;--ink:#f0eaff;--muted:#a597c7;--line:#3a3062;--panel:#1d1735;--accent:#a28aff;--accent-ink:#16122a;--arrow:#6b5aa8;}
-}
-/*bgmerge-after*/
-:root[data-theme="dark"]{--bg:#16122a;--table:#231c3f;--ink:#f0eaff;--muted:#a597c7;--line:#3a3062;--panel:#1d1735;--accent:#a28aff;--accent-ink:#16122a;--arrow:#6b5aa8;}
 *,*::before,*::after{box-sizing:inherit}
 .rulestrip{display:flex;justify-content:safe center;gap:6px;padding:0 12px 4px;overflow-x:auto;scrollbar-width:none;min-height:0}
 .rulestrip::-webkit-scrollbar{display:none}

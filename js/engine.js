@@ -246,7 +246,7 @@ function playCard(pi,card,chosen){
   if(peaceOn&&card.color==='w')chosen=S.color;
   if(annc&&((card.color==='w'&&chosen)||(orig!==card.type&&!card.flipped)))S.morph=true;
   p.hand=p.hand.filter(c=>c.id!==card.id);
-  card.rot=Math.random()*24-12;
+  if(!annc||card.rot==null)card.rot=Math.random()*24-12;
   S.discard.push(card);
   S.color=card.color==='w'?(chosen||S.color):card.color;
   memPlay(pi,card);
@@ -470,6 +470,10 @@ function afterDraw(pi,drawn,count){
     S.forcedPlay=true;fx('⏩',`Compra rápida: ${pi===0?'você joga':who(pi)+' joga'} a carta comprada`,'var(--accent)','stamp');
     S.fastSrc=$('deck').getBoundingClientRect();S.newIds=S.newIds.filter(id=>id!==drawn.id);if(S.botDraw[pi]){S.botDraw[pi]--;if(!S.botDraw[pi])delete S.botDraw[pi]}
     if(p.bot)botPlay(drawn);else humanPlay(drawn);return}
+  if(!p.bot&&!p.hand.some(c=>canPlay(p,c))){
+    S.busy=true;S.tok++;render();const g=S.gen;
+    setTimeout(()=>{if(g!==S.gen||S.phase!=='drawn'||S.turn!==pi)return;S.busy=false;endTurn()},700);return;
+  }
   S.tok++;render();
   if(p.bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();
 }

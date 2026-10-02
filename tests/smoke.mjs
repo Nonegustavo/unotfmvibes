@@ -2,6 +2,7 @@
 // Uso: npm test            (3 partidas)
 //      npm test -- 10      (10 partidas)
 //      npm test -- 3 --ver (abre o navegador visível)
+//      npm test -- 10 --vel=5 (encurta as esperas do jogo em 5x; o padrão é 1, a velocidade normal)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,6 +13,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const GAMES = Number(args.find(a => /^\d+$/.test(a)) || 3);
 const HEADED = args.includes('--ver');
+const SPEED = Math.max(1, Number((args.find(a => a.startsWith('--vel=')) || '').slice(6)) || 1);
 const STALL_MS = 15000;
 const GAME_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -39,6 +41,12 @@ const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+
+// Acelera as esperas do jogo (jogadas dos adversários, anúncios, efeitos) sem mudar o código do jogo.
+if (SPEED > 1) await page.addInitScript(v => {
+  const st = window.setTimeout;
+  window.setTimeout = (fn, ms, ...a) => st(fn, (ms || 0) / v, ...a);
+}, SPEED);
 
 await page.goto(URL_BASE);
 
@@ -79,7 +87,7 @@ for (let g = 1; g <= GAMES; g++) {
       await page.click('#againBtn');
       break;
     }
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(Math.max(60, 250 / SPEED));
     const now = await snapshot();
     if (now !== last) { last = now; lastChange = Date.now(); }
     if (Date.now() - lastChange > STALL_MS) {
@@ -100,6 +108,6 @@ const webgl = await page.evaluate(() => typeof THREE !== 'undefined');
 await browser.close();
 server.close();
 
-console.log(`\nPartidas: ${played} | Travamentos: ${stalls} | Erros: ${errors.length} | three.js carregou: ${webgl ? 'sim' : 'não'}`);
+console.log(`\nPartidas: ${played} | Velocidade: ${SPEED}x | Travamentos: ${stalls} | Erros: ${errors.length} | three.js carregou: ${webgl ? 'sim' : 'não'}`);
 for (const e of [...new Set(errors)]) console.log('  - ' + e);
 process.exit(stalls || errors.length ? 1 : 0);
