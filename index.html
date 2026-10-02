@@ -72,21 +72,23 @@
 .side-b .fan i{background:repeating-linear-gradient(135deg,#1a0f2e 0 3px,#4a2a7a 3px 6px);border-color:#0b0712}
 .fan .mist{position:absolute;left:50%;top:8px;width:30px;height:18px;margin-left:-15px;border-radius:50%;background:radial-gradient(ellipse,rgba(235,232,245,.9) 0,rgba(235,232,245,.55) 50%,rgba(235,232,245,0) 75%);filter:blur(1px);pointer-events:none;z-index:1}
 .fan.fog i{filter:saturate(.7) brightness(1.05)}
-.fan .cnt{position:absolute;left:50%;top:13px;transform:translate(-50%,-50%);z-index:2;font-size:1rem;font-weight:900;line-height:1;color:#fff;text-align:center;white-space:nowrap;
+.fan .cnt{position:absolute;left:50%;top:14px;transform:none;translate:-50% -50%;z-index:2;font-size:2rem;font-weight:900;line-height:1;color:#fff;text-align:center;white-space:nowrap;
   text-shadow:0 0 2px #1d1435,1px 1px 0 #1d1435,-1px -1px 0 #1d1435,1px -1px 0 #1d1435,-1px 1px 0 #1d1435,0 2px 3px rgba(0,0,0,.4)}
 .fan .cnt.c4{color:#ffd24d}
 .fan .cnt.c3{color:#ffa94d}
 .fan .cnt.c2{color:#ff7a4d}
 .fan .cnt.c1{color:#ff5a52;animation:cntPop .35s}
 .fan .cnt.nr{color:#ff5a52}
-.fan .cnt.said{color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);padding:2px 8px;border-radius:999px;font-size:.78rem;text-shadow:none;animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
+.fan .cnt.said{top:24px;color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);padding:2px 8px;border-radius:999px;font-size:.78rem;text-shadow:none;animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
 @keyframes cntPop{0%{scale:.4}70%{scale:1.2}100%{scale:1}}
 @keyframes cntPulse{50%{scale:1.08}}
+.tag,.catch{z-index:4}
 .tag.stat{font-size:.7rem;padding:0 7px;color:var(--ink);border-color:var(--accent);white-space:nowrap;max-width:calc(100% + 10px);overflow:hidden;text-overflow:ellipsis}
 .tag.outic{font-size:.85rem;padding:0 8px;border-color:var(--cr)}
 .rail.many .fan{height:30px}
 .rail.many .fan i{width:12px;height:18px;margin-left:-6px}
-.rail.many .fan .cnt{top:11px;font-size:.9rem}
+.rail.many .fan .cnt{top:12px;font-size:1.6rem}
+.rail.many .fan .cnt.said{top:20px;font-size:.7rem}
 .rail.many .tag.stat{font-size:.62rem;padding:0 4px}
 .pring{position:fixed;z-index:9;pointer-events:none}
 .pring i{position:absolute;inset:0;border-radius:50%;border:3px solid #8a4fd8;box-shadow:0 0 12px #8a4fd8,inset 0 0 12px rgba(22,179,194,.6);opacity:0;animation:pring .9s ease-out forwards}
@@ -196,7 +198,7 @@ html.fx3d-on .table[data-weather="blizzard"]::before{background:rgba(225,240,255
 .pend.bump b{animation:pendBump .5s cubic-bezier(.2,.9,.3,1.4),pendPulse 1.1s ease-in-out .5s infinite}
 @keyframes pendPulse{50%{transform:scale(1.08)}}
 @keyframes pendBump{0%{transform:scale(2.2);opacity:0}100%{transform:none;opacity:1}}
-.arr{flex:none}
+.arr{flex:none;position:relative;z-index:4}
 .rail.many .seat{padding:6px 3px 5px;border-radius:12px}
 .rail.many .seat .av{width:26px;height:26px;font-size:.8rem}
 .rail.many .seat .nm{font-size:.74rem}
