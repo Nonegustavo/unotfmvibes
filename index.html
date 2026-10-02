@@ -65,6 +65,15 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
+.pcharge{position:fixed;z-index:9;border-radius:50%;pointer-events:none;background:conic-gradient(from 0deg,#8a4fd8,#16b3c2,#e8479a,#8a4fd8,#16b3c2,#e8479a,#8a4fd8);
+  -webkit-mask:radial-gradient(circle,transparent 18%,#000 22%,#000 55%,transparent 70%);mask:radial-gradient(circle,transparent 18%,#000 22%,#000 55%,transparent 70%);
+  animation:pcharge linear forwards;filter:blur(.5px) drop-shadow(0 0 12px #8a4fd8)}
+@keyframes pcharge{0%{transform:scale(.2) rotate(0);opacity:0}25%{opacity:.9}100%{transform:scale(1.15) rotate(1440deg);opacity:1}}
+.pcover{position:fixed;inset:0;z-index:50;overflow:hidden;background:#120a22;pointer-events:all}
+.pswirl{position:absolute;left:50%;top:50%;width:300vmax;height:300vmax;margin:-150vmax 0 0 -150vmax;
+  background:repeating-conic-gradient(from 0deg,#2a1450 0 10deg,#8a4fd8 10deg 18deg,#16b3c2 18deg 22deg,#2a1450 22deg 30deg,#e8479a 30deg 34deg);
+  animation:spin 1.4s linear infinite;filter:blur(6px);opacity:.9}
+.pcore{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.9) 0,rgba(200,170,255,.6) 6%,rgba(40,20,80,0) 30%),radial-gradient(circle,transparent 40%,rgba(10,5,20,.85) 100%)}
 .installbox{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 18%,var(--panel)),var(--panel));border:1.5px solid var(--accent);border-radius:16px;padding:12px;margin:4px 0 12px}
 .installbox[hidden]{display:none}
 .ib-ic{width:48px;height:48px;border-radius:12px;overflow:hidden;display:grid;place-items:center;font-size:1.6rem;background:var(--accent)}
@@ -1086,6 +1095,7 @@ const SND={
   thaw:()=>arp([784,988,1175,1568],.1,{type:'triangle',vol:.1,d:.4}),
   rain:()=>{for(let i=0;i<10;i++)noise(.04,{f:3000+Math.random()*2000,vol:.06,at:Math.random()*.6})},
   thunder:()=>{noise(.9,{f:250,filter:'lowpass',vol:.35});noise(.1,{f:5000,filter:'highpass',vol:.15})},
+  portalCharge:()=>{noise(1.3,{f:150,fTo:2500,vol:.12,q:6});tone(80,1.3,{to:320,vol:.1,type:'sawtooth'});tone(160,1.3,{to:640,vol:.05})},
   portal:()=>{noise(.9,{f:200,fTo:3000,vol:.14,q:4});arp([392,523,659,880,1175],.08,{type:'sine',vol:.09,d:.35,at:.15});tone(110,.9,{to:55,vol:.12})},
   siren:()=>{tone(700,.25,{type:'square',vol:.08,to:1000});tone(1000,.25,{type:'square',vol:.08,to:700,at:.25})},
 };
@@ -1314,12 +1324,42 @@ function switchSide(pi){
   S.side=S.side==='b'?'a':'b';S.crossed=true;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.lastTop=null;
   applyBg();
-  $('hand').innerHTML='';S.newIds=S.players[0].hand.map(c=>c.id);S.handFrom=discardRect();
-  const t=document.querySelector('.table');if(!RM){t.classList.remove('portaling');void t.offsetWidth;t.classList.add('portaling')}
-  FX3D.swirl('tornado');sfx('portal');
-  fx('🌀',S.side==='b'?'A mesa atravessou o portal…':'A mesa voltou pelo portal…','#8a4fd8','stamp');
+  $('hand').innerHTML='';S.newIds=[];$('fx').innerHTML='';
   log(`${who(pi)} abriu o portal: a mesa foi para ${S.side==='b'?'o outro lado':'o lado normal'}.`);
-  hold(1200);
+}
+function portalSequence(pi){
+  const g=S.gen,sp=S.spectate?.35:1;
+  S.busy=true;clearFlash();
+  const finish=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()};
+  if(RM){switchSide(pi);S.newIds=S.players[0].hand.map(c=>c.id);S.handFrom=discardRect();finish();return}
+  // 1. carga sobre a pilha
+  const dr=discardRect();const cx=dr.left+dr.width/2,cy=dr.top+dr.height/2;
+  const ch=document.createElement('div');ch.className='pcharge';const sz=dr.height*1.7;
+  Object.assign(ch.style,{left:(cx-sz/2)+'px',top:(cy-sz/2)+'px',width:sz+'px',height:sz+'px',animationDuration:(1300*sp)+'ms'});
+  document.body.appendChild(ch);sfx('portalCharge');
+  fx('🌀','O portal está se abrindo…','#8a4fd8','stamp',1300*sp);
+  setTimeout(()=>{
+    if(g!==S.gen){ch.remove();return}
+    // 2. portal cobre a tela
+    const ov=document.createElement('div');ov.className='pcover';ov.innerHTML='<div class="pswirl"></div><div class="pcore"></div>';
+    const R0=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy))+20;
+    document.body.appendChild(ov);sfx('portal');
+    const open=ov.animate([{clipPath:`circle(0px at ${cx}px ${cy}px)`},{clipPath:`circle(${R0}px at ${cx}px ${cy}px)`}],{duration:650*sp,easing:'cubic-bezier(.5,0,.75,0)',fill:'forwards'});
+    setTimeout(()=>ch.remove(),300*sp);
+    open.onfinish=()=>{
+      if(g!==S.gen){ov.remove();return}
+      // 3. troca de lado por baixo
+      switchSide(pi);render();
+      setTimeout(()=>{
+        if(g!==S.gen){ov.remove();return}
+        const nr=discardRect();const nx=nr.left+nr.width/2,ny=nr.top+nr.height/2;
+        const R1=Math.hypot(Math.max(nx,innerWidth-nx),Math.max(ny,innerHeight-ny))+20;
+        const close=ov.animate([{clipPath:`circle(${R1}px at ${nx}px ${ny}px)`},{clipPath:`circle(0px at ${nx}px ${ny}px)`}],{duration:650*sp,easing:'cubic-bezier(.25,1,.5,1)',fill:'forwards'});
+        close.onfinish=()=>{ov.remove();S.newIds=S.players[0].hand.map(c=>c.id);S.handFrom=nr;
+          fx('🌀',S.side==='b'?'Vocês atravessaram para o outro lado':'Vocês voltaram para o lado normal','#8a4fd8','stamp',1200*sp);finish()};
+      },450*sp);
+    };
+  },1300*sp);
 }
 
 /* ---------- core play ---------- */
@@ -2056,7 +2096,7 @@ function applySpecial(pi,card){
       if(T==='storm')flashStorm();
       if(T==='fog')S.players.forEach(q=>q.called=false);
       return 'done'}
-    case 'portal':if(!S.other)return 'done';switchSide(pi);return 'done';
+    case 'portal':if(!S.other)return 'done';portalSequence(pi);return 'defer';
     case 'luck':p.luck=true;fx('🍀',pi===0?'Sua próxima compra será jogável':`Próxima compra de ${who(pi)} será jogável`,'var(--cg)','stamp');log(`${who(pi)} está com sorte.`);return 'done';
   }
   return 'done';
