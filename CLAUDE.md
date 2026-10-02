@@ -80,7 +80,8 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - `tableStatus()` para a mesa: selos abaixo do baralho.
   - `infoPopup()` abre a janela explicativa com seta. Essas janelas não têm botão Ok e fecham ao tocar em qualquer lugar.
   - Segurar uma carta da mão por 0,5 s (`showCardInfo`) abre essa janela com o que a carta faz e a explicação de cada selo. Cartas numéricas só abrem se tiverem selo, e segurar nunca joga a carta.
-- **Telas grandes:** um único `@media (min-width:900px) and (min-height:560px)` no fim do `style.css` aumenta cartas (`--cw` pela altura da tela), cadeiras e botões numa coluna central. O celular não muda. Com mouse, passar sobre uma carta da mão, um selo da mesa, um selo de jogador ou o seu selo abre a mesma janela do toque.
+- **Escala:** o tamanho de tudo vem de `--u` (no `:root` do `style.css`), que vale 1px num celular de 390×800 e acompanha a largura e a altura da tela. `--cw` (largura da carta) e o `font-size` da raiz derivam dele, e as medidas do CSS estão em `rem`. Use `rem` (ou `var(--cw)`) em vez de `px` em medidas novas; `px` só para bordas finas (até 3px).
+- **Telas grandes:** `@media (min-width:900px) and (min-height:560px)` no fim do `style.css` troca a referência para 1440×900 (cartas maiores), numa coluna central. Com mouse, passar sobre uma carta da mão, um selo da mesa, um selo de jogador ou o seu selo abre a mesma janela do toque.
 - **Cartas na mão:** os selos no topo (`cardBadges`) indicam por que a carta pode ser jogada (🛡️ defesa, ✂️ corte, 📚/🔢 combo, ↕️ vizinho, 🔥 inferno, ☀️+1, 💯, 🌼, 👢, ⛈️) ou o que a bloqueia, com borda vermelha (🔒, 🧼, 🚦, ↕️).
 
 ## Removido de propósito (não reintroduzir sem pedir)

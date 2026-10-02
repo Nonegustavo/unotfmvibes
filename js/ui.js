@@ -430,7 +430,7 @@ function openColors(cb,preview){
   const pv=preview||{type:'wild',color:'w'};
   const cols=COLORS.filter(c=>!(R.bg&&c==='g'));
   $('colorBtns').style.gridTemplateColumns=`repeat(${cols.length},1fr)`;
-  $('colorBtns').innerHTML=cols.map(c=>`<button class="cpick" data-c="${c}" style="--pc:${CVAR[c]}"><div class="card c-${c}" style="--cw:46px">${faceHTML(pv)}</div><span>${CNAME[c]}</span><small>${R.bg&&c==='b'?cc.b+cc.g:cc[c]} na mão</small></button>`).join('');
+  $('colorBtns').innerHTML=cols.map(c=>`<button class="cpick" data-c="${c}" style="--pc:${CVAR[c]}"><div class="card c-${c}" style="--cw:2.875rem">${faceHTML(pv)}</div><span>${CNAME[c]}</span><small>${R.bg&&c==='b'?cc.b+cc.g:cc[c]} na mão</small></button>`).join('');
   $('colorOv').classList.add('show');
   const done=c=>{closeOverlays();cb(c)};
   S.autoResolve=()=>done(bestColor(me.hand));
@@ -548,7 +548,7 @@ function openHistory(){
   const list=S.hist.slice(-5).reverse().map(h=>{
     const c=h.live?snap(h.live):h.card;if(!c)return '';
     const col=c.chosen||c.color;
-    return `<div class="hrow ${S.other?(h.side==='b'?'side-b':'side-a'):''}"><div class="card c-${col}" style="--cw:44px">${faceHTML(c)}</div><div class="hbody"><b>${h.by==null?'Mesa':h.by===0?'Você':S.players[h.by].name}${S.other&&h.side==='b'?' <span class="hside">🌀 outro lado</span>':''}</b>${h.notes.map(n=>`<span>${n}</span>`).join('')}</div></div>`}).join('');
+    return `<div class="hrow ${S.other?(h.side==='b'?'side-b':'side-a'):''}"><div class="card c-${col}" style="--cw:2.75rem">${faceHTML(c)}</div><div class="hbody"><b>${h.by==null?'Mesa':h.by===0?'Você':S.players[h.by].name}${S.other&&h.side==='b'?' <span class="hside">🌀 outro lado</span>':''}</b>${h.notes.map(n=>`<span>${n}</span>`).join('')}</div></div>`}).join('');
   $('histList').innerHTML=list||'<p class="sub">Nenhuma jogada ainda.</p>';
   $('histOv').classList.add('show');$('histClose').focus();
 }
