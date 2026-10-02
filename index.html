@@ -65,6 +65,27 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
+.seat .nm{margin-bottom:3px}
+.fan{position:relative;height:30px;margin:4px auto 0;width:100%;display:flex;justify-content:center}
+.fan i{position:absolute;bottom:0;left:50%;width:15px;height:22px;margin-left:-7.5px;border-radius:3px;border:1.5px solid #fff;background:repeating-linear-gradient(135deg,#3b2f6b 0 3px,#46397d 3px 6px);box-shadow:0 1px 2px rgba(0,0,0,.25);transform-origin:50% 120%;
+  transform:translateX(calc((var(--k) - (var(--n) - 1) / 2) * min(8px, 46px / var(--n)))) rotate(calc((var(--k) - (var(--n) - 1) / 2) * min(11deg, 56deg / var(--n))))}
+.side-b .fan i{background:repeating-linear-gradient(135deg,#1a0f2e 0 3px,#4a2a7a 3px 6px);border-color:#0b0712}
+.fan .mist{position:absolute;left:50%;bottom:-3px;width:34px;height:14px;margin-left:-17px;border-radius:50%;background:radial-gradient(ellipse,rgba(235,232,245,.9) 0,rgba(235,232,245,.55) 50%,rgba(235,232,245,0) 75%);filter:blur(1px);pointer-events:none;z-index:1}
+.fan.fog .cnt{left:calc(50% + 14px);top:55%;transform:translate(0,-50%)}
+.fan.fog i{margin-left:-14px}
+.fan.fog .mist{margin-left:-24px;bottom:2px;width:30px;height:20px}
+.fan.fog i{filter:saturate(.7) brightness(1.05)}
+.fan .cnt{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);z-index:2;min-width:20px;padding:0 6px;border-radius:999px;background:var(--panel);border:1.5px solid var(--line);font-size:.74rem;font-weight:800;line-height:1.35;color:var(--ink);text-align:center;white-space:nowrap}
+.fan .cnt.c4{color:#b57c00;border-color:#e6b74a}
+.fan .cnt.c3{color:#d86a0a;border-color:#f0a050}
+.fan .cnt.c2{color:#fff;background:#e0763a;border-color:transparent}
+.fan .cnt.c1{color:#fff;background:var(--cr);border-color:transparent;animation:pop .35s}
+.fan .cnt.nr{color:#fff;background:var(--cr);border-color:transparent}
+.fan .cnt.said{color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);border-color:transparent;animation:pop .35s,saidPulse 1s ease-in-out infinite .35s}
+.fan .cnt.shiny::before{content:'✨'}
+.tag.outic{font-size:.85rem;padding:0 8px;border-color:var(--cr)}
+.rail.many .fan{height:26px}
+.rail.many .fan i{width:12px;height:18px;margin-left:-6px}
 .pring{position:fixed;z-index:9;pointer-events:none}
 .pring i{position:absolute;inset:0;border-radius:50%;border:3px solid #8a4fd8;box-shadow:0 0 12px #8a4fd8,inset 0 0 12px rgba(22,179,194,.6);opacity:0;animation:pring .9s ease-out forwards}
 .pring i:nth-child(2){animation-delay:.25s;border-color:#16b3c2}
@@ -1166,7 +1187,7 @@ function checkLimits(){
   for(const i of alive())if(overloaded(i)&&markOut(i))return;
   if(S.players[S.turn].out)endTurn();else render();
 }
-function markOut(pi,reason){
+function markOut(pi,reason,icon){
   const p=S.players[pi];
   if(immune(pi)){if(S.boom===pi)S.boom=null;toast('Charlotte não pode ser eliminada!','var(--cg)');return false}
   FX3D.smoke(targetRect(pi));p.out=true;sfx('out');
@@ -1177,6 +1198,7 @@ function markOut(pi,reason){
     S.handFrom=targetRect(pi);log('Snowy distribuiu as cartas dele para os outros.');
   }else{S.deck.unshift(...cards);shuffle(S.deck)}
   const why=reason||(S.boom===pi?'explodiu com a bomba':`passou de ${limit()} cartas`);
+  p.outIcon=icon||(S.boom===pi?'💣':/morte súbita/.test(why)?'☠️':/espinho/.test(why)?'🌵':/batata/.test(why)?'🥔':(R.overload&&limit()<=10?'🏋️':String(limit())));
   if(S.boom===pi)S.boom=null;
   log(`${who(pi)} foi eliminado: ${why}.`);toast(`${who(pi)} foi eliminado!`,'var(--cr)');
   if(pi===0){S.outWhy=why;S.spectate=true}
@@ -1273,7 +1295,6 @@ function newGame(){
 function dealAndStart(){
   const players=S.players;
   S.deck=buildDeck();S.mull=R.mulligan;applyBg();
-  if(R.bomb&&!R.noaction)S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,mk('w','bomb'));
   if(R.time){const g=S.gen;S.timeEnd=Date.now()+360000;timeT=setInterval(()=>{if(!S||S.gen!==g||S.phase==='over')return;const el=$('timeLeft');const left=Math.max(0,S.timeEnd-Date.now());if(el)el.textContent=fmtTime(left);if(left<=0)timeUp()},1000)}
   if(R.limbo){const g=S.gen;limboT=setInterval(()=>{
     if(!S||S.gen!==g||S.phase==='over')return;
@@ -1286,7 +1307,7 @@ function dealAndStart(){
   players.forEach((p,i)=>{const cs=CARRY[p.name];if(cs&&cs.length){cs.forEach(c=>give(i,mk(c.color,c.type,c.value)));delete CARRY[p.name];log(`${who(i)} recebeu ${cs.length} carta${cs.length>1?'s':''} do paradoxo.`)}});
   let first;
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
-  S.discard.push(first);S.color=first.color;S.hist=[{by:null,card:snap(first),notes:['Primeira carta da mesa.']}];S.histCur=null;
+  S.discard.push(first);S.color=first.color;if(R.bomb&&!R.noaction)S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,mk('w','bomb'));S.hist=[{by:null,card:snap(first),notes:['Primeira carta da mesa.']}];S.histCur=null;
   S.turn=Math.floor(Math.random()*players.length);
   log(`Primeira carta: ${cardName(first)}. ${who(S.turn)} ${S.turn===0?'começa':'começa'}.`);
   if(R.addrules){const g=S.gen;addT=setInterval(()=>{if(!S||S.gen!==g||S.phase==='over'||S.busy)return;const o=ruleOptions(1);if(o.length){addRule(null,o[0]);render()}},75000)}
@@ -1303,13 +1324,13 @@ function applySide(o){R=o.R;SIDE_KEYS.forEach(k=>S[k]=o[k]);S.players.forEach((p
 function buildSideB(startOf){
   const saved=captureSide();
   R={...saved.R,bg:false};
-  S.deck=buildDeck();if(R.bomb&&!R.noaction)S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,mk('w','bomb'));
+  S.deck=buildDeck();
   S.players.forEach(p=>{p.hand=[];p.hand2=[];p.called=false;p.luck=false;p.webbed=false;p.confuse=false;p.confuseNext=false;p.treasure=0;p.batata=0;p.escaped=false});
   for(let r=0;r<10;r++)S.players.forEach((p,i)=>{if(r<startOf(i)){const c=popDeck();if(c&&c.type==='bomb'){S.deck.unshift(c);const d=popDeck();if(d)p.hand.push(d)}else if(c)p.hand.push(c)}});
   if(R.twohands)S.players.forEach((p,i)=>{for(let r=0;r<startOf(i);r++){const c=popDeck();if(c&&c.type!=='bomb')p.hand2.push(c)}});
   let first;S.discard=[];
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
-  S.discard.push(first);S.color=first.color;
+  S.discard.push(first);S.color=first.color;if(R.bomb&&!R.noaction)S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,mk('w','bomb'));
   Object.assign(S,{pending:0,pendingType:null,chal:null,comboValue:null,seqDir:null,weather:null,peace:0,curse:null,death:false,traffic:null,simon:[],passes:0,numOnly:0,boom:null,
     mem:{lacks:{},lastCol:{},played:{}},added:[...(saved.added||[])],removed:[]});
   S.other=captureSide();
@@ -1479,7 +1500,7 @@ function endTurnHook(pi){
       if(fp.batata>=5){
         fp.hand=fp.hand.filter(c=>c!==bt);fp.batata=0;
         fx('🥔',`${who(pi)} ficou com a batata por 5 turnos!`,'var(--cr)','slam');stampOn(pi,'🥔','var(--cr)');
-        if(markOut(pi))return true;
+        if(markOut(pi,'ficou 5 turnos com a batata','🥔'))return true;
         const t=rand(alive());bt.color=rand(COLORS);S.players[t].hand.push(bt);S.players[t].batata=0;
         if(t===0){S.newIds.push(bt.id)}else ghost(targetRect(pi),targetRect(t),0);
         hold(1200);
@@ -1503,7 +1524,7 @@ function endTurn(){
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
   if(S.pending>0&&R.combo==='none'&&!R.nou){
     const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
-    if(noDraw(v)||curseOn('ice',v)){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v))return}S.turn=nextIdx(v,1);startTurn();return}
+    if(noDraw(v)||curseOn('ice',v)){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     drawN(v,n);floatOn(v,`+${n}`,'var(--cr)');stampOn(v,'⊘','var(--cr)');hold(900);
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
     S.pending=0;S.pendingType=null;
@@ -1546,7 +1567,7 @@ function takeDraw(pi){
   if(noDraw(pi)){
     S.pending=0;S.pendingType=null;S.chal=null;
     fx('☠️',`${who(pi)} não podia comprar!`,'#0d0a14','slam');log(`${who(pi)} precisou comprar e foi eliminado.`);
-    if(markOut(pi))return;endTurn();return;
+    if(markOut(pi,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return;endTurn();return;
   }
   if(curseOn('ice',pi)){
     S.pending=0;S.pendingType=null;S.chal=null;
@@ -2383,7 +2404,7 @@ function humanClick(id,el){
   if(!myTurn()){if(canJump(0,card))doJumpIn(0,card);return}
   if(!canPlay(me,card)){
     if(R.hard&&S.phase==='play'){
-      if(noDraw(0)){if(!markOut(0))endTurn();return}
+      if(noDraw(0)){if(!markOut(0,S.death?'errou na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))endTurn();return}
       drawN(0,1);log('Carta inválida: você comprou 1 e passou a vez.');toast('Carta inválida! +1','var(--cr)');
       if(overloaded(0)&&markOut(0))return;
       endTurn();
@@ -2568,17 +2589,18 @@ function renderRail(){
     const said=!p.out&&n===target()&&p.called&&!hidden;
     const lim=limit(),thr=Math.max(3,Math.round(lim*.25)),rem=lim-n;
     const near=!p.out&&!hidden&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
-    const ctTxt=p.out?'eliminado':hidden?'? cartas':said?`${word()}!`:near?`<b>${n}</b>/${lim} cartas`:`<b>${n}</b> carta${n===1?'':'s'}`;
-    const ctCls=said?'said':(p.out||hidden)?'':n<=4?'c'+n:'';
+    const badge=hidden?'?':said?`${word()}!`:near?`${n}/${lim}`:String(n);
+    const ctCls=said?'said':hidden?'':near?'nr':n<=4?'c'+n:'';
+    const fanN=hidden?1:Math.min(n,8);
     const shiny=R.shiny&&!p.out&&(p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col)));
     if(i>1)parts.push(a);
     parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${shiny?'shiny':''} ${near?'near':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
-      <div class="av" style="background:${p.col}">${p.name[0]}</div>
       <div class="nm">${p.name}</div>
-      <div class="ct ${shiny?'shiny':''} ${ctCls}">${ctTxt}</div>${(p.batata&&p.hand.some(c=>c.type==='batata'))||p.treasure||p.confuse||p.luck?`<span class="mini">${p.hand.some(c=>c.type==='batata')&&p.batata?`🥔${p.batata}/5 `:''}${p.treasure?`🧭${p.treasure}/3 `:''}${p.confuse?'🍄':''}${p.luck?'🍀':''}</span>`:''}${p.hand2&&p.hand2.length&&!p.out?`<span class="mini">✋+${p.hand2.length}</span>`:''}${S.other&&!p.out?`<span class="mini oside">🌀${S.other.players[i].hand.length}</span>`:''}
-      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?'<span class="tag">fora</span>':partner(i)===0?'<span class="tag next">dupla</span>':''}</div>`);
+      <div class="av" style="background:${p.col}">${p.name[0]}</div>
+      ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${shiny?'shiny':''} ${ctCls}">${badge}</span></div>`}${(p.batata&&p.hand.some(c=>c.type==='batata'))||p.treasure||p.confuse||p.luck?`<span class="mini">${p.hand.some(c=>c.type==='batata')&&p.batata?`🥔${p.batata}/5 `:''}${p.treasure?`🧭${p.treasure}/3 `:''}${p.confuse?'🍄':''}${p.luck?'🍀':''}</span>`:''}${p.hand2&&p.hand2.length&&!p.out?`<span class="mini">✋+${p.hand2.length}</span>`:''}${S.other&&!p.out?`<span class="mini oside">🌀${S.other.players[i].hand.length}</span>`:''}
+      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" title="eliminado">${p.outIcon||'✖'}</span>`:partner(i)===0?'<span class="tag next">dupla</span>':''}</div>`);
   });
   parts.push(edge);
   row.innerHTML=parts.join('');
