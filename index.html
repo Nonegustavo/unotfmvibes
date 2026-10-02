@@ -65,15 +65,12 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
-.pcharge{position:fixed;z-index:9;border-radius:50%;pointer-events:none;background:conic-gradient(from 0deg,#8a4fd8,#16b3c2,#e8479a,#8a4fd8,#16b3c2,#e8479a,#8a4fd8);
-  -webkit-mask:radial-gradient(circle,transparent 18%,#000 22%,#000 55%,transparent 70%);mask:radial-gradient(circle,transparent 18%,#000 22%,#000 55%,transparent 70%);
-  animation:pcharge linear forwards;filter:blur(.5px) drop-shadow(0 0 12px #8a4fd8)}
-@keyframes pcharge{0%{transform:scale(.2) rotate(0);opacity:0}25%{opacity:.9}100%{transform:scale(1.15) rotate(1440deg);opacity:1}}
-.pcover{position:fixed;inset:0;z-index:50;overflow:hidden;background:#120a22;pointer-events:all}
-.pswirl{position:absolute;left:50%;top:50%;width:300vmax;height:300vmax;margin:-150vmax 0 0 -150vmax;
-  background:repeating-conic-gradient(from 0deg,#2a1450 0 10deg,#8a4fd8 10deg 18deg,#16b3c2 18deg 22deg,#2a1450 22deg 30deg,#e8479a 30deg 34deg);
-  animation:spin 1.4s linear infinite;filter:blur(6px);opacity:.9}
-.pcore{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.9) 0,rgba(200,170,255,.6) 6%,rgba(40,20,80,0) 30%),radial-gradient(circle,transparent 40%,rgba(10,5,20,.85) 100%)}
+.pring{position:fixed;z-index:9;pointer-events:none}
+.pring i{position:absolute;inset:0;border-radius:50%;border:3px solid #8a4fd8;box-shadow:0 0 12px #8a4fd8,inset 0 0 12px rgba(22,179,194,.6);opacity:0;animation:pring .9s ease-out forwards}
+.pring i:nth-child(2){animation-delay:.25s;border-color:#16b3c2}
+.pring i:nth-child(3){animation-delay:.5s;border-color:#e8479a}
+@keyframes pring{0%{transform:scale(.25);opacity:0}30%{opacity:1}100%{transform:scale(1.1);opacity:0}}
+.pcover{position:fixed;inset:0;z-index:50;pointer-events:all;background:radial-gradient(circle at var(--px,50%) var(--py,50%),#4a2a86 0,#24124a 35%,#120a22 80%)}
 .installbox{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 18%,var(--panel)),var(--panel));border:1.5px solid var(--accent);border-radius:16px;padding:12px;margin:4px 0 12px}
 .installbox[hidden]{display:none}
 .ib-ic{width:48px;height:48px;border-radius:12px;overflow:hidden;display:grid;place-items:center;font-size:1.6rem;background:var(--accent)}
@@ -1329,39 +1326,41 @@ function switchSide(pi){
 }
 function portalSequence(pi){
   const g=S.gen,sp=S.spectate?.35:1;
-  S.busy=true;clearFlash();
+  S.busy=true;clearFlash();render();
   const finish=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()};
-  if(RM){switchSide(pi);S.newIds=S.players[0].hand.map(c=>c.id);S.handFrom=discardRect();finish();return}
-  // 1. carga sobre a pilha
-  const dr=discardRect();const cx=dr.left+dr.width/2,cy=dr.top+dr.height/2;
-  const ch=document.createElement('div');ch.className='pcharge';const sz=dr.height*1.7;
-  Object.assign(ch.style,{left:(cx-sz/2)+'px',top:(cy-sz/2)+'px',width:sz+'px',height:sz+'px',animationDuration:(1300*sp)+'ms'});
-  document.body.appendChild(ch);sfx('portalCharge');
-  fx('🌀','O portal está se abrindo…','#8a4fd8','stamp',1300*sp);
+  if(RM){switchSide(pi);render();finish();return}
   setTimeout(()=>{
-    if(g!==S.gen){ch.remove();return}
-    // 2. portal cobre a tela
-    const ov=document.createElement('div');ov.className='pcover';ov.innerHTML='<div class="pswirl"></div><div class="pcore"></div>';
-    const R0=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy))+20;
-    document.body.appendChild(ov);sfx('portal');
-    const open=ov.animate([{clipPath:`circle(0px at ${cx}px ${cy}px)`},{clipPath:`circle(${R0}px at ${cx}px ${cy}px)`}],{duration:650*sp,easing:'cubic-bezier(.5,0,.75,0)',fill:'forwards'});
-    setTimeout(()=>ch.remove(),300*sp);
-    open.onfinish=()=>{
-      if(g!==S.gen){ov.remove();return}
-      // 3. troca de lado por baixo
-      switchSide(pi);render();
-      setTimeout(()=>{
+    if(g!==S.gen)return;
+    // 1. carga discreta sobre a pilha
+    const dr=discardRect();const cx=dr.left+dr.width/2,cy=dr.top+dr.height/2;
+    const ring=document.createElement('div');ring.className='pring';const sz=dr.height*1.25;
+    Object.assign(ring.style,{left:(cx-sz/2)+'px',top:(cy-sz/2)+'px',width:sz+'px',height:sz+'px'});
+    ring.innerHTML='<i></i><i></i><i></i>';
+    document.body.appendChild(ring);sfx('portalCharge');
+    setTimeout(()=>{
+      if(g!==S.gen){ring.remove();return}
+      // 2. cortina circular a partir da pilha
+      const ov=document.createElement('div');ov.className='pcover';
+      const R0=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy))+10;
+      ov.style.setProperty('--px',cx+'px');ov.style.setProperty('--py',cy+'px');
+      document.body.appendChild(ov);sfx('portal');ring.remove();
+      const open=ov.animate([{clipPath:`circle(0px at ${cx}px ${cy}px)`},{clipPath:`circle(${R0}px at ${cx}px ${cy}px)`}],{duration:520*sp,easing:'cubic-bezier(.6,0,.8,.3)',fill:'forwards'});
+      open.onfinish=()=>{
         if(g!==S.gen){ov.remove();return}
-        const nr=discardRect();const nx=nr.left+nr.width/2,ny=nr.top+nr.height/2;
-        const R1=Math.hypot(Math.max(nx,innerWidth-nx),Math.max(ny,innerHeight-ny))+20;
-        const close=ov.animate([{clipPath:`circle(${R1}px at ${nx}px ${ny}px)`},{clipPath:`circle(0px at ${nx}px ${ny}px)`}],{duration:650*sp,easing:'cubic-bezier(.25,1,.5,1)',fill:'forwards'});
-        close.onfinish=()=>{ov.remove();S.newIds=S.players[0].hand.map(c=>c.id);S.handFrom=nr;
-          fx('🌀',S.side==='b'?'Vocês atravessaram para o outro lado':'Vocês voltaram para o lado normal','#8a4fd8','stamp',1200*sp);finish()};
-      },450*sp);
-    };
-  },1300*sp);
+        // 3. troca de lado por baixo, já com a mão pronta
+        switchSide(pi);render();
+        setTimeout(()=>{
+          if(g!==S.gen){ov.remove();return}
+          const nr=discardRect();const nx=nr.left+nr.width/2,ny=nr.top+nr.height/2;
+          const R1=Math.hypot(Math.max(nx,innerWidth-nx),Math.max(ny,innerHeight-ny))+10;
+          ov.style.setProperty('--px',nx+'px');ov.style.setProperty('--py',ny+'px');
+          const close=ov.animate([{clipPath:`circle(${R1}px at ${nx}px ${ny}px)`},{clipPath:`circle(0px at ${nx}px ${ny}px)`}],{duration:520*sp,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
+          close.onfinish=()=>{ov.remove();toast(S.side==='b'?'🌀 Outro lado':'🌀 Lado normal','#8a4fd8');finish()};
+        },260*sp);
+      };
+    },900*sp);
+  },480*sp);
 }
-
 /* ---------- core play ---------- */
 function srcRect(pi,card){
   const el=pi===0?document.querySelector(`#hand [data-id="${card.id}"]`):document.querySelector(`[data-seat="${pi}"] .av`);
