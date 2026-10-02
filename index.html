@@ -71,6 +71,7 @@
   background:repeating-conic-gradient(from 0deg,rgba(255,214,110,.42) 0 5deg,rgba(255,214,110,0) 5deg 15deg);
   -webkit-mask:radial-gradient(circle,#000 0,rgba(0,0,0,.85) 25%,transparent 68%);mask:radial-gradient(circle,#000 0,rgba(0,0,0,.85) 25%,transparent 68%);
   animation:spin 60s linear infinite}
+.fxin.roul{animation:none}
 .roul .fxg{min-width:1.2em;text-align:center}
 .seat .nm{margin-bottom:3px}
 .fan{position:relative;height:34px;margin:-2px auto 0;width:100%}
@@ -2595,6 +2596,7 @@ function cardBadges(p,c,turn){
   if(c.type==='batata')b.push(`🥔 ${p.batata||0}/5`);
   if(R.perfection&&c.type==='num'&&c.value===p.hand.length)b.push('💯');
   if(S.peace>0&&c.type!=='num')b.push('🌼');
+  if(curseOn('shoe',0)&&c.type!=='num')b.push('👢');
   return b;
 }
 function sortHand(h){
@@ -2753,7 +2755,7 @@ function render(){
   else{deck.className='card back deckbtn';deck.innerHTML='<span class="face">unotfm</span>'}
   deck.classList.toggle('can',mine);deck.disabled=!mine;
   {const ic=[];if(R.satisfaction)ic.push('😋');if(R.insatisfaction)ic.push('😒');if(R.tracking)ic.push('🔎');if(R.fastdraw)ic.push('⏩');
-   if(S.death)ic.push('☠️');if(S.curse)ic.push(CURSES[S.curse.k].g);if(S.weather==='blizzard')ic.push('❄️');
+   if(S.death)ic.push('☠️');if(S.curse&&S.curse.k!=='shoe')ic.push(CURSES[S.curse.k].g);if(S.weather==='blizzard')ic.push('❄️');
    if(ic.length){const sp=document.createElement('span');sp.className='cb deckcb';sp.textContent=ic.join(' ');deck.appendChild(sp)}
    deck.classList.toggle('frozen',S.weather==='blizzard'||curseIs('ice'));deck.classList.toggle('gone',!!S.death);}
   $('deckCount').textContent=`${S.deck.length} no monte`;
