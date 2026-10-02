@@ -65,6 +65,16 @@
 .act .gone{background:var(--muted)}
 .act-basics{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .topbtns{display:flex;gap:6px}
+.installbox{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 18%,var(--panel)),var(--panel));border:1.5px solid var(--accent);border-radius:16px;padding:12px;margin:4px 0 12px}
+.installbox[hidden]{display:none}
+.ib-ic{width:48px;height:48px;border-radius:12px;overflow:hidden;display:grid;place-items:center;font-size:1.6rem;background:var(--accent)}
+.ib-ic img{width:100%;height:100%;display:block}
+.ib-tx b{display:block;font-size:.98rem}
+.ib-tx span{font-size:.82rem;color:var(--muted)}
+.ib-bt{grid-column:1/-1;display:flex;gap:8px}
+.ib-bt .btn{padding:9px 10px;font-size:.92rem}
+.iossteps{margin:6px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:.95rem}
+.ios-ic{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--bg);border:1.5px solid var(--line);font-weight:700;margin-left:2px}
 .side-b{--cr:#e8479a;--cy:#f28a1c;--cg:#16b3c2;--cb:#8a4fd8}
 .side-b .card{border-color:#15101f}
 .side-b .card::before{border-color:rgba(0,0,0,.55)}
@@ -459,6 +469,7 @@ button.card:disabled{cursor:default}
 <div class="ov" id="settingsOv" role="dialog" aria-modal="true" aria-labelledby="stTitle">
   <div class="sheet">
     <h2 id="stTitle">Nova partida</h2>
+    <div class="installbox" id="installBox" hidden><div class="ib-ic"><img src="icons/icon-192.png" alt="" onerror="this.replaceWith(document.createTextNode('🃏'))"></div><div class="ib-tx"><b>Instale o unotfm</b><span>Jogue em tela cheia, direto da tela inicial, até sem internet.</span></div><div class="ib-bt"><button type="button" class="btn main" id="installYes">Instalar</button><button type="button" class="btn" id="installNo">Agora não</button></div></div>
     <div class="tip" id="tipBox"></div>
     <div class="field"><div class="lb">Modo</div><div class="seg" data-key="mode"></div><p class="legend" id="modeLegend"></p></div>
     <div class="field"><div class="lb">Dificuldade dos adversários</div><div class="seg" data-key="diff"></div></div>
@@ -500,7 +511,17 @@ button.card:disabled{cursor:default}
   <div class="sheet"><h2 id="cfgTitle">Configurações</h2>
     <div class="field"><div class="lb">Som</div><div class="seg" data-key="sound"></div></div>
     <div class="field"><div class="lb">Efeitos 3D</div><div class="seg" data-key="fx3d"></div><p class="legend">Dado 3D, partículas dos climas, explosões e confete. Desligue se o celular ficar lento.</p></div>
+    <div class="field" id="installField" hidden><div class="lb">App</div><button type="button" class="btn" id="installCfg" style="width:100%">📲 Instalar o unotfm neste aparelho</button></div>
     <div class="row2" style="margin-top:6px"><button class="btn main" id="cfgClose">Voltar</button></div></div>
+</div>
+<div class="ov" id="iosOv" role="dialog" aria-modal="true" aria-labelledby="iosTitle">
+  <div class="sheet"><h2 id="iosTitle">Instalar no iPhone/iPad</h2><p class="sub">No Safari, é só seguir estes passos:</p>
+    <ol class="iossteps">
+      <li>Toque no botão <b>Compartilhar</b> <span class="ios-ic">⬆︎</span> na barra do Safari.</li>
+      <li>Role e toque em <b>Adicionar à Tela de Início</b> <span class="ios-ic">＋</span>.</li>
+      <li>Toque em <b>Adicionar</b>. O unotfm vai aparecer junto dos seus apps.</li>
+    </ol>
+    <div class="row2" style="margin-top:12px"><button class="btn main" id="iosClose">Entendi</button></div></div>
 </div>
 <div class="ov" id="endOv" role="dialog" aria-modal="true" aria-labelledby="endTitle">
   <div class="sheet">
@@ -2787,6 +2808,7 @@ function openHistory(){
   $('histOv').classList.add('show');$('histClose').focus();
 }
 function openSettings(){
+  updateInstallUI();
   $('tipBox').innerHTML=`<b>💡 Dica</b>${rand(TIPS)}`;
   buildSettings();$('closeSettings').style.display=S&&S.phase!=='over'?'':'none';
   $('endOv').classList.remove('show');$('settingsOv').classList.add('show');
@@ -2830,7 +2852,7 @@ function showRuleInfo(k){
   const a=(S&&S.added||[]).find(x=>x.k===k);
   notice(k,a?`Nova regra, adicionada por ${a.by}`:'Em jogo',{info:true,title:RNAME[k],anchor:b});
 }
-$('openConfig').onclick=()=>{CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()};
+$('openConfig').onclick=()=>{updateInstallUI();CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()};
 $('cfgClose').onclick=()=>$('configOv').classList.remove('show');
 document.addEventListener('pointerdown',()=>{if(!MUTED)audio()},{once:true});
 $('closeActive').onclick=()=>$('activeOv').classList.remove('show');
@@ -2839,11 +2861,32 @@ $('closeSettings').onclick=()=>$('settingsOv').classList.remove('show');
 $('startBtn').onclick=()=>{save('unotfm-solo-cfg',CFG);R=rulesForMode();TOUR=null;$('settingsOv').classList.remove('show');newGame()};
 $('againBtn').onclick=()=>{$('endOv').classList.remove('show');R=rulesForMode();newGame()};
 window.addEventListener('resize',()=>{if(!S)return;render();if(S.turn!==0&&S.phase!=='over')placeMarker(S.turn,false)});
-openSettings();
+/* PWA: instalação dentro do jogo */
+let installEvt=null;
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const hosted=()=>/^https?:$/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host);
+const canInstall=()=>hosted()&&!isStandalone()&&(!!installEvt||isIOS());
+function updateInstallUI(){
+  const can=canInstall();
+  const snooze=load('unotfm-solo-install-snooze',0);
+  $('installBox').hidden=!(can&&Date.now()>snooze);
+  $('installField').hidden=!can;
+}
+function doInstall(){
+  if(installEvt){const ev=installEvt;installEvt=null;ev.prompt();ev.userChoice.then(r=>{if(r&&r.outcome==='dismissed')save('unotfm-solo-install-snooze',Date.now()+3*864e5);updateInstallUI()}).catch(()=>{});updateInstallUI();return}
+  if(isIOS()){$('iosOv').classList.add('show');$('iosClose').focus()}
+}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;updateInstallUI()});
+addEventListener('appinstalled',()=>{installEvt=null;updateInstallUI();if(S)toast('unotfm instalado!','var(--cg)')});
+$('installYes').onclick=doInstall;$('installCfg').onclick=doInstall;
+$('installNo').onclick=()=>{save('unotfm-solo-install-snooze',Date.now()+7*864e5);updateInstallUI()};
+$('iosClose').onclick=()=>$('iosOv').classList.remove('show');
 /* PWA: registra o service worker quando hospedado (GitHub Pages etc.) */
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)){
   addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
 }
+openSettings();
 })();
 </script>
 </body>
