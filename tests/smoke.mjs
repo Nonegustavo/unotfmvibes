@@ -27,7 +27,14 @@ const server = http.createServer((req, res) => {
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const URL_BASE = `http://127.0.0.1:${server.address().port}/`;
 
-const browser = await chromium.launch({ headless: !HEADED, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+// Visível: usa o Chrome (ou Edge) instalado, porque o Chromium completo do Playwright pode não abrir no Windows.
+async function launch() {
+  if (!HEADED) return chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  for (const channel of ['chrome', 'msedge', undefined]) {
+    try { return await chromium.launch({ headless: false, channel }); } catch (e) { if (!channel) throw e; }
+  }
+}
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
