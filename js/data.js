@@ -124,7 +124,7 @@ const CURSES={
 };
 const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload'];
 ['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{const i=RULES.findIndex(r=>r.k===k);if(i>=0)RULES.splice(i,1)});
-const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw']];
+const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw'],['satisfaction','fastdraw']];
 RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k]));
 const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
@@ -172,6 +172,8 @@ const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 
 const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
+// configuração salva com duas regras incompatíveis (conflito novo): mantém só a primeira
+CONFLICT_PAIRS.forEach(([a,b])=>{if(CFG[a]&&CFG[b])CFG[b]=false});
 let MESTRE=load('unotfm-solo-master',false);if(CFG.diff==='master'&&!MESTRE)CFG.diff='hard';
 let hardClicks={n:0,t:0};
 ['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{CFG[k]=false});
