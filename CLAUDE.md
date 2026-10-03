@@ -59,21 +59,25 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **Modos:** Clássico (sem regras), Mix de regras (chave `poker`: cada jogador escolhe uma regra **antes** da distribuição) e Personalizado. Clássico e Mix usam sempre 3 adversários e 7 cartas.
 - **Dificuldades:** Fácil, Normal, Difícil e **Mestre** (oculto). O Mestre é desbloqueado tocando 7 vezes seguidas em "Difícil", fica salvo em `unotfm-solo-master` e não mostra nenhuma indicação antes disso. Ele usa memória (`S.mem`: cores que faltam a cada jogador, última cor jogada, cartas já saídas) sem nunca ver mãos ocultas.
 - **Regras:** `RULES` (grupo, chave, nome, descrição). As cartas especiais ficam em `SP` (nome, ícone `g`, descrição, `deck` com cores e quantidades do `deck.lua`, `rule` quando a chave da regra é diferente, e `hide`). Os conflitos ficam em `CONFLICT_PAIRS`. Os ícones das regras (`RICON` + `SP.g`) **não podem se repetir**.
-- **Anúncio antes do efeito:** toda carta de ação (e o 0 na Tempestade) primeiro pousa na mesa (`announce`) e só depois aplica o efeito.
+- **Anúncio antes do efeito:** toda carta de ação primeiro pousa na mesa (`announce`) e só depois aplica o efeito.
   - Misteriosa e Clonagem giram e se transformam. Coringas giram ao ser pintados.
   - Os adversários mostram a decisão num balão perto da cadeira (`botThink`).
 - **Portal:** são dois lados independentes. `SIDE_KEYS` e `PLAYER_KEYS` definem o que é separado por lado, e o sentido do jogo é compartilhado. O outro lado tem cores rosa, laranja, ciano e roxo, borda e símbolos pretos e coringas brancos. A mesa não muda de cor. Azul e Verde só vale no lado normal.
 - **Eliminação por erro** (ser pego sem UNO, blefe desafiado, desafio errado) **só acontece com a Morte súbita**. Fora dela:
   - Pego sem UNO compra 2.
-  - O desafio vale só para o **último** +4/+99. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.
+  - O desafio vale só para o **último** +4/+99.
+- **+99:** quem compra as cartas dele (inclusive no desafio) é sempre eliminado, logo depois da compra (`drawn99`). Só escapa quem não comprou por causa da Nevasca ou do Gelo.
+- **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final limpo, Semáforo e compras acumuladas continuam valendo.
+- **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece nas cartas que podem mudar a cor.
+- **Transmutação** (chave `steal`) e **Banimento** mostram as cartas como a Clarividência (`showCards`). A carta transmutada guarda a forma original em `c.tm`, que `restoreCard` desfaz. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.
 - **Nevasca e Gelo:** ninguém compra. Os +2/+4 continuam acumulando, e quem não se defende perde a vez sem comprar. No desafio:
   - Se foi blefe, o desafiante segue jogando.
   - Se a jogada era legal, o desafiante perde a vez.
   - Perder a vez por penalidade não conta como "passar" para encerrar a Nevasca.
 - **Compra:** depois de comprar, o jogador pode jogar **qualquer** carta jogável ou passar.
-  - Insatisfação passa a vez ao comprar.
+  - Compra e Passa passa a vez ao comprar.
   - Compra rápida joga a carta comprada sozinha, mesmo que não combine (exceto a Bomba).
-  - Satisfação compra 1 por vez (2 com a Bigorna) e não deixa passar enquanto não houver carta jogável.
+  - Compra Implacável compra 1 por vez (2 com a Bigorna) e não deixa passar enquanto não houver carta jogável.
 - **Reembaralhar:** `restoreCard`/`returnable` devolvem as cartas à forma original (coringa preto, Misteriosa e Clonagem desfeitas, cor de antes da Tinta, Batata vermelha). Cartas com `extra: true` (Misteriosas do Presente, cópias da Partilha, Tesouro) não voltam ao baralho.
 - **Status:**
   - `seatStatus(i)` para jogadores: selo na borda de baixo da cadeira e o seu selo acima da mão.
@@ -83,7 +87,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **Escala:** o tamanho de tudo vem de `--u` (no `:root` do `style.css`), que vale 1px num celular de 390×800 e acompanha a largura e a altura da tela. `--cw` (largura da carta) e o `font-size` da raiz derivam dele, e as medidas do CSS estão em `rem`. Use `rem` (ou `var(--cw)`) em vez de `px` em medidas novas; `px` só para bordas finas (até 3px).
   O centro da mesa (`.arena`) reduz o `--cw` para caber na altura da mesa (`.table` é um container query), então o círculo e o +2/+4 nunca são cortados. As partes da página têm linha fixa na grade do `body`.
 - **Telas grandes:** `@media (min-width:900px) and (min-height:560px)` no fim do `style.css` troca a referência para 1440×900 (cartas maiores), numa coluna central. Com mouse, passar sobre uma carta da mão, um selo da mesa, um selo de jogador ou o seu selo abre a mesma janela do toque.
-- **Cartas na mão:** os selos no topo (`cardBadges`) indicam por que a carta pode ser jogada (🛡️ defesa, ✂️ corte, 📚/🔢 combo, ↕️ vizinho, 🔥 inferno, ☀️+1, 💯, 🌼, 👢, ⛈️) ou o que a bloqueia, com borda vermelha (🔒, 🧼, 🚦, ↕️).
+- **Cartas na mão:** os selos no topo (`cardBadges`) indicam por que a carta pode ser jogada (🛡️ defesa, ✂️ corte, 📚/🔢 combo, ↕️ vizinho, 🔥 inferno, ☀️+1, 💯, 🌼, 👢, ⛈️) ou o que a bloqueia, com selo vermelho (🔒, 🧼, 🚦, ↕️). A carta bloqueada não tem borda vermelha, só o selo.
 
 ## Removido de propósito (não reintroduzir sem pedir)
 - Regras baseadas em tempo: Rápido, Tempo reduzido, Limbo, Mais regras e a maldição de 3 segundos. Funcionam mal no solo, porque só o humano sofre pressão de tempo.

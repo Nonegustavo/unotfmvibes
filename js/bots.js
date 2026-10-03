@@ -93,13 +93,13 @@ function botChoose(p,opts){
         d99:nn<=2?80:(p.hand.length<=2?40:1),rule:8,
         portal:(()=>{if(!S.other)return 0;const oh=S.other.players[S.turn].hand.length,h=p.hand.length-1;let v=-8;if(oh<=h-2)v=35;
           const th=alive().filter(i=>i!==S.turn&&S.players[i].hand.length<=2);if(th.some(i=>S.other.players[i].hand.length>3))v=Math.max(v,30);if(oh>=h+3&&!th.length)v=-25;return v})(),
-        sun:12,fog:p.hand.length<=3?28:6,storm:8+p.hand.filter(x=>x.type==='num'&&x.value===0).length*10,blizzard:(p.hand.length>6||S.players[nextIdx(S.turn,1)].hand.length<=2)?22:6};
+        sun:12,fog:p.hand.length<=3?28:6,storm:10,blizzard:(p.hand.length>6||S.players[nextIdx(S.turn,1)].hand.length<=2)?22:6};
       s=(sc[c.type]??10)+(cc[c.color]||0);
     }else if(c.type==='wild'){s=p.hand.length<=2?30:2}
     else{s=nn<=2?50:(p.hand.length<=2?28:0)}
     if(R.clean&&p.hand.length===2&&c.type!=='num')s+=60;
     if(S.weather==='sun'&&S.pending===0&&!matchTop(c))s-=14;
-    if(S.weather==='storm'&&c.type==='num'&&c.value===0)s+=18;
+    if(S.weather==='storm'&&S.pending===0&&(c.color==='w'||!sameCol(c.color,S.color)))s+=8;
     if(R.overload&&nn>=8&&isDraw(c))s+=40;
     if(R.team&&partner(S.turn)===nextIdx(S.turn,1)&&['skip','d2','d4'].includes(c.type)&&S.pending===0)s-=40;
     {const opp=alive().filter(i=>i!==S.turn),mn=opp.length?Math.min(...opp.map(i=>S.players[i].hand.length)):99;
@@ -127,10 +127,11 @@ function botAct(){
     opts.sort((a,b)=>cc[a.color]-cc[b.color]);
     botPlay(opts[0]);return;
   }
-  if(S.phase==='drawn'){const o=p.hand.filter(c=>canPlay(p,c));if(o.length)botPlay(botChoose(p,o));else endTurn();return}
-  const opts=p.hand.filter(c=>canPlay(p,c));
+  if(S.phase==='drawn'){const o=p.hand.filter(c=>canPlay(p,c,confused(pi)));if(o.length)botPlay(botChoose(p,o));else endTurn();return}
+  const opts=p.hand.filter(c=>canPlay(p,c,confused(pi)));
   if(S.pending>0&&S.chal&&S.chal.by!==pi&&!opts.length){
     const ah=S.players[S.chal.by].hand.length;let pr=R.diff==='master'?masterChallenge(S.chal):{easy:.15,normal:ah>=5?.35:.22,hard:ah>=5?.5:ah>=3?.3:.15}[R.diff];if(S.death&&R.diff!=='master')pr*=ah>=6?.8:.35;
+    if(S.pending>=99)pr=1; // comprar o +99 elimina: desafiar é a única chance
     if(Math.random()<pr){doChallenge(pi);return}
   }
   if(!opts.length){takeDraw(pi);return}
@@ -174,7 +175,7 @@ function announce(pi,card,cont,wait){
 function botPlay(card){
   const pi=S.turn;
   if(needsAnn(pi,card)){announce(pi,card,()=>botPlayNow(card,pi));return}
-  if(card.type!=='num'||(S.weather==='storm'&&card.value===0)){announce(pi,card,()=>botPlayNow(card,pi),S.spectate?250:480);return}
+  if(card.type!=='num'){announce(pi,card,()=>botPlayNow(card,pi),S.spectate?250:480);return}
   botPlayNow(card,pi);
 }
 function botPlayNow(card,pi0){

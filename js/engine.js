@@ -1,10 +1,12 @@
 /* unotfm solo: motor da partida (baralho, regras de jogada, distribuição, portal, jogada de carta e fluxo de turnos) */
 /* ---------- deck ops ---------- */
-function restoreCard(c){if(c.orig){c.type=c.orig;c.color='w';c.value=null;delete c.orig}if(c.baseColor!=null){c.color=c.baseColor;delete c.baseColor}c.chosen=null;c.lock=false;c.flipped=false;return c}
+function restoreCard(c){if(c.tm){Object.assign(c,c.tm);delete c.tm}if(c.orig){c.type=c.orig;c.color='w';c.value=null;delete c.orig}if(c.baseColor!=null){c.color=c.baseColor;delete c.baseColor}c.chosen=null;c.lock=false;c.flipped=false;return c}
 const returnable=cards=>cards.filter(c=>!c.extra).map(restoreCard);
 function popDeck(){
   if(!S.deck.length){
-    const t=S.discard.pop();S.deck=shuffle(returnable(S.discard));S.discard=[t];
+    // a Batata no topo ainda vai sair da pilha (para a mão de alguém): guarda também a carta de baixo, senão a pilha fica vazia
+    const keep=S.discard.length>2&&S.discard[S.discard.length-1].type==='batata'?2:1;
+    const t=S.discard.splice(-keep);S.deck=shuffle(returnable(S.discard));S.discard=t;
     if(!S.deck.length)return null;
   }
   return S.deck.pop();
@@ -32,7 +34,7 @@ function checkLimits(){
 function markOut(pi,reason,icon){
   const p=S.players[pi];
   if(immune(pi)){if(S.boom===pi)S.boom=null;toast('Charlotte não pode ser eliminada!','var(--cg)');return false}
-  FX3D.smoke(targetRect(pi));p.out=true;sfx('out');
+  FX3D.smoke(targetRect(pi));p.out=true;p.outAt=S.outSeq=(S.outSeq||0)+1;sfx('out');
   if(S.other){const o=S.other.players[pi];S.other.deck.unshift(...returnable([...o.hand,...(o.hand2||[])]));o.hand=[];o.hand2=[]}
   const cards=[...p.hand,...(p.hand2||[])];p.hand=[];p.hand2=[];
   if(ab(pi,'snowy')&&alive().length){
@@ -60,7 +62,8 @@ function comboOk(c){
   }
   return false;
 }
-function canPlay(p,c){
+// any: jogada da Confusão, que ignora cor e símbolo (tranca, Final limpo, Semáforo e compras acumuladas continuam valendo)
+function canPlay(p,c,any){
   if(S.phase==='combo')return comboOk(c);
   if(c.type==='bomb'||c.lock)return false;
   if(S.numOnly===1&&c.type!=='num')return false;
@@ -74,7 +77,7 @@ function canPlay(p,c){
     if(R.combo==='normal')return c.type===S.pendingType;
     return false;
   }
-  return matchTop(c)||S.weather==='sun';
+  return !!any||matchTop(c)||S.weather==='sun';
 }
 function matchTop(c){
   const t=topCard();
@@ -238,9 +241,9 @@ function playCard(pi,card,chosen){
   if(inCombo&&R.sequence&&card.value!==S.comboValue&&!S.seqDir)S.seqDir=card.value-S.comboValue;
   const black=R.black&&identical(card,topCard());
   const prev=topCard();const colBefore=S.color;S.colBefore=colBefore;
-  const sunPen=!S.forcedPlay&&S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(card);S.forcedPlay=false;
+  const sunPen=!S.forcedPlay&&!confused(pi)&&S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(card);S.forcedPlay=false;
   const hadColor=p.hand.some(c=>c.id!==card.id&&c.color!=='w'&&sameCol(c.color,colBefore));
-  const peaceOn=S.peace>0;
+  const peaceOn=S.peace>0,wasColorful=colorful({hand:p.hand.includes(card)?p.hand:[...p.hand,card]});
   if(!peaceOn&&(card.type==='clone'||card.type==='random'))morphCard(card,prev);
   const orig=card.orig||card.type;
   if(card.color==='w'&&!chosen&&orig!==card.type)chosen=S.color==='k'?rand(COLORS):S.color;
@@ -251,7 +254,9 @@ function playCard(pi,card,chosen){
   S.discard.push(card);
   S.color=card.color==='w'?(chosen||S.color):card.color;
   memPlay(pi,card);
-  if(black){S.color='k';card.chosen='k';fx('<span class="wheel" style="width:calc(var(--cw)*1.1);background:#0d0a14"></span>','Carta preta!','#0d0a14','stamp');burst('#0d0a14')}
+  // Mão Colorida: perdeu o ícone ao jogar uma carta colorida, então não tem mais essa cor (o Mestre anota)
+  if(R.shiny&&wasColorful&&orig===card.type&&card.color!=='w'&&!colorful(p)&&!(R.bg&&(card.color==='b'||card.color==='g')))memLack(pi,card.color);
+  if(black){S.color='k';card.chosen='k';fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR.k}"></span>`,'Descolorida!',CVAR.k,'stamp');burst(CVAR.k)}
   if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}
   S.hist=S.hist||[];const he={by:pi,live:card,card:null,notes:[],side:S.side||'a'};S.hist.push(he);if(S.hist.length>12)S.hist.shift();S.histCur=he;
   let msg=`${who(pi)} jogou ${orig!==card.type?SP[orig].n+' → ':''}${cardName(card)}`;
@@ -280,10 +285,11 @@ function playCard(pi,card,chosen){
   if(p.hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
   if(p.hand.length===target())afterOneCard(pi);
   if(card.type==='num'&&R.perfection&&card.value===before){S.extra=true;log(`Perfeição! ${who(pi)} joga de novo.`);fx('★','Joga de novo','var(--cg)','stamp')}
-  if(S.weather==='storm'&&card.type==='num'&&card.value===0){
-    const o=alive().filter(i=>i!==pi);o.forEach(i=>{drawN(i,1);floatOn(i,'+1 ⛈️','#4b4f8f')});
-    flashStorm();fx('⛈️','Um 0 na tempestade: todos compram 1','#4b4f8f','slam');log('Tempestade: todos os outros compraram 1.');
-    if(massCheck()==='win')return 'win';
+  if(S.weather==='storm'&&colBefore&&S.color!==colBefore&&!sameCol(S.color,colBefore)){
+    // Tempestade: mudou a cor, um adversário aleatório compra 1 (mesmo raio do Trovão)
+    const o=alive().filter(i=>i!==pi);
+    if(o.length){const v=rand(o);flashStorm();boltOn(v);sfx('thunder');drawN(v,1);quietDraw(v);floatOn(v,'+1','var(--cy)');stampOn(v,'⚡','var(--cy)');
+      log(`Tempestade: ${who(pi)} mudou a cor e ${who(v)} ${v===0?'compra':'comprou'} 1.`);if(massCheck()==='win')return 'win'}
   }
   if(curseOn('shoe',pi)&&orig!=='num'&&card.type!=='num'){drawN(pi,1);floatOn(pi,'+1','var(--cy)');log(`${who(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}
   if(card.type==='num'&&S.players[pi].name==='Charlotte'&&on){const k={r:'red',b:'blue',y:'yellow',g:'green'}[card.color];if(k&&R[k]){const r=charlotteFx(pi,card.color);if(r==='win')return r}}
@@ -337,7 +343,6 @@ function endTurnHook(pi){
     const wasNext=fp.confuseNext;fp.confuse=false;if(wasNext){fp.confuse=true;fp.confuseNext=false}
     const bt=fp.hand.find(c=>c.type==='batata');
     if(bt){
-      fp.batata=(fp.batata||0)+1;
       if(fp.batata>=5){
         fp.hand=fp.hand.filter(c=>c!==bt);fp.batata=0;
         fx('🥔',`${who(pi)} ficou com a batata por 5 turnos!`,'var(--cr)','slam');stampOn(pi,'🥔','var(--cr)');
@@ -368,7 +373,8 @@ function endTurn(){
     if(noDraw(v)||curseOn('ice',v)||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     drawN(v,n);floatOn(v,`+${n}`,'var(--cr)');stampOn(v,'⊘','var(--cr)');hold(900);
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
-    S.pending=0;S.pendingType=null;
+    const p99=S.pending>=99;S.pending=0;S.pendingType=null;
+    if(p99){S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
     if(overloaded(v)&&markOut(v))return;
     S.turn=nextIdx(v,1);
   }
@@ -377,6 +383,8 @@ function endTurn(){
 function startTurn(){
   S.tok++;
   const cp=cur();
+  // Batata: o contador mostra a vez atual com ela (1/5 na primeira, 5/5 na última)
+  if(!cp.out&&cp.hand.some(c=>c.type==='batata'))cp.batata=(cp.batata||0)+1;
   if(cp.webbed){
     cp.webbed=false;const g=S.gen,tok=S.tok;
     stampOn(S.turn,'🕸️','var(--muted)');fx('🕸️',S.turn===0?'Você está preso na teia':`${cp.name} está preso na teia`,'var(--muted)','stamp');
@@ -420,8 +428,9 @@ function takeDraw(pi){
     fx('🧊',`${who(pi)} não pode comprar e passa`,'var(--cb)','stamp');log(`${who(pi)} passou (gelo).`);endTurn();return;
   }
   if(S.pending>0){
-    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);floatOn(pi,`+${n}`,'var(--cr)');hold(700);icemiceHook(pi);
+    const n=drawAmt(pi,S.pending),p99=S.pending>=99;S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);floatOn(pi,`+${n}`,'var(--cr)');hold(700);icemiceHook(pi);
     log(`${who(pi)} comprou ${n}.`);
+    if(p99){drawn99(pi,endTurn);return}
     if(overloaded(pi)&&markOut(pi))return;
     endTurn();return;
   }
@@ -456,6 +465,16 @@ function takeDraw(pi){
   if(curseOn('anvil',pi)&&drawOne(pi))count++;
   icemiceHook(pi);
   afterDraw(pi,drawn,count);
+}
+// +99: quem compra as cartas dele é eliminado logo depois (só escapa quem não comprou por causa da Nevasca ou do Gelo)
+function drawn99(pi,then){
+  const g=S.gen;S.busy=true;clearFlash();render();
+  setTimeout(()=>{
+    if(g!==S.gen||S.phase==='over')return;S.busy=false;
+    fx('+99',`${pi===0?'Você não aguentou':who(pi)+' não aguentou'} o +99!`,'var(--cr)','slam');stampOn(pi,'+99','var(--cr)');
+    if(markOut(pi,'comprou as cartas do +99','+99'))return;
+    then();
+  },S.spectate?500:1100);
 }
 function afterDraw(pi,drawn,count){
   const p=S.players[pi];
@@ -517,7 +536,7 @@ function endRound(pi){
     }
     $('againBtn').textContent='Nova rodada';
     const hp=p=>[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
-    const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||(a.pts-b.pts)||(a.n-b.n));
+    const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||((b.p.outAt||0)-(a.p.outAt||0))||(a.pts-b.pts)||(a.n-b.n));
     $('endSub').textContent=(S.players[0].out?`Você ${S.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
     $('scoreTbl').innerHTML=rank.map((x,k)=>`<tr${x.i===0?' style="font-weight:700"':''}><td>${['🥇','🥈','🥉'][k]||`${k+1}º`} ${x.p.name}${x.p.out?' <span style="color:var(--muted)">(eliminado)</span>':` <span style="color:var(--muted)">(${x.n} carta${x.n===1?'':'s'})</span>`}</td><td>${x.p.out?'—':x.pts+' pts'}</td></tr>`).join('');
     $('endOv').classList.add('show');$('againBtn').focus();

@@ -2,8 +2,8 @@
 const $=id=>document.getElementById(id);
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const COLORS=['r','y','g','b'];
-const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Preto'};
-const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'#0d0a14'};
+const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Cinza'};
+const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'var(--cgray)'};
 function applyBg(){
   const sb=!!(S&&S.side==='b');
   document.documentElement.classList.toggle('side-b',sb);
@@ -18,7 +18,7 @@ const BOTNAMES=['Snowy','Buffy','Elise','Jingle','Charlotte','Papaille','Drekkem
 const AVCOL=['#d9534f','#2b8a9e','#8e5bd0','#d4892b','#3c9d5d','#c2477f','#4a6fd1','#7c8b2a','#b0563a'];
 
 const RULES=[
-  {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho é formado apenas por números e curingas comuns (sem +4).'},
+  {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho não tem as cartas +2, +4, reverter e bloqueios.'},
   {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho tem só cartas de ação: as comuns e as especiais de todas as regras.'},
   {g:'Baralho e mão',k:'revelation',n:'Revelação',d:'A carta no topo do baralho é visível para todos.'},
   {g:'Baralho e mão',k:'mulligan',n:'Segunda chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
@@ -28,18 +28,18 @@ const RULES=[
   {g:'Baralho e mão',k:'twohands',n:'Duas mãos',d:'Você tem duas mãos de cartas para jogar. Termine uma primeiro para poder usar a outra e ganhar o jogo!'},
   {g:'Baralho e mão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
   {g:'Baralho e mão',k:'dos',n:'DOS!',d:'Ao invés de declarar UNO, você precisa declarar DOS quando tiver duas cartas na mão.'},
-  {g:'Baralho e mão',k:'shiny',n:'Mão brilhante',d:'Quem tiver um curinga ou as 4 cores na mão fica com o número de cartas brilhando.'},
+  {g:'Baralho e mão',k:'shiny',n:'Mão Colorida',d:'Se um jogador segurar todas as cores ou um curinga, este ícone aparecerá.'},
   {g:'Jogadas',k:'stack',n:'Empilhar',d:'Você pode jogar várias cartas do mesmo número de uma só vez.'},
   {g:'Jogadas',k:'sequence',n:'Sequência',d:'Você pode jogar várias cartas da mesma cor, desde que formem uma sequência numérica.'},
   {g:'Jogadas',k:'neighbor',n:'Vizinho',d:'Números iguais não combinam mais. Números só combinam com um número acima ou abaixo.'},
   {g:'Jogadas',k:'hell',n:'Inferno',d:'Cartas de ação podem ser jogadas em cima de outras cartas de ação de qualquer cor.'},
   {g:'Jogadas',k:'jumpin',n:'Corte',d:'Se você tiver uma carta idêntica à da mesa, pode jogá-la mesmo que não seja sua vez!'},
-  {g:'Jogadas',k:'black',n:'Cartas pretas',d:'Se jogar uma carta idêntica à da mesa, ela fica preta. Em cima dela, só vale uma carta com o mesmo número ou símbolo, ou um curinga.'},
+  {g:'Jogadas',k:'black',n:'Descolorir',d:'Se jogar uma carta idêntica à da mesa, ela fica cinza. Em cima dela, só vale uma carta com o mesmo número ou símbolo, ou um curinga.'},
   {g:'Jogadas',k:'perfection',n:'Perfeccionista',d:'Se jogar um número igual ao número de cartas na mão, jogue novamente.'},
   {g:'Jogadas',k:'clean',n:'Final limpo',d:'Você só pode vencer se sua última carta for numérica.'},
   {g:'Compras',k:'nou',n:'Contra-ataque',d:'Você pode jogar cartas Inverter para devolver compras de carta.'},
-  {g:'Compras',k:'satisfaction',n:'Satisfação',d:'Compre cartas até poder jogar uma.'},
-  {g:'Compras',k:'insatisfaction',n:'Insatisfação',d:'Comprar carta fará você passar a vez automaticamente.'},
+  {g:'Compras',k:'satisfaction',n:'Compra Implacável',d:'Compre cartas até poder jogar uma.'},
+  {g:'Compras',k:'insatisfaction',n:'Compra e Passa',d:'Comprar carta fará você passar a vez automaticamente.'},
   {g:'Compras',k:'fastdraw',n:'Compra rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem com a mesa (exceto a Carta Bomba e compras de penalidade).'},
   {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
   {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
@@ -58,8 +58,8 @@ const SP={
   justice:{n:'Carta da Misericórdia',g:'🙏',d:'Ao jogar esta carta, descarte 1 carta por cada jogador com menos cartas que você.',deck:['r','b','y','g']},
   magnet:{n:'Carta do Imã',g:'🧲',d:'Ao jogar esta carta, descarte todas as cartas da mesma cor que esta.',deck:['r','b','y','g','r','b','y','g']},
   tornado:{n:'Carta do Tornado',g:'🌪️',d:'Ao jogar esta carta, embaralhe as cartas dos outros jogadores.',deck:['r','b','y','g','r','b','y','g']},
-  steal:{n:'Carta da Reciclagem',g:'♻️',d:'Ao jogar esta carta, todos os outros descartam uma carta de ação aleatória e compram 1 carta para repor.',deck:['r','b','y','g']},
-  wish:{n:'Carta do Desejo',g:'☄️',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
+  steal:{n:'Carta da Transmutação',g:'🎩',d:'Ao jogar, faça uma carta de cada adversário se transformar em carta numérica.',deck:['r','b','y','g']},
+  wish:{n:'Carta do Desejo',g:'🪄',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
   peace:{n:'Carta da Paz',g:'🌼',d:'Ao jogar esta carta, cartas de ação não terão efeito por alguns turnos.',deck:['r','b','y','g']},
   luck:{n:'Carta da Sorte',g:'🍀',d:'Ao jogar esta carta, a sua próxima carta comprada será uma carta jogável naquele turno.',deck:['r','b','y','g','r','b','y','g']},
   random:{n:'Carta Misteriosa',g:'❓',d:'Esta carta ativa um efeito aleatório quando jogada.',deck:['w','w','w','w']},
@@ -88,7 +88,7 @@ const SP={
   mix3:{n:'Combo Bloqueio + +2',g:'⊘+2',small:1,hide:1,rule:'mix',deck:C4},
   d99:{n:'Curinga +99',g:'+99',small:1,rule:'plus99',d:'Ao jogar esta carta, o próximo jogador morre de tanto comprar cartas. Esta carta pode ser desafiada.',deck:['w']},
   sun:{n:'Clima: Ensolarado',g:'☀️',hide:1,rule:'weather',deck:C4},
-  fog:{n:'Clima: Nevoeiro',g:'☁️',hide:1,rule:'weather',deck:C4},
+  fog:{n:'Clima: Neblina',g:'☁️',hide:1,rule:'weather',deck:C4},
   storm:{n:'Clima: Tempestade',g:'⛈️',hide:1,rule:'weather',deck:C4},
   blizzard:{n:'Clima: Nevasca',g:'❄️',hide:1,rule:'weather',deck:C4},
   portal:{n:'Carta do Portal',g:'🌀',d:'Duas partidas estão acontecendo ao mesmo tempo. Jogue esta carta para alternar entre elas.',deck:C8},
@@ -111,8 +111,8 @@ RULES.push(
 const BOTRULES=['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise'];
 const WEATHER={
   sun:{g:'☀️',n:'Ensolarado',t:'Pode jogar fora da cor, mas compra 1',c:'#e8a317'},
-  fog:{g:'☁️',n:'Nevoeiro',t:'Cartas dos adversários ocultas, sem UNO',c:'#8a86a0'},
-  storm:{g:'⛈️',n:'Tempestade',t:'Jogar um 0 faz todos os outros comprarem 1',c:'#4b4f8f'},
+  fog:{g:'☁️',n:'Neblina',t:'Cartas dos adversários ocultas, sem UNO',c:'#8a86a0'},
+  storm:{g:'⛈️',n:'Tempestade',t:'Quando um jogador mudar de cor, um adversário aleatório compra 1 carta',c:'#4b4f8f'},
   blizzard:{g:'❄️',n:'Nevasca',t:'Ninguém compra. Acaba se todos passarem a vez.',c:'#5aa9d6'},
 };
 const CURSES={
@@ -120,12 +120,12 @@ const CURSES={
   ice:{nm:'Gelo',g:'🧊',t:'Ninguém pode comprar cartas',n:3},
   shoe:{nm:'Bota',g:'👢',t:'Quem jogar carta de ação compra 1 carta',n:3},
   thorn:{nm:'Espinho',g:'🌵',t:'Quem comprar cartas será eliminado',n:1},
-  poison:{nm:'Veneno',g:'🧪',t:'Todos ficam confusos',n:2},
+  poison:{nm:'Veneno',g:'🧪',t:'Todos ficam confusos',n:1},
 };
 const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload'];
 ['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{const i=RULES.findIndex(r=>r.k===k);if(i>=0)RULES.splice(i,1)});
 const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw'],['satisfaction','fastdraw']];
-RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k]));
+RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k],['noaction',r.k]));
 const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
 const MODE_DESC={classic:'UNO tradicional, sem nenhuma regra especial.',mix:'Antes de distribuir as cartas, cada jogador escolhe uma regra para colocar na partida.',custom:'Você escolhe todas as regras da partida na lista abaixo.'};
@@ -138,7 +138,6 @@ const TIPS=[
   'Recebeu um +4 suspeito? Desafie! Se foi blefe, quem jogou é que comprará as cartas. Mas se não foi, você compra 2 cartas a mais.',
   'O ranking do fim da partida é por pontos: guarde números baixos e livre-se dos curingas (50) e ações (20) quando alguém estiver perto de vencer.',
   'Selos nos topos das cartas indicam por que elas podem ser jogadas ou não e algumas outras informações especiais.',
-  'Cartas com borda vermelha estão bloqueadas por alguma regra. O ícone no topo mostra qual.',
   'A seta e a moldura brilhante nas cadeiras mostram a ordem da vez. Quando a moldura sai pela ponta, é sua vez.',
   'Na Paz, cartas de ação não fazem efeito e curingas não trocam a cor. Às vezes vale guardar suas ações para depois.',
   'Durante o clima Nevasca, ninguém compra cartas. Caso todos passem a vez, a nevasca acaba.',
@@ -156,6 +155,7 @@ const SEGS={
   sound:[[true,'Ligado'],[false,'Desligado']],
   mode:[['classic','Clássico'],['mix','Mix de regras'],['custom','Personalizado']],
   fx3d:[[true,'Ligados'],[false,'Desligados']],
+  vibrate:[[true,'Ligada'],[false,'Desligada']],
   bots:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],
   diff:[['easy','Fácil'],['normal','Normal'],['hard','Difícil'],['master','Mestre']],
   start:[3,4,5,6,7,8,9,10].map(n=>[n,String(n)]),
@@ -170,7 +170,7 @@ const DIFF={
 const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 
-const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.vibrate=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
 // configuração salva com duas regras incompatíveis (conflito novo): mantém só a primeira
 CONFLICT_PAIRS.forEach(([a,b])=>{if(CFG[a]&&CFG[b])CFG[b]=false});
@@ -216,6 +216,8 @@ const isDraw=c=>c.type==='d2'||c.type==='d4'||c.type==='d99';
 const drawVal=c=>c.type==='d2'?2:c.type==='d4'?4:99;
 const curseIs=k=>!!(S&&S.curse&&S.curse.k===k);
 const sameCol=(a,b)=>a===b||(R.bg&&((a==='b'&&b==='g')||(a==='g'&&b==='b')));
+// Mão Colorida: segura todas as cores ou um curinga
+const colorful=p=>p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col));
 const holds=(pi,t)=>S.players[pi].hand.some(c=>c.type===t);
 function drawAmt(pi,n){let k=n;if(holds(pi,'half'))k=Math.ceil(k/2);if(curseOn('anvil',pi))k+=1;return k}
 const confused=pi=>!!(S.players[pi].confuse||curseOn('poison',pi));

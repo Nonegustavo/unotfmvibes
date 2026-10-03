@@ -314,9 +314,9 @@ function sfxGlyph(g){
   const map=[['⊘+2','plus'],['⊘','skip'],['💣','boom'],['💥','boom'],['☀️','sun'],['☁️','fog'],['⛈️','storm'],['❄️','blizzard'],['⚀','dice'],['⚁','dice'],['⚂','dice'],['⚃','dice'],['⚄','dice'],['⚅','dice'],
     ['💰','chest'],['📜','rule'],['⚔️','chal'],['☠️','death'],['✂','jump'],['★','bonus'],['⇆','swoosh'],['🔀','swoosh'],['🎠','swoosh'],['🌪️','swoosh'],['✋','swoosh'],['🥔','pop'],['🌼','peace'],['🕊️','peace'],
     ['⚒️','curse'],['🧊','curse'],['👢','curse'],['🌵','curse'],['⏱️','curse'],['🧪','curse'],['😈','curse'],['⚡','thunder'],['💧','rain'],
-    ['❤️‍🔥','gift'],['🕸️','web'],['☄️','wish'],['⚖️','equal'],['🙏','justice'],['🧲','magnet'],['♻️','recycle'],['🍀','luck'],['❓','mystery'],['🧬','clone'],['🚦','beep'],
+    ['❤️‍🔥','gift'],['🕸️','web'],['🪄','wish'],['⚖️','equal'],['🙏','justice'],['🧲','magnet'],['🎩','recycle'],['🍀','luck'],['❓','mystery'],['🧬','clone'],['🚦','beep'],
     ['🤲','copy'],['🧠','simon'],['🪑','chairs'],['👁️','view'],['🧭','compass'],['🔒','lock'],['🧤','sneak'],['✖️','ban'],['📦','box'],['🍄','dizzy'],['🖌️','splat'],['⏳','paradox'],
-    ['⏩','zip'],['🌀','portal'],['🌤️','thaw'],['🚨','siren'],['#0d0a14','thud'],['wheel','wild'],['+','plus']];
+    ['⏩','zip'],['🌀','portal'],['🌤️','thaw'],['🚨','siren'],['--cgray','thud'],['wheel','wild'],['+','plus']];
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }
 function fx(glyph,cap,color,kind,dur){

@@ -22,7 +22,7 @@ function humanPlay(card){
     announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else{S.preLanded=card;finishHuman(card,null)}});
     return;
   }
-  if(card.type!=='num'||(S.weather==='storm'&&card.value===0)){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
+  if(card.type!=='num'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
   finishHuman(card,null);
 }
 function finishHuman(card,col){
@@ -156,7 +156,7 @@ function cardBadges(p,c,turn){
   if(c.type==='batata')b.push(`🥔 ${p.batata||0}/5`);
   if(R.perfection&&c.type==='num'&&c.value===p.hand.length)b.push('💯');
   if(S.peace>0&&c.type!=='num')b.push('🌼');
-  if(S.weather==='storm'&&c.type==='num'&&c.value===0)b.push('⛈️');
+  if(S.weather==='storm'&&(c.color==='w'?S.peace<=0:!sameCol(c.color,S.color)))b.push('⛈️');
   if(curseOn('shoe',0)&&c.type!=='num')b.push('👢');
   return b;
 }
@@ -176,31 +176,31 @@ function statusText(){
     return `Combo: ${parts.join(' ou ')} — ou encerre`;
   }
   if(S.phase==='drawn')return 'Jogue uma carta ou passe';
-  if(R.satisfaction&&S.drawnId!=null&&S.phase==='play')return 'Satisfação: compre até poder jogar';
+  if(R.satisfaction&&S.drawnId!=null&&S.phase==='play')return 'Compra Implacável: compre até poder jogar';
   if(S.pending>0){
     const any=S.players[0].hand.some(c=>canPlay(S.players[0],c));
     return any?`Defenda o +${S.pending} ou compre`:`Você compra ${S.pending}`;
   }
-  return '';
+  return 'Sua vez';
 }
 function seatStatus(i){
   const p=S.players[i],L=[];if(p.out)return L;
   const n=p.hand.length;
-  const shiny=R.shiny&&(p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col)));
+  const shiny=R.shiny&&colorful(p);
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
-  if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`segurando por ${p.batata}/5 turnos, no quinto é eliminado`});
+  if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
   if(p.treasure)L.push({ic:'🧭',short:`🧭${p.treasure}`,name:'Busca',txt:`jogou ${p.treasure}/3, na terceira ganha a Carta do Tesouro`});
   if(p.hand2&&p.hand2.length)L.push({ic:'✋',short:'✋',name:'Segunda mão',txt:`${p.hand2.length} carta${p.hand2.length===1?'':'s'} pendente${p.hand2.length===1?'':'s'} na segunda mão`});
   if(S.other){const k=S.other.players[i].hand.length;L.push({ic:'🌀',short:`🌀${k}`,name:'Portal',txt:`${k} carta${k===1?'':'s'} no outro lado`})}
-  if(shiny)L.push({ic:'✨',short:'✨',name:'Mão brilhante',txt:'tem todas as cores ou um curinga'});
+  if(shiny)L.push({ic:'🌈',short:'🌈',name:'Mão Colorida',txt:'tem todas as cores ou um curinga'});
   if(p.luck)L.push({ic:'🍀',short:'🍀',name:'Sorte',txt:'a próxima compra será uma carta jogável'});
   if(p.confuse)L.push({ic:'🍄',short:'🍄',name:'Confusão',txt:'a próxima jogada será aleatória'});
   if(camo&&!fog)L.push({ic:'😶‍🌫️',short:'😶‍🌫️',name:'Camuflagem',txt:'quantidade de cartas ocultada até ter 1 carta'});
-  if(fog)L.push({ic:'☁️',short:'☁️',name:'Nevoeiro',txt:'quantidade de cartas ocultada até mudar o clima'});
+  if(fog)L.push({ic:'☁️',short:'☁️',name:'Neblina',txt:'quantidade de cartas ocultada até mudar o clima'});
   return L;
 }
-const OUT_INFO={'💣':['Bomba','comprou a Carta Bomba'],'🏋️':['Sobrecarga','passou de 10 cartas na mão'],'☠️':['Morte súbita','precisou comprar ou cometeu um erro durante a Morte súbita'],'🥔':['Batata','ficou 5 turnos com a Batata'],'🌵':['Maldição do espinho','comprou cartas com a maldição ativa']};
+const OUT_INFO={'+99':['+99','comprou as cartas do +99'],'💣':['Bomba','comprou a Carta Bomba'],'🏋️':['Sobrecarga','passou de 10 cartas na mão'],'☠️':['Morte súbita','precisou comprar ou cometeu um erro durante a Morte súbita'],'🥔':['Batata','ficou 5 turnos com a Batata'],'🌵':['Maldição do espinho','comprou cartas com a maldição ativa']};
 function seatInfoItems(i){
   const p=S.players[i];
   if(p.out){const ic=p.outIcon||'✖';const inf=OUT_INFO[ic]||['Limite de cartas',`passou de ${ic} cartas na mão`];return [{ic,name:inf[0],txt:inf[1]}]}
@@ -265,7 +265,6 @@ function renderRail(){
     const badge=hidden?'?':said?`${word()}!`:near?`${n}/${lim}`:String(n);
     const ctCls=said?'said':hidden?'':near?'nr':n<=4?'c'+n:'';
     const fanN=hidden?1:Math.min(n,8);
-    const shiny=R.shiny&&!p.out&&(p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col)));
     if(i>1)parts.push(a);
     parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
@@ -327,7 +326,7 @@ function render(){
   hw.style.setProperty('--sweep',S.dir===1?'right':'left');
   if(S.phase==='over'){if(MK.turn!==null){edgeMarker('right',true);MK.turn=null}}
   else if(MK.turn!==S.turn){
-    if(S.turn===0){hw.classList.remove('arrive');void hw.offsetWidth;hw.classList.add('arrive');setTimeout(()=>sfx('turn'),250)}
+    if(S.turn===0){hw.classList.remove('arrive');void hw.offsetWidth;hw.classList.add('arrive');setTimeout(()=>sfx('turn'),250);if(!S.players[0].out)buzz(30)}
     moveMarker(MK.turn,S.turn);MK.turn=S.turn;
   }else if(S.turn!==0&&Date.now()>MK.until)placeMarker(S.turn,true);
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
@@ -347,7 +346,7 @@ function render(){
   if(R.revelation&&dtop){deck.className=`card deckbtn reveal c-${dtop.color}`;deck.innerHTML=faceHTML(dtop)}
   else{deck.className='card back deckbtn';deck.innerHTML='<span class="face">unotfm</span>'}
   deck.classList.toggle('can',mine);deck.disabled=!mine;
-  {const ic=[];if(R.satisfaction)ic.push('😋');if(R.insatisfaction)ic.push('😒');if(R.tracking)ic.push('🔎');if(R.fastdraw)ic.push('⏩');
+  {const ic=[];if(R.revelation)ic.push('🔦');if(R.satisfaction)ic.push('😤');if(R.insatisfaction)ic.push('👋');if(R.tracking)ic.push('🔎');if(R.fastdraw)ic.push('⏩');
    if(S.death)ic.push('☠️');if(S.curse&&S.curse.k!=='shoe')ic.push(CURSES[S.curse.k].g);if(S.weather==='blizzard')ic.push('❄️');
    if(ic.length){const sp=document.createElement('span');sp.className='cb deckcb';sp.textContent=ic.join(' ');deck.appendChild(sp)}
    deck.classList.toggle('frozen',S.weather==='blizzard'||curseIs('ice'));deck.classList.toggle('gone',!!S.death);}
@@ -494,7 +493,8 @@ function buildSettings(){
 setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=master]');if(mb&&!RM)mb.animate([{transform:'scale(.4)',opacity:0},{transform:'scale(1.15)'},{transform:'none',opacity:1}],{duration:600,easing:'cubic-bezier(.2,.9,.3,1.3)'})},30)}}
         else hardClicks.n=0}
       if(k==='sound'){MUTED=!CFG.sound;save('unotfm-solo-mute',MUTED);if(!MUTED)sfx('special')}
-      if(k==='fx3d'||k==='sound'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
+      if(k==='vibrate'&&CFG.vibrate)buzz(40);
+      if(k==='fx3d'||k==='sound'||k==='vibrate'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
       buildSettings()};
   });
   $('comboLegend').textContent=COMBO_DESC[CFG.combo]||'';$('modeLegend').textContent=MODE_DESC[CFG.mode]||'';$('rulesField').hidden=CFG.mode!=='custom';$('botsField').hidden=CFG.mode!=='custom';$('startField').hidden=CFG.mode!=='custom';
@@ -505,7 +505,7 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
     const block=(CONFLICT[r.k]||[]).filter(x=>CFG[x]);
     let why=block.length?`Incompatível com ${block.map(x=>RNAME[x]).join(', ')}`:'';
     if(r.k==='team'&&CFG.bots%2===0)why='Precisa de 1, 3 ou 5 adversários';
-    html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${[...ruleIcon(r.k)].length>2?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${why?`<em>${why}</em>`:''}</div></label>`;
+    html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${why?`<em>${why}</em>`:''}</div></label>`;
   });
   $('ruleList').innerHTML=html;
   $('ruleList').onchange=e=>{const k=e.target.dataset.k;if(!k)return;CFG[k]=e.target.checked;buildSettings()};
@@ -541,7 +541,7 @@ function openActive(){
   let g='';
   on.forEach(r=>{
     if(r.g!==g){g=r.g;html+=`<div class="act-group">${g}</div>`}
-    html+=`<div class="act act-i"><span class="mi ${[...ruleIcon(r.k)].length>2?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b>${added[r.k]?`<em class="new" style="font-style:normal">adicionada por ${added[r.k]}</em>`:''}<span>${r.d}</span></div></div>`;
+    html+=`<div class="act act-i"><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b>${added[r.k]?`<em class="new" style="font-style:normal">adicionada por ${added[r.k]}</em>`:''}<span>${r.d}</span></div></div>`;
   });
   if(S.removed.length){html+=`<div class="act-group">Removidas nesta partida</div>`;S.removed.forEach(x=>{html+=`<div class="act"><b>${RNAME[x.k]}</b><em class="new gone" style="font-style:normal">banida por ${x.by}</em></div>`})}
   if(!on.length)html+='<p class="sub" style="margin-top:10px">Nenhuma regra da casa ativa: UNO clássico.</p>';
@@ -597,7 +597,7 @@ function badgeInfo(b,c,blocked){
     case '🥔':return {ic,name:'Batata',txt:`você está com ela há ${S.players[0].batata||0}/5 turnos. No quinto, você é eliminado`};
     case '💯':return r('perfection');
     case '🌼':return {ic,name:'Paz',txt:'cartas de ação não têm efeito enquanto a Paz durar'};
-    case '⛈️':return {ic,name:'Tempestade',txt:'jogar um 0 faz todos os outros jogadores comprarem 1 carta'};
+    case '⛈️':return {ic,name:'Tempestade',txt:'esta carta pode mudar a cor. Se mudar, um adversário aleatório compra 1 carta'};
     case '👢':return {ic,name:'Maldição da bota',txt:'jogar uma carta de ação faz você comprar 1 carta'};
     case '🔒':return {ic,name:'Tranca',txt:'esta carta está bloqueada por 1 turno'};
     case '🧼':return r('clean');
@@ -613,9 +613,11 @@ function showCardInfo(id,el){
   if(!desc&&!rows.length)return false;
   const name=c.type==='num'?`${c.value} ${CNAME[c.color]||''}`.trim():label(c);
   infoPopup('card'+id,`<div class="si-head"><b>${name}</b></div>${desc?`<p class="ci-desc">${desc}</p>`:''}`,rows,el,true,true);
-  if(navigator.vibrate)try{navigator.vibrate(15)}catch(e){}
+  buzz(15);
   return true;
 }
+// vibração leve (pode ser desligada nas Configurações; o iPhone não vibra pelo navegador)
+function buzz(ms){if(CFG.vibrate!==false&&navigator.vibrate)try{navigator.vibrate(ms)}catch(e){}}
 /* ---------- wiring ---------- */
 {let lp=null,fired=false;
  const cancel=()=>{if(lp){clearTimeout(lp.t);lp=null}};

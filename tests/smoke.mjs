@@ -41,7 +41,7 @@ async function launch() {
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
 const errors = [];
-page.on('pageerror', e => errors.push(e.message));
+page.on('pageerror', e => errors.push(process.env.STACK ? e.stack : e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
 
 // Acelera as esperas do jogo (jogadas dos adversários, anúncios, efeitos) sem mudar o código do jogo.

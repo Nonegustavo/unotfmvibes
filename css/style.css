@@ -1,7 +1,7 @@
 /* unotfm solo: estilos */
 :root{
   --bg:#16122a; --table:#231c3f; --ink:#f0eaff; --muted:#a597c7; --line:#3a3062; --panel:#1d1735; --accent:#a28aff; --accent-ink:#16122a; --arrow:#6b5aa8;
-  --cr:#e0433a; --cy:#f0b21f; --cg:#2c9a57; --cb:#2b6bd6; --ck:#1d1829;
+  --cr:#e0433a; --cy:#f0b21f; --cg:#2c9a57; --cb:#2b6bd6; --ck:#1d1829; --cgray:#8e8a98;
   /* escala única: 1 --u = 1px num celular de 390×800; cresce e diminui com a largura e a altura da tela */
   --u:clamp(.75px,min(calc(100vw/390),calc(100dvh/800)),1.3px);
   --cw0:calc(60*var(--u));--cw:var(--cw0);
@@ -14,10 +14,10 @@
 .rulestrip{display:flex;justify-content:safe center;gap:0.375rem;padding:0 0.75rem 0.25rem;overflow-x:auto;scrollbar-width:none;min-height:0}
 .rulestrip::-webkit-scrollbar{display:none}
 .rulestrip:empty{display:none}
-.ri{flex:0 0 auto;min-width:2rem;height:2rem;padding:0 0.4375rem;border-radius:999px;border:1.5px solid var(--line);background:var(--panel);display:grid;place-items:center;font-size:1rem;line-height:1;font-weight:700}
-.ri.txt{font-size:.72rem}
+.ri{flex:0 0 auto;width:2rem;height:2rem;padding:0;border-radius:50%;overflow:hidden;white-space:nowrap;border:1.5px solid var(--line);background:var(--panel);display:grid;place-items:center;font-size:1rem;line-height:1;font-weight:700}
+.ri.txt{font-size:.7rem;letter-spacing:-.02em}
 .ri.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
-.ri.fresh{animation:riIn 1.2s cubic-bezier(.2,.9,.3,1.3),riGlow 2.4s ease-in-out 1.2s 3;border-color:var(--accent)}
+.ri.fresh{animation:riIn 1.2s cubic-bezier(.2,.9,.3,1.3),riGlow 2.4s ease-in-out 1.2s 2;border-color:var(--accent)}
 @keyframes riIn{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.35)}100%{transform:none}}
 @keyframes riGlow{50%{box-shadow:0 0 0 0.3125rem color-mix(in srgb,var(--accent) 35%,transparent)}}
 .notices{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 3.25rem);transform:translateX(-50%);width:min(92vw,26.25rem);z-index:9;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}
@@ -189,7 +189,6 @@
 .hbody b{font-size:.95rem}
 .hbody span{color:var(--muted)}
 .rulestrip{cursor:grab}
-.hand .card.blocked{border-color:#e0433a;box-shadow:0 0 0 2px #e0433a,0 3px 0 rgba(0,0,0,.22)}
 .card .cb.bad{border-color:var(--cr);background:#fde8e6;color:#8a1f18}
 .deckbtn.frozen{background-image:linear-gradient(160deg,rgba(235,247,255,.85),rgba(160,210,250,.55) 55%,rgba(210,236,255,.8)),repeating-linear-gradient(135deg,#3b2f6b 0 0.4375rem,#46397d 0.4375rem 0.875rem);border-color:#d8efff;box-shadow:0 0 0 2px #9fd3ff,0 0 1rem rgba(120,190,255,.7),0 3px 0 rgba(0,0,0,.22)}
 .deckbtn.frozen .face{background:#e8f6ff;color:#2b6bd6}
@@ -414,7 +413,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .card .cn{position:absolute;top:calc(var(--cw)*.065);left:calc(var(--cw)*.09);font-size:calc(var(--cw)*.19);line-height:1}
 .card .cn.br{top:auto;left:auto;bottom:calc(var(--cw)*.065);right:calc(var(--cw)*.09);transform:rotate(180deg)}
 .mw{display:inline-block;width:calc(var(--cw)*.17);aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);border:1px solid #fff;vertical-align:top}
-.c-k{--cc:var(--ck)}.c-r{--cc:var(--cr)}.c-y{--cc:var(--cy)}.c-g{--cc:var(--cg)}.c-b{--cc:var(--cb)}.c-w{--cc:var(--ck)}
+.c-k{--cc:var(--cgray)}.c-r{--cc:var(--cr)}.c-y{--cc:var(--cy)}.c-g{--cc:var(--cg)}.c-b{--cc:var(--cb)}.c-w{--cc:var(--ck)}
 .wheel{width:58%;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);display:grid;place-items:center;border:max(1px,calc(var(--cw)*.026)) solid #fff}
 .wheel span{font-size:calc(var(--cw)*.26);text-shadow:0 1px 0 rgba(0,0,0,.5)}
 .back{--cc:#3b2f6b;background:repeating-linear-gradient(135deg,#3b2f6b 0 0.4375rem,#46397d 0.4375rem 0.875rem)}
@@ -433,7 +432,6 @@ button.card:disabled{cursor:default}
 .hand.myturn .card.ok{transform:translateY(-0.625rem)}
 .hand.myturn .card.ok:hover{transform:translateY(-1rem) rotate(-2deg)}
 .hand .card.jump{transform:translateY(-0.625rem);box-shadow:0 0 0 3px var(--cy),0 3px 0 rgba(0,0,0,.22);animation:wiggle .9s ease-in-out infinite}
-.hand.myturn .card.ok.sunny{transform:translateY(-0.25rem)}
 .hand .card.fresh{box-shadow:0 0 0 3px var(--accent),0 3px 0 rgba(0,0,0,.22)}
 .shake{animation:shake .3s}
 @keyframes shake{25%{translate:-0.375rem 0}75%{translate:0.375rem 0}}
@@ -539,3 +537,11 @@ body>.top{grid-row:1}body>.rail{grid-row:2}body>.rulestrip{grid-row:3}body>.tabl
 .home-btns{display:flex;gap:0.625rem;width:min(20rem,100%)}
 .home-btns .btn.main{flex:1;font-size:1.15rem}
 .home-btns .btn:not(.main){flex:0 0 3.5rem}
+/* Banimento e Transmutação: cartas mostradas perto da cadeira (como na Clarividência), sobre o monte ou na mão */
+.showc{position:fixed;z-index:21;pointer-events:none;display:flex;align-items:center;gap:0.1875rem}
+.showc .card{flex:none}
+.showc .xn{font-weight:800;font-size:.8rem;color:#fff;background:var(--cr);border-radius:999px;padding:0 0.3125rem;margin-left:0.125rem}
+.ember{position:fixed;z-index:23;width:0.3125rem;height:0.3125rem;border-radius:50%;background:#ffc04a;box-shadow:0 0 0.375rem 0.125rem #ff6a00;pointer-events:none}
+/* Dado: dado pequeno rolando perto do adversário */
+.minidie{position:fixed;z-index:21;pointer-events:none;width:2.125rem;height:2.125rem;animation:noteIn .2s}
+.minidie svg{width:100%!important;height:100%!important}
