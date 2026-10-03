@@ -97,6 +97,7 @@ function canCombo(p,card){
 
 /* ---------- setup ---------- */
 function newGame(){
+  $('home').hidden=true;
   const gen=S?S.gen+1:1;
   clearFlash();closeOverlays();
   const tourMode=R.tournament?'tournament':R.survivor?'survivor':null;
@@ -127,7 +128,7 @@ function newGame(){
   if(R.poker){
     const o=ruleOptions(3,true);
     S.busy=true;render();
-    const go=()=>{S.players.forEach((p,i)=>{if(i===0)return;const b=ruleOptions(1,true);if(b.length)addRule(i,b[0],true)});S.busy=false;openPoker()};
+    const go=()=>{S.players.forEach((p,i)=>{if(i===0)return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=false;openPoker()};
     if(o.length){openRuleChoice(o,k=>{addRule(0,k,true);go()},'Mix de regras','Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.');return}
     go();return;
   }

@@ -13,6 +13,9 @@ function humanClick(id,el){
 }
 function humanPlay(card){
   S.mull=false;
+  // a última carta (com Duas mãos, só a última da segunda mão) vence direto, sem escolhas
+  const me=S.players[0],last=me.hand.length===1&&!(me.hand2&&me.hand2.length);
+  if(last&&(isWildPick(card)||card.type==='clone'||card.type==='random')){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
   if(S.peace>0&&card.color==='w'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
   if(isWildPick(card)){announce(0,card,()=>{S.busy=true;render();openColors(col=>finishHuman(card,col),card)},480);return}
   if(card.type==='clone'||card.type==='random'){
@@ -559,7 +562,7 @@ function openSettings(){
   updateInstallUI();
   $('tipBox').innerHTML=`<b>💡 Dica</b>${rand(TIPS)}`;
   RF.cat='all';RF.q='';$('ruleSearch').value='';
-  buildSettings();$('closeSettings').style.display=S&&S.phase!=='over'?'':'none';
+  buildSettings();$('closeSettings').style.display=(S&&S.phase!=='over')||!$('home').hidden?'':'none';
   $('endOv').classList.remove('show');$('settingsOv').classList.add('show');
 }
 
@@ -726,4 +729,8 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
  for(let i=0;i<60;i++){const f=document.createElement('i'),d=R1(5,11);
    f.style.cssText=`--x:${R1(-2,100).toFixed(1)}%;--sz:${R1(.25,.7).toFixed(2)}rem;--o:${R1(.55,1).toFixed(2)};--d:${d.toFixed(1)}s;--dl:${(-R1(0,d)).toFixed(1)}s;--sd:${R1(1.6,3.2).toFixed(1)}s;--sw:${R1(.3,1.4).toFixed(2)}rem`;
    box.insertBefore(f,box.lastElementChild)}}
-openSettings();
+/* tela inicial: no lugar da mesa vazia até a primeira partida */
+$('homeFan').innerHTML=[['r','num',7],['y','skip'],['w','wild'],['g','rev'],['b','num',0]].map(([c,t,v],k)=>`<div class="card c-${c}" style="--k:${k}">${faceHTML({color:c,type:t,value:v??null})}</div>`).join('');
+$('homePlay').onclick=()=>openSettings();
+$('homeCfg').onclick=()=>$('openConfig').click();
+

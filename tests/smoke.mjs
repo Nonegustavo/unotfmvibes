@@ -64,6 +64,7 @@ async function step() {
     const click = el => { if (el) { el.click(); return true; } return false; };
     const pick = list => list[Math.floor(Math.random() * list.length)];
     if (shown('endOv')) return 'fim';
+    if (!document.getElementById('home').hidden && !shown('settingsOv')) return click(document.getElementById('homePlay')) && 'tela inicial';
     if (shown('settingsOv')) return click(document.getElementById('startBtn')) && 'iniciar';
     if (shown('pokerOv')) return click(document.getElementById('pokerGo')) && 'mix';
     for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps'], ['simonOv', 'simonBtns']]) {

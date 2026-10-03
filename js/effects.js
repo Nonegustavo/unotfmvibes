@@ -340,6 +340,43 @@ function stampOn(pi,glyph,color){
   d.style.fontSize=(h*.62)+'px';if(pi===0)d.style.borderRadius='50%';
   document.body.appendChild(d);d.addEventListener('animationend',()=>d.remove());
 }
+/* Chuva: uma carta cai do céu até o jogador, junto com gotas */
+function rainDrop(pi,ms,cb){
+  const r=targetRect(pi);if(RM||!r){cb();return}
+  const cw=Math.min(pi===0?$('deck').getBoundingClientRect().width:r.width*.42,r.height*.8),ch=cw*1.5;
+  const x=r.left+r.width/2,y=r.top+r.height/2;
+  const c=document.createElement('div');c.className='card back raincard';c.innerHTML='<span class="face">unotfm</span>';
+  Object.assign(c.style,{left:(x-cw/2)+'px',top:(y-ch/2)+'px',width:cw+'px'});c.style.setProperty('--cw',cw+'px');
+  document.body.appendChild(c);
+  const fall=y+ch;
+  c.animate([{transform:`translateY(${-fall}px) rotate(-8deg)`,opacity:.9},{transform:'translateY(0) rotate(4deg)',opacity:1}],{duration:ms,easing:'cubic-bezier(.55,0,1,.6)',fill:'both'}).onfinish=()=>{c.remove();splash(x,y);cb()};
+  for(let k=0;k<7;k++){const d=document.createElement('i');d.className='raindrop';const dx=(Math.random()-.5)*cw*2.4,len=10+Math.random()*14;
+    Object.assign(d.style,{left:(x+dx)+'px',top:'0px',height:len+'px'});document.body.appendChild(d);
+    d.animate([{transform:`translateY(${-len}px)`,opacity:.9},{transform:`translateY(${y+Math.random()*ch*.4}px)`,opacity:.2}],{duration:ms*(.75+Math.random()*.4),delay:Math.random()*ms*.3,easing:'linear',fill:'both'}).onfinish=()=>d.remove()}
+}
+function splash(x,y){
+  const s=document.createElement('div');s.className='rainsplash';Object.assign(s.style,{left:x+'px',top:y+'px'});document.body.appendChild(s);
+  s.addEventListener('animationend',()=>s.remove());
+}
+/* Trovão: raio descendo do alto da tela até o jogador */
+function boltOn(pi){
+  const r=targetRect(pi);if(RM||!r)return;
+  const x=r.left+r.width/2,y=r.top+r.height/2,pts=[[x+(Math.random()-.5)*30,0]];
+  const n=7;for(let k=1;k<n;k++)pts.push([x+(Math.random()-.5)*60*(1-k/n),y*k/n]);pts.push([x,y]);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','boltsvg');
+  svg.setAttribute('width',innerWidth);svg.setAttribute('height',innerHeight);
+  const d=pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ');
+  svg.innerHTML=`<polyline points="${d}" class="glow"/><polyline points="${d}" class="core"/>`;
+  document.body.appendChild(svg);svg.addEventListener('animationend',()=>svg.remove());
+}
+/* Carta da Regra: cartas novas caem viradas para cima no monte */
+function cardDrop(c,to,delay){
+  if(RM||!to)return;
+  const cw=to.width,el=document.createElement('div');el.className=`card c-${c.color} dropcard`;el.innerHTML=faceHTML(c);
+  Object.assign(el.style,{left:to.left+'px',top:to.top+'px',width:cw+'px'});el.style.setProperty('--cw',cw+'px');
+  document.body.appendChild(el);
+  el.animate([{transform:`translateY(${-cw*2.2}px) rotate(${(Math.random()-.5)*30}deg)`,opacity:0},{opacity:1,offset:.35},{transform:'translateY(0) rotate(0)',opacity:1,offset:.8},{transform:'translateY(0) scale(.96)',opacity:0}],{duration:780,delay,easing:'ease-in',fill:'both'}).onfinish=()=>el.remove();
+}
 function floatOn(pi,text,color){
   const r=targetRect(pi);if(!r)return;
   const d=document.createElement('div');d.className='floatx';d.textContent=text;d.style.setProperty('--fxc',color);
