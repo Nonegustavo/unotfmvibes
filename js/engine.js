@@ -122,7 +122,7 @@ function newGame(){
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,log:[],busy:false,
      newIds:[],botDraw:{},animPlay:null,mull:R.mulligan,autoResolve:null,lastTop:null};
-  applyBg();S.added=[];S.removed=[];S.freshRules=[];$('notices').innerHTML='';$('rulestrip').dataset.sig='';
+  applyBg();S.added=[];S.removed=[];S.freshRules=[];S.ruleOrder=[];S.stripHold=false;$('notices').innerHTML='';$('rulestrip').dataset.sig='';
   S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
   if(timeT){clearInterval(timeT);timeT=null}
@@ -130,7 +130,8 @@ function newGame(){
   $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';S.limit=12;
   if(R.poker){
     const o=ruleOptions(3,true);
-    S.busy=true;render();
+    // a faixa de regras fica vazia até o fim do Mix (flyRules)
+    S.busy=true;S.stripHold=!RM;render();
     const go=()=>{S.players.forEach((p,i)=>{if(i===0)return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=false;openPoker()};
     if(o.length){openRuleChoice(o,k=>{addRule(0,k,true);go()},'Mix de regras','Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.');return}
     go();return;
@@ -158,6 +159,7 @@ function dealAndStart(){
   if(R.addrules){const g=S.gen;addT=setInterval(()=>{if(!S||S.gen!==g||S.phase==='over'||S.busy)return;const o=ruleOptions(1);if(o.length){addRule(null,o[0]);render()}},75000)}
   if(spOn('portal'))buildSideB(startOf);
   S.lastTop=null;S.newIds=players[0].hand.map(c=>c.id);
+  S.ruleOrder=ruleKeys(); // daqui em diante, cada regra nova vai para o fim da faixa
   startTurn();
 }
 

@@ -316,6 +316,7 @@ function addRule(pi,k,quiet,done){
   R[k]=true;if(k==='bg')applyBg();
   const by=pi==null?'o jogo':pi===0?'você':who(pi);
   S.added.push({k,by});S.freshRules=[...(S.freshRules||[]),k];
+  S.ruleOrder=[...(S.ruleOrder||[]).filter(x=>x!==k),k]; // regra nova entra na ponta direita
   const cards=[];
   Object.entries(SP).forEach(([t,v])=>{if((v.rule||t)===k)v.deck.forEach(c=>cards.push(mk(c,t)))});
   if(k==='bomb')cards.push(mk('w','bomb'));
@@ -374,14 +375,16 @@ function notice(k,by,opts={}){
   while(box.children.length>3)box.firstElementChild.remove();
   if(!opts.info)sfx('rule');
 }
+// ordem da faixa: a ordem em que as regras entraram (S.ruleOrder); as que ainda não estão nela vêm depois, na ordem da lista
+function ruleKeys(){const order=(S&&S.ruleOrder)||[];return [...order.filter(k=>R[k]),...RULES.filter(r=>R[r.k]&&!order.includes(r.k)).map(r=>r.k)]}
 function renderRuleStrip(){
-  const keys=RULES.filter(r=>R[r.k]).map(r=>r.k);
+  const keys=ruleKeys();
   const sig=keys.join(',');const strip=$('rulestrip');
   if(strip.dataset.sig===sig)return;strip.dataset.sig=sig;
   const fresh=S.freshRules||[];S.freshRules=[];
   strip.innerHTML=keys.map(k=>{const ic=ruleIcon(k);const txt=txtIcon(ic);
     const bot=BOTRULES.includes(k);
-    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''}" data-k="${k}" title="${RNAME[k]}" aria-label="${RNAME[k]}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</button>`}).join('');
+    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''} ${S.stripHold?'pre':''}" data-k="${k}" title="${RNAME[k]}" aria-label="${RNAME[k]}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</button>`}).join('');
   const f=strip.querySelector('.fresh');if(f){S.progScroll=Date.now();f.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'})}
   strip.querySelectorAll('.fresh').forEach(freshen);
 }
@@ -392,8 +395,6 @@ function openPoker(){
     return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(a.k[0].toUpperCase()+a.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${a.by==='você'?'sua':'de '+a.by}</em></div><p>${ruleDesc(a.k)}</p></div></div>`}).join('');
   $('pokerList').innerHTML=list||'<p class="sub">Nenhuma regra disponível para escolher.</p>';
   S.busy=true;S.freshRules=[];render();
-  // a faixa fica vazia: os ícones escolhidos chegam voando e os outros aparecem depois (flyRules)
-  if(!RM)$('rulestrip').querySelectorAll('.ri').forEach(el=>el.style.visibility='hidden');
   $('pokerOv').classList.add('show');$('pokerGo').focus();
   $('pokerGo').onclick=()=>{
     const src=[...$('pokerList').querySelectorAll('.pk-ic')].map((el,j)=>({k:S.added[j].k,r:el.getBoundingClientRect(),fs:getComputedStyle(el).fontSize}));
@@ -401,24 +402,27 @@ function openPoker(){
     flyRules(src,()=>{S.busy=false;dealAndStart()});
   };
 }
-// Mix de regras: os ícones escolhidos voam da lista até a faixa de regras, como na Carta da Regra;
-// depois os ícones das outras regras crescem um por vez, em ordem, e só então as cartas são distribuídas
+// Mix de regras: os ícones escolhidos voam até a faixa e ficam centralizados sozinhos; depois os ícones das
+// outras regras entram um por vez na ponta direita, crescendo, e a fileira se recentraliza aos poucos. Só então as cartas são distribuídas
 function flyRules(src,done){
-  const g=S.gen;
-  const strip=$('rulestrip'),rest=()=>[...strip.querySelectorAll('.ri')].filter(el=>!src.some(s=>s.k===el.dataset.k));
+  const g=S.gen,strip=$('rulestrip');S.stripHold=false;
+  const all=[...strip.querySelectorAll('.ri')];
+  if(RM){all.forEach(el=>el.classList.remove('pre'));done();return}
+  const chosen=src.map(s=>({s,tgt:strip.querySelector(`[data-k="${s.k}"]`)})).filter(x=>x.tgt);
+  const rest=all.filter(el=>!chosen.some(x=>x.tgt===el));
   const grow=()=>{
-    const els=rest();if(RM||!els.length){done();return}
-    els.forEach((el,j)=>setTimeout(()=>{if(g!==S.gen)return;el.style.visibility='';
-      el.animate([{transform:'scale(0)'},{transform:'scale(1.25)',offset:.7},{transform:'none'}],{duration:380,easing:'ease-out'});sfx('tick')},j*180));
-    setTimeout(()=>{if(g===S.gen)done()},els.length*180+400);
+    if(!rest.length){done();return}
+    rest.forEach((el,j)=>setTimeout(()=>{if(g!==S.gen)return;el.classList.remove('pre');
+      el.animate([{width:0,marginLeft:'-0.375rem',transform:'scale(0)'},{width:'2rem',marginLeft:0,transform:'scale(1.2)',offset:.7},{width:'2rem',marginLeft:0,transform:'none'}],{duration:420,easing:'ease-out'});sfx('tick')},j*260));
+    setTimeout(()=>{if(g===S.gen)done()},rest.length*260+450);
   };
-  if(RM||!src.length){grow();return}
-  render();sfx('rule');
-  const st=strip.getBoundingClientRect();let left=src.length;
+  if(!chosen.length){grow();return}
+  sfx('rule');
+  // os escolhidos ocupam a faixa (ainda invisíveis), já centralizados entre si
+  chosen.forEach(x=>{x.tgt.classList.remove('pre');x.tgt.style.visibility='hidden'});
+  const st=strip.getBoundingClientRect();let left=chosen.length;
   const end=()=>{if(--left===0)setTimeout(()=>{if(g===S.gen)grow()},300)};
-  src.forEach((s,j)=>{
-    const tgt=strip.querySelector(`[data-k="${s.k}"]`);if(!tgt){end();return}
-    tgt.style.visibility='hidden';
+  chosen.forEach(({s,tgt},j)=>{
     const a=s.r,b=tgt.getBoundingClientRect();
     const bx=Math.max(st.left+b.width/2,Math.min(st.right-b.width/2,b.left+b.width/2)),by=b.top+b.height/2;
     const el=document.createElement('div');el.className='rulefly';el.textContent=ruleIcon(s.k);
