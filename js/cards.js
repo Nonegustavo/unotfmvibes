@@ -165,7 +165,7 @@ function transmute(pi,col){
   const g=S.gen,sp=S.spectate?.4:1;S.busy=true;clearFlash();hold(99999);
   picks.forEach(x=>{const c=x.c;x.before={...c};
     c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(Math.random()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
-  let t=0;picks.forEach(x=>{t=Math.max(t,showCards(x.i,[x.before],'morph',sp,[x.after]))});
+  let t=0;picks.forEach(x=>{t=Math.max(t,x.i===0?morphMine(x.c,x.before,x.after,sp):showCards(x.i,[x.before],'morph',sp,[x.after]))});
   setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('',rand(MAGIC),col,'stamp',1800*sp)},RM?0:(SHOW_IN+SHOW_HOLD+MORPH/2)*sp);
   log(`Transmutação: ${picks.map(x=>`${label(x.before)} de ${who(x.i)} virou ${x.after.value}`).join(', ')}.`);
   setTimeout(()=>{
@@ -200,6 +200,37 @@ function vanishCards(target,cards,sp=1){
     setTimeout(()=>box.remove(),VANISH*sp+80);
   },j*VANISH_GAP*sp));
   return ((batches.length-1)*VANISH_GAP+VANISH)*sp;
+}
+/* Transmutação de uma carta sua: ela sai da mão para o centro, logo acima da mão, gira e vira a carta nova,
+   e volta animada para a posição nova na mão (a ordem muda com o símbolo). Devolve a duração em ms */
+const MINE_GO=450,MINE_BACK=450;
+function morphMine(card,before,after,sp=1){
+  const total=(MINE_GO+SHOW_HOLD/2+MORPH+MORPH_HOLD+MINE_BACK)*sp;
+  const src=document.querySelector(`#hand [data-id="${card.id}"]`);
+  if(RM||!src)return RM?0:total;
+  const a=src.getBoundingClientRect(),hr=$('hand').getBoundingClientRect();
+  const fly=makeCard(before);fly.className=`card c-${before.color} flyclone`;fly.disabled=true;
+  Object.assign(fly.style,{position:'fixed',left:a.left+'px',top:a.top+'px',width:a.width+'px',margin:'0',zIndex:21,pointerEvents:'none'});fly.style.setProperty('--cw',a.width+'px');
+  document.body.appendChild(fly);src.style.visibility='hidden';
+  const mid={x:hr.left+hr.width/2-a.width/2,y:hr.top-a.height*1.15};
+  const at=(x,y,extra='')=>`translate(${x-a.left}px,${y-a.top}px) ${extra}`;
+  fly.animate([{transform:'none'},{transform:at(mid.x,mid.y,'scale(1.15)')}],{duration:MINE_GO*sp,easing:'cubic-bezier(.2,.9,.3,1.05)',fill:'forwards'});
+  const tMorph=(MINE_GO+SHOW_HOLD/2)*sp,half=MORPH/2*sp;
+  setTimeout(()=>{sfx('mystery');
+    fly.animate([{transform:at(mid.x,mid.y,'scale(1.15) rotateY(0)')},{transform:at(mid.x,mid.y,'scale(1.15) rotateY(90deg)')}],{duration:half,easing:'ease-in',fill:'forwards'});
+    setTimeout(()=>{fly.innerHTML=faceHTML(after);fly.className=`card c-${after.color} flyclone`;
+      fly.animate([{transform:at(mid.x,mid.y,'scale(1.15) rotateY(90deg)')},{transform:at(mid.x,mid.y,'scale(1.15) rotateY(0)')}],{duration:half,easing:'cubic-bezier(.2,.9,.3,1.2)',fill:'forwards'})},half);
+  },tMorph);
+  // volta: a mão é redesenhada com a carta nova no lugar certo e a cópia voa até lá
+  setTimeout(()=>{
+    const el=document.querySelector(`#hand [data-id="${card.id}"]`);
+    if(el){el.innerHTML=faceHTML(card);el.setAttribute('aria-label',cardName(card));el.style.visibility='hidden'}
+    render();
+    const dst=(document.querySelector(`#hand [data-id="${card.id}"]`)||src).getBoundingClientRect();
+    fly.animate([{transform:at(mid.x,mid.y,'scale(1.15)')},{transform:at(dst.left,dst.top)}],{duration:MINE_BACK*sp,easing:'cubic-bezier(.4,.1,.3,1)',fill:'forwards'});
+    setTimeout(()=>{fly.remove();const e=document.querySelector(`#hand [data-id="${card.id}"]`);if(e)e.style.visibility=''},MINE_BACK*sp);
+  },tMorph+(MORPH+MORPH_HOLD)*sp);
+  return total;
 }
 /* Transmutação: cartas mostradas como na Clarividência (abaixo da cadeira do adversário ou, para você, na própria mão),
    que giram e viram as cartas de "to". Devolve a duração em ms */
