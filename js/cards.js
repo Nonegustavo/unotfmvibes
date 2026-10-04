@@ -14,13 +14,12 @@ function selfCheck(pi){
   return 'done';
 }
 const opponents=pi=>alive().filter(i=>i!==pi&&i!==partner(pi));
-function fewest(list){return list.reduce((a,b)=>S.players[b].hand.length<S.players[a].hand.length?b:a)}
-// alvo da Teia e da Batata: o adversário com menos cartas (o Fácil escolhe ao acaso).
+// alvo da Teia e da Batata: o adversário com menos cartas que ele enxerga (o Fácil escolhe ao acaso).
 // Na Teia, o Mestre pula quem ele anotou que não tem a cor da mesa (esse já não jogaria mesmo)
 function botTarget(pi,skipLack){
   const o=opponents(pi);if(!o.length)return -1;
   if(R.diff==='easy')return rand(o);
-  const byLen=[...o].sort((a,b)=>S.players[a].hand.length-S.players[b].hand.length);
+  const byLen=shuffle([...o]).sort((a,b)=>seenLen(pi,a)-seenLen(pi,b));
   if(skipLack&&R.diff==='master'){const f=byLen.find(i=>!lacksCol(i,S.color));if(f!=null)return f}
   return byLen[0];
 }
@@ -585,7 +584,7 @@ function applySpecial(pi,card){
   switch(T){
     case 'trade':if(!opp.length)return 'done';if(pi===0)return 'ask';{const t=botSwapTarget(pi),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{swapHands(pi,t);return 'done'})}
     case 'carousel':rotateHands();return 'done';
-    case 'gift':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o=opponents(pi).filter(i=>!ab(i,'papaille'));if(!o.length)return 'done';const t=R.diff==='easy'?rand(o):fewest(o),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>giftCard(pi,t))}
+    case 'gift':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o=opponents(pi).filter(i=>!ab(i,'papaille'));if(!o.length)return 'done';const t=R.diff==='easy'?rand(o):fewest(pi,o),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>giftCard(pi,t))}
     case 'web':{if(pi===0)return 'ask';const t=botTarget(pi,true);if(t<0)return 'done';const l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{webOn(pi,t);return 'done'})}
     case 'wish':if(!p.hand.length||S.discard.length<2)return 'done';if(pi===0)return 'ask';{
       const opts=wishOptions();const best=opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0];return botDefer(pi,'up',opts,opts.indexOf(best),()=>{wishSwap(pi,best);return 'done'})}
@@ -687,7 +686,7 @@ function applySpecial(pi,card){
     case 'lock':
       opp.forEach(i=>{const free=shuffle(S.players[i].hand.filter(c=>!c.lock)).slice(0,2);free.forEach(c=>c.lock=true);if(free.length)stampOn(i,'🔒',col)});
       fx('🔒','Duas cartas trancadas por jogador',col,'stamp');log('Tranca: duas cartas de cada adversário trancadas.');return 'done';
-    case 'theft':if(pi===0)return 'ask';{const o=opponents(pi);const t=o.length?(R.diff==='easy'?rand(o):o.reduce((a,b)=>S.players[b].hand.length>S.players[a].hand.length?b:a)):rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>stealWild(pi,t))}
+    case 'theft':if(pi===0)return 'ask';{const o=opponents(pi);const t=o.length?(R.diff==='easy'?rand(o):fewest(pi,o,true)):rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>stealWild(pi,t))}
     case 'ban':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o3=shuffle([...p.hand]).slice(0,3),pk=rand(o3);return botDefer(pi,'down',o3,o3.indexOf(pk),()=>banType(pi,pk))}
     case 'box':
       alive().forEach((i,k)=>{const c=mk('w','random');c.extra=true;S.players[i].hand.push(c);S.players[i].called=false;if(i===0){S.newIds.push(c.id)}else ghost($('deck').getBoundingClientRect(),targetRect(i),k*60)});
@@ -782,7 +781,7 @@ function botSwapTarget(pi){
   if(!others.length)others=alive().filter(i=>i!==pi);
   if(!others.length)return -1;
   if(R.diff==='easy')return rand(others);
-  return others.reduce((a,b)=>S.players[b].hand.length<S.players[a].hand.length?b:a);
+  return fewest(pi,others);
 }
 
 /* ---------- jump-in ---------- */

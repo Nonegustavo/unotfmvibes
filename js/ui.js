@@ -475,10 +475,10 @@ function openSimon(n,cb){
 }
 function openTarget(title,sub,opts,cb){
   $('swapTitle').textContent=title;$('swapSub').textContent=sub;$('swaps').classList.add('row');
-  $('swaps').innerHTML=opts.map(i=>{const p=S.players[i];return `<button data-i="${i}"><span class="av" style="background:${p.col}">${p.name[0]}</span>${p.name}${partner(i)===0?' (dupla)':''}<small>${R.camouflage&&p.hand.length!==1?'?':p.hand.length} carta${p.hand.length===1?'':'s'}</small></button>`}).join('');
+  $('swaps').innerHTML=opts.map(i=>{const p=S.players[i];return `<button data-i="${i}"><span class="av" style="background:${p.col}">${p.name[0]}</span>${p.name}${partner(i)===0?' (dupla)':''}<small>${handHidden(i)?'? cartas':p.hand.length+' carta'+(p.hand.length===1?'':'s')}</small></button>`}).join('');
   $('swapOv').classList.add('show');
   const done=i=>{closeOverlays();cb(i)};
-  S.autoResolve=()=>done(opts.reduce((a,b)=>S.players[b].hand.length<S.players[a].hand.length?b:a));
+  S.autoResolve=()=>done(fewest(0,opts));
   $('swaps').onclick=e=>{const b=e.target.closest('button');if(b)done(+b.dataset.i)};
   $('swaps').firstChild&&$('swaps').firstChild.focus();
 }
