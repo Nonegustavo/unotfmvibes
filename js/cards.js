@@ -192,7 +192,7 @@ function vanishCards(target,cards,sp=1){
   const r=targetRect(target);if(!r)return 0;
   const w=shownW(r);
   cards.forEach((c,j)=>setTimeout(()=>{
-    const el=makeCard(c);el.className=`card c-${c.chosen||c.color} showc`;el.disabled=true;el.style.setProperty('--cw',w+'px');
+    const el=makeCard(c);el.className=`card c-${c.chosen||c.color} banc`;el.disabled=true;el.style.setProperty('--cw',w+'px');
     el.style.left=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+4)+'px';
     document.body.appendChild(el);
     el.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none',offset:.25},{opacity:0,transform:'translateY(3rem)'}],{duration:VANISH*sp,easing:'ease-in',fill:'forwards'});

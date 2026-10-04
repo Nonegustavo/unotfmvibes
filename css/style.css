@@ -539,6 +539,8 @@ body>.top{grid-row:1}body>.rail{grid-row:2}body>.rulestrip{grid-row:3}body>.tabl
 /* Banimento e Transmutação: cartas mostradas perto da cadeira (como na Clarividência) ou na mão */
 .showc{position:fixed;z-index:21;pointer-events:none;display:flex;align-items:center;gap:0.1875rem}
 .showc .card{flex:none}
+/* Banimento: carta solta (não usa .showc, que é flex e desalinharia os símbolos da carta) */
+.banc{position:fixed;z-index:21;pointer-events:none}
 .showc .xn{font-weight:800;font-size:.8rem;color:#fff;background:var(--cr);border-radius:999px;padding:0 0.3125rem;margin-left:0.125rem}
 /* Dado: dado pequeno rolando perto do adversário */
 .minidie{position:fixed;z-index:21;pointer-events:none;width:2.125rem;height:2.125rem;animation:noteIn .2s}
