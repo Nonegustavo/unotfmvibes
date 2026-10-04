@@ -258,7 +258,7 @@ function showSeatInfoOld(i,anchor){
 const CNT={gen:null,shown:{},timer:{},step:{},flash:{}};
 // a cor verde/vermelha fica firme por CNT_HOLD ms depois do último passo e volta em CNT_FADE ms
 // (refeita a cada render, que recria as cadeiras, a partir do ponto em que estava)
-const CNT_HOLD=500,CNT_FADE=400;
+const CNT_HOLD=300,CNT_FADE=200;
 function cntColor(el,i){
   const f=CNT.flash[i];if(!el||!f||el.classList.contains('said')||el.textContent==='?')return;
   const t=performance.now()-f.t,tot=CNT_HOLD+CNT_FADE;if(t>=tot){delete CNT.flash[i];return}
