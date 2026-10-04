@@ -407,8 +407,8 @@ function openPoker(){
     return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(a.k[0].toUpperCase()+a.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${a.by==='você'?'sua':'de '+a.by}</em></div><p>${ruleDesc(a.k)}</p></div></div>`}).join('');
   $('pokerList').innerHTML=list||'<p class="sub">Nenhuma regra disponível para escolher.</p>';
   S.busy=true;S.freshRules=[];render();
-  // os ícones só aparecem na faixa quando chegam voando (flyRules)
-  if(!RM)S.added.forEach(a=>{const el=$('rulestrip').querySelector(`[data-k="${a.k}"]`);if(el)el.style.visibility='hidden'});
+  // a faixa fica vazia: os ícones escolhidos chegam voando e os outros aparecem depois (flyRules)
+  if(!RM)$('rulestrip').querySelectorAll('.ri').forEach(el=>el.style.visibility='hidden');
   $('pokerOv').classList.add('show');$('pokerGo').focus();
   $('pokerGo').onclick=()=>{
     const src=[...$('pokerList').querySelectorAll('.pk-ic')].map((el,j)=>({k:S.added[j].k,r:el.getBoundingClientRect(),fs:getComputedStyle(el).fontSize}));
@@ -416,12 +416,21 @@ function openPoker(){
     flyRules(src,()=>{S.busy=false;dealAndStart()});
   };
 }
-// Mix de regras: os ícones escolhidos voam da lista até a faixa de regras, como na Carta da Regra; depois as cartas são distribuídas
+// Mix de regras: os ícones escolhidos voam da lista até a faixa de regras, como na Carta da Regra;
+// depois os ícones das outras regras crescem um por vez, em ordem, e só então as cartas são distribuídas
 function flyRules(src,done){
-  const g=S.gen;if(RM||!src.length){done();return}
+  const g=S.gen;
+  const strip=$('rulestrip'),rest=()=>[...strip.querySelectorAll('.ri')].filter(el=>!src.some(s=>s.k===el.dataset.k));
+  const grow=()=>{
+    const els=rest();if(RM||!els.length){done();return}
+    els.forEach((el,j)=>setTimeout(()=>{if(g!==S.gen)return;el.style.visibility='';
+      el.animate([{transform:'scale(0)'},{transform:'scale(1.25)',offset:.7},{transform:'none'}],{duration:380,easing:'ease-out'});sfx('tick')},j*180));
+    setTimeout(()=>{if(g===S.gen)done()},els.length*180+400);
+  };
+  if(RM||!src.length){grow();return}
   render();sfx('rule');
-  const strip=$('rulestrip'),st=strip.getBoundingClientRect();let left=src.length;
-  const end=()=>{if(--left===0)setTimeout(()=>{if(g===S.gen)done()},300)};
+  const st=strip.getBoundingClientRect();let left=src.length;
+  const end=()=>{if(--left===0)setTimeout(()=>{if(g===S.gen)grow()},300)};
   src.forEach((s,j)=>{
     const tgt=strip.querySelector(`[data-k="${s.k}"]`);if(!tgt){end();return}
     tgt.style.visibility='hidden';
@@ -544,7 +553,7 @@ function applySpecial(pi,card){
       const vs=shuffle(alive().filter(i=>!ab(i,'drekkemaus'))).slice(0,2);
       log(`Trovão atingiu ${vs.map(who).join(' e ')}.`);
       return sequenceFx(vs,(i,next,sp)=>{const n=1+Math.floor(Math.random()*5);
-        flashStorm();boltOn(i);sfx('thunder');drawN(i,n);quietDraw(i);floatOn(i,`+${n}`,'var(--cy)');stampOn(i,'⚡','var(--cy)');render();setTimeout(next,950*sp)})}
+        thunderDraw(i,n);render();setTimeout(next,950*sp)})}
     case 'equality':{
       alive().forEach(i=>{const q=S.players[i];let k=0;while(q.hand.length>3)discardCard(i,rand(q.hand),k++);while(q.hand.length<3&&drawOne(i)){}});
       graceCalls();fx('=','Todos ficam com 3 cartas',col,'stamp');log('Igualdade: todos ficaram com 3 cartas.');

@@ -156,7 +156,7 @@ function cardBadges(p,c,turn){
   if(c.type==='batata')b.push(`🥔 ${p.batata||0}/5`);
   if(R.perfection&&c.type==='num'&&c.value===p.hand.length)b.push('💯');
   if(S.peace>0&&c.type!=='num')b.push('🌼');
-  if(S.weather==='storm'&&(c.color==='w'?S.peace<=0:!sameCol(c.color,S.color)))b.push('⛈️');
+  if(turn&&S.weather==='storm'&&canPlay(p,c)&&(c.color==='w'?S.peace<=0:!sameCol(c.color,S.color)))b.push('⛈️');
   if(curseOn('shoe',0)&&c.type!=='num')b.push('👢');
   return b;
 }

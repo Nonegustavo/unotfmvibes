@@ -359,8 +359,8 @@ function splash(x,y){
   s.addEventListener('animationend',()=>s.remove());
 }
 /* Trovão: raio descendo do alto da tela até o jogador */
-function boltOn(pi){
-  const r=targetRect(pi);if(RM||!r)return;
+function boltOn(pi,rect){
+  const r=rect||targetRect(pi);if(RM||!r)return;
   const x=r.left+r.width/2,y=r.top+r.height/2,pts=[[x+(Math.random()-.5)*30,0]];
   const n=7;for(let k=1;k<n;k++)pts.push([x+(Math.random()-.5)*60*(1-k/n),y*k/n]);pts.push([x,y]);
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','boltsvg');
@@ -368,6 +368,23 @@ function boltOn(pi){
   const d=pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ');
   svg.innerHTML=`<polyline points="${d}" class="glow"/><polyline points="${d}" class="core"/>`;
   document.body.appendChild(svg);svg.addEventListener('animationend',()=>svg.remove());
+}
+/* raio + compra (Trovão e Tempestade): no adversário, cai na cadeira; em você, cai exatamente sobre as cartas compradas */
+function thunderDraw(pi,n){
+  flashStorm();sfx('thunder');
+  const h=S.players[pi].hand,before=h.length;drawN(pi,n);quietDraw(pi);
+  const ids=S.players[pi].hand.slice(before).map(c=>c.id);
+  floatOn(pi,`+${n}`,'var(--cy)');
+  if(pi!==0||!ids.length){boltOn(pi);stampOn(pi,'⚡','var(--cy)');return}
+  // espera a mão ser desenhada com as cartas novas para mirar nelas
+  setTimeout(()=>{
+    const find=()=>ids.map(id=>document.querySelector(`#hand [data-id="${id}"]`)).filter(Boolean);
+    let els=find();if(!els.length){render();els=find()}
+    if(!els.length){boltOn(0);return}
+    const rs=els.map(e=>e.getBoundingClientRect()),l=Math.min(...rs.map(r=>r.left)),rt=Math.max(...rs.map(r=>r.right)),t=Math.min(...rs.map(r=>r.top)),b=Math.max(...rs.map(r=>r.bottom));
+    boltOn(0,{left:l,right:rt,top:t,bottom:b,width:rt-l,height:b-t});
+    els.forEach(e=>e.animate([{filter:'brightness(2.2) drop-shadow(0 0 0.5rem #ffe066)'},{filter:'none'}],{duration:700,easing:'ease-out'}));
+  },0);
 }
 /* Carta da Regra: cartas novas caem viradas para cima no monte */
 function cardDrop(c,to,delay){
