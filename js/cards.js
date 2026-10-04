@@ -175,9 +175,11 @@ function transmute(pi,col){
   },Math.max(t,RM?300:0));
   return 'defer';
 }
+// largura das cartas que os adversários mostram abaixo da cadeira (o dobro da antiga, até 5,75rem)
+const shownW=r=>Math.min(r.width*1.2,5.75*parseFloat(getComputedStyle(document.documentElement).fontSize));
 /* Banimento: as cartas aparecem e já saem no mesmo movimento. As do adversário descem sumindo abaixo da cadeira,
-   até 4 por vez (as seguintes saem logo depois, em levas de 4); as suas sobem e somem na mão. Devolve a duração em ms */
-const VANISH=1100,VANISH_GAP=650,LIFT='translateY(-1.375rem) scale(1.08) ';
+   uma de cada vez, em sequência rápida; as suas sobem e somem na mão. Devolve a duração em ms */
+const VANISH=1100,VANISH_GAP=220,LIFT='translateY(-1.375rem) scale(1.08) ';
 function vanishCards(target,cards,sp=1){
   if(RM||!cards.length)return 0;
   sfx('ban');
@@ -188,18 +190,16 @@ function vanishCards(target,cards,sp=1){
     return (VANISH+els.length*60)*sp;
   }
   const r=targetRect(target);if(!r)return 0;
-  const w=Math.min(r.width*.6,46,(r.width+24)/4.3),batches=[];
-  for(let k=0;k<cards.length;k+=4)batches.push(cards.slice(k,k+4));
-  batches.forEach((b,j)=>setTimeout(()=>{
-    const box=document.createElement('div');box.className='showc';
-    b.forEach(c=>{const el=makeCard(c);el.className=`card c-${c.chosen||c.color}`;el.disabled=true;el.style.setProperty('--cw',w+'px');box.appendChild(el)});
-    document.body.appendChild(box);
-    const bw=box.offsetWidth;box.style.left=Math.max(4,Math.min(innerWidth-bw-4,r.left+r.width/2-bw/2))+'px';box.style.top=(r.bottom+4)+'px';
-    box.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none',offset:.25},{opacity:0,transform:'translateY(2rem)'}],{duration:VANISH*sp,easing:'ease-in',fill:'forwards'});
-    if(j)sfx('ban');
-    setTimeout(()=>box.remove(),VANISH*sp+80);
+  const w=shownW(r);
+  cards.forEach((c,j)=>setTimeout(()=>{
+    const el=makeCard(c);el.className=`card c-${c.chosen||c.color} showc`;el.disabled=true;el.style.setProperty('--cw',w+'px');
+    el.style.left=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+4)+'px';
+    document.body.appendChild(el);
+    el.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none',offset:.25},{opacity:0,transform:'translateY(3rem)'}],{duration:VANISH*sp,easing:'ease-in',fill:'forwards'});
+    if(j&&j%2===0)sfx('ban');
+    setTimeout(()=>el.remove(),VANISH*sp+80);
   },j*VANISH_GAP*sp));
-  return ((batches.length-1)*VANISH_GAP+VANISH)*sp;
+  return ((cards.length-1)*VANISH_GAP+VANISH)*sp;
 }
 /* Transmutação de uma carta sua: ela sai da mão para o centro, logo acima da mão, gira e vira a carta nova,
    e volta animada para a posição nova na mão (a ordem muda com o símbolo). Devolve a duração em ms */
@@ -245,7 +245,7 @@ function showCards(target,cards,mode,sp=1,to){
     els.forEach(el=>el.animate([{transform:'none'},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)'}],{duration:SHOW_IN*sp,fill:'forwards',easing:'ease-out'}));
   }else{
     const r=targetRect(target);if(!r)return total;
-    const w=Math.min(r.width*.6,46);
+    const w=shownW(r);
     box=document.createElement('div');box.className='showc';
     const max=3;
     cards.slice(0,max).forEach(c=>{const el=makeCard(c);el.className=`card c-${c.chosen||c.color}`;el.disabled=true;el.style.setProperty('--cw',w+'px');box.appendChild(el);els.push(el)});
@@ -277,7 +277,7 @@ function showCards(target,cards,mode,sp=1,to){
 function peek(i,c){
   if(RM)return;const r=targetRect(i);if(!r)return;
   const el=makeCard(c);el.className=`card c-${c.color} peekc`;el.disabled=true;
-  const w=Math.min(r.width*.6,46);el.style.setProperty('--cw',w+'px');el.style.left=(r.left+r.width/2-w/2)+'px';el.style.top=(r.bottom+4)+'px';
+  const w=shownW(r);el.style.setProperty('--cw',w+'px');el.style.left=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+4)+'px';
   document.body.appendChild(el);el.addEventListener('animationend',()=>el.remove());
 }
 function revealCard(pi,c){
