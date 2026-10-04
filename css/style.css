@@ -535,11 +535,10 @@ body>.top{grid-row:1}body>.rail{grid-row:2}body>.rulestrip{grid-row:3}body>.tabl
 .home-btns{display:flex;gap:0.625rem;width:min(20rem,100%)}
 .home-btns .btn.main{flex:1;font-size:1.15rem}
 .home-btns .btn:not(.main){flex:0 0 3.5rem}
-/* Banimento e Transmutação: cartas mostradas perto da cadeira (como na Clarividência), sobre o monte ou na mão */
+/* Banimento e Transmutação: cartas mostradas perto da cadeira (como na Clarividência) ou na mão */
 .showc{position:fixed;z-index:21;pointer-events:none;display:flex;align-items:center;gap:0.1875rem}
 .showc .card{flex:none}
 .showc .xn{font-weight:800;font-size:.8rem;color:#fff;background:var(--cr);border-radius:999px;padding:0 0.3125rem;margin-left:0.125rem}
-.ember{position:fixed;z-index:23;width:0.3125rem;height:0.3125rem;border-radius:50%;background:#ffc04a;box-shadow:0 0 0.375rem 0.125rem #ff6a00;pointer-events:none}
 /* Dado: dado pequeno rolando perto do adversário */
 .minidie{position:fixed;z-index:21;pointer-events:none;width:2.125rem;height:2.125rem;animation:noteIn .2s}
 .minidie svg{width:100%!important;height:100%!important}

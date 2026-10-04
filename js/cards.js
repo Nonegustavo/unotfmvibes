@@ -129,17 +129,14 @@ function banType(pi,c){
   const m=x=>x.type===c.type&&(c.type!=='num'||x.value===c.value);
   const g=S.gen,sp=S.spectate?.4:1;S.busy=true;clearFlash();hold(99999);
   const others=alive().filter(i=>i!==pi).map(i=>({i,cards:S.players[i].hand.filter(m)})).filter(x=>x.cards.length);
-  const inDeck=S.deck.filter(m),inPile=S.discard.slice(0,-1).filter(m);
-  const n=S.players[pi].hand.filter(m).length+others.reduce((a,x)=>a+x.cards.length,0)+inDeck.length+inPile.length;
+  const n=S.players[pi].hand.filter(m).length+others.reduce((a,x)=>a+x.cards.length,0)+S.deck.filter(m).length+S.discard.slice(0,-1).filter(m).length;
   fx('✖️',`${c.type==='num'?`Número ${c.value}`:label(c)} banido do jogo (${n} carta${n===1?'':'s'})`,'var(--cr)','slam');
-  // quem jogou mostra e queima primeiro; depois, juntos, os outros jogadores, o monte e a pilha
-  const t1=showCards(pi,S.players[pi].hand.filter(m),'burn',sp);
+  // quem jogou mostra e some primeiro; depois, juntos, os outros jogadores (o monte e a pilha perdem as cartas sem animação)
+  const t1=showCards(pi,S.players[pi].hand.filter(m),'vanish',sp);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
     let t2=0;
-    others.forEach(x=>{t2=Math.max(t2,showCards(x.i,x.cards,'burn',sp))});
-    if(inDeck.length)t2=Math.max(t2,showCards($('deck').getBoundingClientRect(),inDeck,'burn',sp));
-    if(inPile.length)t2=Math.max(t2,showCards(discardRect(),inPile,'burn',sp));
+    others.forEach(x=>{t2=Math.max(t2,showCards(x.i,x.cards,'vanish',sp))});
     setTimeout(()=>{
       if(g!==S.gen||S.phase==='over')return;
       S.fxUntil=0;S.busy=false;
@@ -178,11 +175,11 @@ function transmute(pi,col){
   },Math.max(t,RM?300:0));
   return 'defer';
 }
-/* cartas mostradas como na Clarividência: abaixo da cadeira, sobre o monte/pilha (alvo = retângulo) ou, para você, na própria mão.
-   'burn' queima as cartas; 'morph' gira e vira as cartas de "to". Devolve a duração em ms */
-const SHOW_IN=250,SHOW_HOLD=700,BURN=1100,MORPH=520,MORPH_HOLD=1000;
+/* cartas mostradas como na Clarividência: abaixo da cadeira do adversário ou, para você, na própria mão.
+   'vanish' faz as cartas sumirem (as do adversário descendo, as suas subindo); 'morph' gira e vira as cartas de "to". Devolve a duração em ms */
+const SHOW_IN=250,SHOW_HOLD=700,VANISH=800,MORPH=520,MORPH_HOLD=1000;
 function showCards(target,cards,mode,sp=1,to){
-  const total=(SHOW_IN+SHOW_HOLD+(mode==='burn'?BURN:MORPH+MORPH_HOLD))*sp;
+  const total=(SHOW_IN+SHOW_HOLD+(mode==='vanish'?VANISH:MORPH+MORPH_HOLD))*sp;
   if(RM)return 0;
   if(!cards.length)return total;
   let els=[],box=null;
@@ -191,21 +188,24 @@ function showCards(target,cards,mode,sp=1,to){
     els=cards.map(c=>document.querySelector(`#hand [data-id="${c.id}"]`)).filter(Boolean);
     els.forEach(el=>el.animate([{transform:'none'},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)'}],{duration:SHOW_IN*sp,fill:'forwards',easing:'ease-out'}));
   }else{
-    const pile=typeof target!=='number',r=pile?target:targetRect(target);if(!r)return total;
-    const w=pile?r.width*.85:Math.min(r.width*.6,46);
+    const r=targetRect(target);if(!r)return total;
+    const w=Math.min(r.width*.6,46);
     box=document.createElement('div');box.className='showc';
-    const max=pile?1:3;
+    const max=3;
     cards.slice(0,max).forEach(c=>{const el=makeCard(c);el.className=`card c-${c.chosen||c.color}`;el.disabled=true;el.style.setProperty('--cw',w+'px');box.appendChild(el);els.push(el)});
     if(cards.length>max)box.insertAdjacentHTML('beforeend',`<span class="xn">×${cards.length}</span>`);
     document.body.appendChild(box);
     const bw=box.offsetWidth,bh=box.offsetHeight;
     box.style.left=Math.max(4,Math.min(innerWidth-bw-4,r.left+r.width/2-bw/2))+'px';
-    box.style.top=(pile?r.top+r.height/2-bh/2-r.height*.3:r.bottom+4)+'px';
+    box.style.top=(r.bottom+4)+'px';
     box.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none'}],{duration:SHOW_IN*sp,easing:'ease-out',fill:'backwards'});
   }
   const at=(SHOW_IN+SHOW_HOLD)*sp,base=target===0?LIFT:'';
-  if(mode==='burn'){
-    setTimeout(()=>{els.forEach((el,k)=>burnEl(el,base,BURN*sp,k*60*sp));sfx('ban')},at);
+  if(mode==='vanish'){
+    setTimeout(()=>{sfx('ban');
+      if(box)box.animate([{opacity:1,transform:'none'},{opacity:0,transform:'translateY(2rem)'}],{duration:VANISH*sp,easing:'ease-in',fill:'forwards'});
+      else els.forEach((el,k)=>el.animate([{transform:base,opacity:1},{transform:base+'translateY(-2.5rem)',opacity:0}],{duration:VANISH*sp,delay:k*60*sp,easing:'ease-in',fill:'forwards'}));
+    },at);
     if(box)setTimeout(()=>box.remove(),total+100);
   }else{
     setTimeout(()=>{sfx('mystery');els.forEach((el,k)=>{
@@ -223,21 +223,6 @@ function showCards(target,cards,mode,sp=1,to){
     },total-250*sp);
   }
   return total;
-}
-// queima: a carta esquenta, escurece e se desfaz soltando brasas
-function burnEl(el,base,ms,delay){
-  const r=el.getBoundingClientRect();
-  el.animate([{transform:base||'none',filter:'none',opacity:1},
-    {offset:.35,transform:base||'none',filter:'sepia(.8) saturate(3) hue-rotate(-25deg) brightness(1.15)',boxShadow:'0 0 0.75rem 0.25rem #ff7a1a',opacity:1},
-    {offset:.7,transform:base+'translateY(-0.2rem) scale(.95)',filter:'sepia(1) brightness(.3)',boxShadow:'0 0 0.5rem 0.125rem #ff4a00',opacity:.8},
-    {transform:base+'translateY(-0.6rem) scale(.85)',filter:'brightness(0)',opacity:0}],{duration:ms,delay,easing:'ease-in',fill:'forwards'});
-  for(let k=0;k<9;k++){
-    const e=document.createElement('i');e.className='ember';
-    Object.assign(e.style,{left:(r.left+Math.random()*r.width)+'px',top:(r.top+r.height*(.3+Math.random()*.7))+'px'});document.body.appendChild(e);
-    e.animate([{transform:'none',opacity:0},{opacity:1,offset:.2},{transform:`translate(${(Math.random()-.5)*30}px,${-(30+Math.random()*50)}px) scale(.3)`,opacity:0}],
-      {duration:ms*(.6+Math.random()*.5),delay:delay+ms*(.2+Math.random()*.4),easing:'ease-out',fill:'both'});
-    setTimeout(()=>e.remove(),delay+ms*1.2);
-  }
 }
 function peek(i,c){
   if(RM)return;const r=targetRect(i);if(!r)return;

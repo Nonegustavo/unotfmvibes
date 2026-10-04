@@ -191,8 +191,11 @@ function seatStatus(i){
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
   if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
   if(p.treasure)L.push({ic:'🧭',short:`🧭${p.treasure}`,name:'Busca',txt:`jogou ${p.treasure}/3, na terceira ganha a Carta do Tesouro`});
-  if(p.hand2&&p.hand2.length)L.push({ic:'✋',short:'✋',name:'Segunda mão',txt:`${p.hand2.length} carta${p.hand2.length===1?'':'s'} pendente${p.hand2.length===1?'':'s'} na segunda mão`});
-  if(S.other){const k=S.other.players[i].hand.length;L.push({ic:'🌀',short:`🌀${k}`,name:'Portal',txt:`${k} carta${k===1?'':'s'} no outro lado`})}
+  if(p.hand2&&p.hand2.length)L.push({ic:'✋',short:`✋${p.hand2.length}`,name:'Segunda mão',txt:`${p.hand2.length} carta${p.hand2.length===1?'':'s'} pendente${p.hand2.length===1?'':'s'} na segunda mão`});
+  if(S.other){const k=S.other.players[i].hand.length;
+    // no outro lado, a Camuflagem (até ter 1 carta) e a Neblina escondem a quantidade dos adversários
+    const hid=i!==0&&!S.other.players[i].out&&((S.other.R.camouflage&&k!==1)||S.other.weather==='fog');
+    L.push({ic:'🌀',short:`🌀${hid?'?':k}`,name:'Portal',txt:hid?'quantidade de cartas no outro lado oculta':`${k} carta${k===1?'':'s'} no outro lado`})}
   if(shiny)L.push({ic:'🌈',short:'🌈',name:'Mão Colorida',txt:'tem todas as cores ou um curinga'});
   if(p.luck)L.push({ic:'🍀',short:'🍀',name:'Sorte',txt:'a próxima compra será uma carta jogável'});
   if(p.confuse)L.push({ic:'🍄',short:'🍄',name:'Confusão',txt:'a próxima jogada será aleatória'});
