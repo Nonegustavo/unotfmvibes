@@ -400,7 +400,7 @@ function renderRuleStrip(){
   const f=strip.querySelector('.fresh');if(f){S.progScroll=Date.now();f.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'})}
   strip.querySelectorAll('.fresh').forEach(freshen);
 }
-// destaque de regra nova: some sozinho depois do brilho (6 s), mesmo sem tocar no ícone
+// destaque de regra nova: some sozinho (e suave) depois de 6 s, mesmo sem tocar no ícone
 function freshen(el){el.classList.add('fresh');setTimeout(()=>el.classList.remove('fresh'),6000)}
 function openPoker(){
   const list=S.added.map(a=>{const bot=BOTRULES.includes(a.k),ic=ruleIcon(a.k);
