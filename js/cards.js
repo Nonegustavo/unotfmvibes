@@ -165,9 +165,9 @@ function transmute(pi,col){
   picks.forEach(x=>{const c=x.c;x.before={...c};
     c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(Math.random()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
   let t=0;picks.forEach(x=>{t=Math.max(t,x.i===0?morphMine(x.c,x.before,x.after,sp):showCards(x.i,[x.before],'morph',sp,[x.after]))});
-  // as cartas giram juntas: um único som, a partir do primeiro giro (a sua carta gira um pouco antes)
-  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')sfx('transmute')},RM?0:(picks.some(x=>x.i===0)?MINE_GO+SHOW_HOLD/2:SHOW_IN+SHOW_HOLD)*sp);
-  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('🎩',rand(MAGIC),col,'stamp',1800*sp,true)},RM?0:(SHOW_IN+SHOW_HOLD+MORPH/2)*sp);
+  // todas as cartas se transformam juntas, no "puf" do único som (PUF ms depois de ele começar)
+  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')sfx('transmute')},RM?0:(SHOW_IN+SHOW_HOLD)*sp);
+  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('🎩',rand(MAGIC),col,'stamp',1800*sp,true)},RM?0:(SHOW_IN+SHOW_HOLD)*sp+PUF);
   log(`Transmutação: ${picks.map(x=>`${label(x.before)} de ${who(x.i)} virou ${x.after.value}`).join(', ')}.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
@@ -187,9 +187,19 @@ const tilt=()=>(Math.random()<.5?-1:1)*(8+Math.random()*10);
 function vanishCards(target,cards,sp=1){
   if(RM||!cards.length)return 0;
   if(target===0){
-    const els=cards.map(c=>document.querySelector(`#hand [data-id="${c.id}"]`)).filter(Boolean);
-    const g=S.gen;els.forEach((_,k)=>setTimeout(()=>{if(g===S.gen)sfx('vanishUp')},k*VANISH_GAP*sp));
-    els.forEach((el,k)=>el.animate(tiltKeys(-el.offsetWidth*1.6,tilt()),{duration:DROP*sp,delay:k*VANISH_GAP*sp,easing:'ease-in',fill:'forwards'}));
+    // cada carta sobe como uma cópia solta por cima da mesa (a mão corta o que passa dos limites dela)
+    const els=cards.map(c=>[c,document.querySelector(`#hand [data-id="${c.id}"]`)]).filter(([,el])=>el);
+    const g=S.gen;
+    els.forEach(([c,src],k)=>setTimeout(()=>{
+      if(g!==S.gen)return;
+      sfx('vanishUp');
+      const a=src.getBoundingClientRect();
+      const fly=makeCard(c);fly.className=`card c-${c.chosen||c.color} flyclone`;fly.disabled=true;
+      Object.assign(fly.style,{position:'fixed',left:a.left+'px',top:a.top+'px',width:a.width+'px',margin:'0',zIndex:21,pointerEvents:'none'});fly.style.setProperty('--cw',a.width+'px');
+      document.body.appendChild(fly);src.style.visibility='hidden';
+      fly.animate(tiltKeys(-a.width*1.6,tilt()),{duration:DROP*sp,easing:'ease-in',fill:'forwards'});
+      setTimeout(()=>fly.remove(),DROP*sp+80);
+    },k*VANISH_GAP*sp));
     return ((els.length-1)*VANISH_GAP+DROP)*sp;
   }
   const r=targetRect(target);if(!r)return 0;
@@ -204,11 +214,35 @@ function vanishCards(target,cards,sp=1){
   },j*VANISH_GAP*sp));
   return ((cards.length-1)*VANISH_GAP+DROP)*sp;
 }
-/* Transmutação de uma carta sua: ela sai da mão para o centro, logo acima da mão, gira e vira a carta nova,
+/* Transformação da Transmutação: enquanto o som sobe (PUF ms, fixo como o áudio), a carta treme e vai brilhando;
+   no "puf" um clarão e uma nuvem de fumaça com faíscas a cobrem, a face troca (swap) e a carta nova salta.
+   Usa as propriedades translate/scale/filter, que se somam ao transform de posição das outras animações */
+const PUF=550,POP=450;
+function transformFx(el,swap){
+  const n=10,keys=[];
+  for(let k=0;k<=n;k++){const f=k/n,amp=k===n?0:1+f*2.5,s=k%2?1:-1;
+    keys.push({translate:`${s*amp}px ${-s*amp*.5}px`,filter:`brightness(${1+f*1.3}) drop-shadow(0 0 ${f*.75}rem rgba(255,255,255,${f*.9}))`})}
+  el.animate(keys,{duration:PUF,easing:'ease-in'});
+  setTimeout(()=>{
+    swap();puffAt(el);
+    el.animate([{scale:'1.3',filter:'brightness(2.6) drop-shadow(0 0 .9rem #fff)'},{scale:'.94',offset:.45},{scale:'1',filter:'brightness(1) drop-shadow(0 0 0 transparent)'}],{duration:POP,easing:'ease-out'});
+  },PUF);
+}
+function puffAt(el){
+  const r=el.getBoundingClientRect(),d=document.createElement('div');d.className='puff';
+  Object.assign(d.style,{left:r.left+r.width/2+'px',top:r.top+r.height/2+'px'});d.style.setProperty('--s',r.width+'px');
+  const sm=7,sk=9,html=[];
+  for(let k=0;k<sm;k++){const a=(k/sm)*Math.PI*2+Math.random()*.6,dist=r.width*(.35+Math.random()*.3);
+    html.push(`<i style="--x:${Math.cos(a)*dist}px;--y:${Math.sin(a)*dist}px;animation-delay:${Math.random()*60}ms"></i>`)}
+  for(let k=0;k<sk;k++){const a=Math.random()*Math.PI*2,dist=r.width*(.6+Math.random()*.5);
+    html.push(`<b style="--x:${Math.cos(a)*dist}px;--y:${Math.sin(a)*dist}px"></b>`)}
+  d.innerHTML=html.join('');document.body.appendChild(d);setTimeout(()=>d.remove(),1000);
+}
+/* Transmutação de uma carta sua: ela sai da mão para o centro, logo acima da mão, se transforma junto com as outras
    e volta animada para a posição nova na mão (a ordem muda com o símbolo). Devolve a duração em ms */
 const MINE_GO=450,MINE_BACK=450;
 function morphMine(card,before,after,sp=1){
-  const total=(MINE_GO+SHOW_HOLD/2+MORPH+MORPH_HOLD+MINE_BACK)*sp;
+  const tMorph=(SHOW_IN+SHOW_HOLD)*sp,total=tMorph+PUF+(MORPH_HOLD+MINE_BACK)*sp;
   const src=document.querySelector(`#hand [data-id="${card.id}"]`);
   if(RM||!src)return RM?0:total;
   const a=src.getBoundingClientRect(),hr=$('hand').getBoundingClientRect();
@@ -218,12 +252,7 @@ function morphMine(card,before,after,sp=1){
   const mid={x:hr.left+hr.width/2-a.width/2,y:hr.top-a.height*1.15};
   const at=(x,y,extra='')=>`translate(${x-a.left}px,${y-a.top}px) ${extra}`;
   fly.animate([{transform:'none'},{transform:at(mid.x,mid.y,'scale(1.15)')}],{duration:MINE_GO*sp,easing:'cubic-bezier(.2,.9,.3,1.05)',fill:'forwards'});
-  const tMorph=(MINE_GO+SHOW_HOLD/2)*sp,half=MORPH/2*sp;
-  setTimeout(()=>{
-    fly.animate([{transform:at(mid.x,mid.y,'scale(1.15) rotateY(0)')},{transform:at(mid.x,mid.y,'scale(1.15) rotateY(90deg)')}],{duration:half,easing:'ease-in',fill:'forwards'});
-    setTimeout(()=>{fly.innerHTML=faceHTML(after);fly.className=`card c-${after.color} flyclone`;
-      fly.animate([{transform:at(mid.x,mid.y,'scale(1.15) rotateY(90deg)')},{transform:at(mid.x,mid.y,'scale(1.15) rotateY(0)')}],{duration:half,easing:'cubic-bezier(.2,.9,.3,1.2)',fill:'forwards'})},half);
-  },tMorph);
+  setTimeout(()=>transformFx(fly,()=>{fly.innerHTML=faceHTML(after);fly.className=`card c-${after.color} flyclone`}),tMorph);
   // volta: a mão é redesenhada com a carta nova no lugar certo e a cópia voa até lá
   setTimeout(()=>{
     const el=document.querySelector(`#hand [data-id="${card.id}"]`);
@@ -232,14 +261,14 @@ function morphMine(card,before,after,sp=1){
     const dst=(document.querySelector(`#hand [data-id="${card.id}"]`)||src).getBoundingClientRect();
     fly.animate([{transform:at(mid.x,mid.y,'scale(1.15)')},{transform:at(dst.left,dst.top)}],{duration:MINE_BACK*sp,easing:'cubic-bezier(.4,.1,.3,1)',fill:'forwards'});
     setTimeout(()=>{fly.remove();const e=document.querySelector(`#hand [data-id="${card.id}"]`);if(e)e.style.visibility=''},MINE_BACK*sp);
-  },tMorph+(MORPH+MORPH_HOLD)*sp);
+  },tMorph+PUF+MORPH_HOLD*sp);
   return total;
 }
 /* Transmutação: cartas mostradas como na Clarividência (abaixo da cadeira do adversário ou, para você, na própria mão),
-   que giram e viram as cartas de "to". Devolve a duração em ms */
-const SHOW_IN=250,SHOW_HOLD=700,MORPH=520,MORPH_HOLD=1000;
+   que se transformam nas cartas de "to". Devolve a duração em ms */
+const SHOW_IN=250,SHOW_HOLD=700,MORPH_HOLD=1000;
 function showCards(target,cards,mode,sp=1,to){
-  const total=(SHOW_IN+SHOW_HOLD+MORPH+MORPH_HOLD)*sp;
+  const total=(SHOW_IN+SHOW_HOLD+MORPH_HOLD)*sp+PUF;
   if(RM)return 0;
   if(!cards.length)return total;
   let els=[],box=null;
@@ -259,17 +288,13 @@ function showCards(target,cards,mode,sp=1,to){
     box.style.top=(r.bottom+4)+'px';
     box.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none'}],{duration:SHOW_IN*sp,easing:'ease-out',fill:'backwards'});
   }
-  const at=(SHOW_IN+SHOW_HOLD)*sp,base=target===0?LIFT:'';
+  const at=(SHOW_IN+SHOW_HOLD)*sp;
   {
-    setTimeout(()=>{els.forEach((el,k)=>{
-      const half=MORPH/2*sp;
-      // troca a face por tempo (não pelo fim da animação, que para com a aba em segundo plano)
-      el.animate([{transform:base+'rotateY(0)'},{transform:base+'rotateY(90deg)'}],{duration:half,easing:'ease-in',fill:'forwards'});
-      setTimeout(()=>{
-        const c=to[k];el.innerHTML=faceHTML(c);el.setAttribute('aria-label',cardName(c));
-        el.classList.remove('c-w','c-r','c-y','c-g','c-b');el.classList.add('c-'+c.color);
-        el.animate([{transform:base+'rotateY(90deg)'},{transform:base+'rotateY(0)'}],{duration:half,easing:'cubic-bezier(.2,.9,.3,1.2)',fill:'forwards'});
-      },half)})},at);
+    // troca a face por tempo (não pelo fim da animação, que para com a aba em segundo plano)
+    setTimeout(()=>{els.forEach((el,k)=>transformFx(el,()=>{
+      const c=to[k];el.innerHTML=faceHTML(c);el.setAttribute('aria-label',cardName(c));
+      el.classList.remove('c-w','c-r','c-y','c-g','c-b');el.classList.add('c-'+c.color);
+    }))},at);
     setTimeout(()=>{
       if(box){box.animate([{opacity:1},{opacity:0}],{duration:250,fill:'forwards'});setTimeout(()=>box.remove(),260)}
       else els.forEach(el=>el.getAnimations().forEach(a=>a.cancel()));
