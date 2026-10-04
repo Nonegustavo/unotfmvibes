@@ -497,7 +497,7 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
         else hardClicks.n=0}
       if(k==='sound'){MUTED=!CFG.sound;save('unotfm-solo-mute',MUTED);if(!MUTED)sfx('special')}
       if(k==='vibrate'&&CFG.vibrate)buzz(40);
-      if(k==='fx3d'||k==='sound'||k==='vibrate'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
+      if(k==='fx3d'||k==='sound'||k==='vibrate'||k==='ruleInfo'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
       buildSettings()};
   });
   $('comboLegend').textContent=COMBO_DESC[CFG.combo]||'';$('modeLegend').textContent=MODE_DESC[CFG.mode]||'';$('rulesField').hidden=CFG.mode!=='custom';$('botsField').hidden=CFG.mode!=='custom';$('startField').hidden=CFG.mode!=='custom';
@@ -668,7 +668,9 @@ function openRuleIcon(b){
   const a=(S&&S.added||[]).find(x=>x.k===k);
   notice(k,a?`Em jogo, adicionada por ${a.by}`:'Em jogo desde o início',{info:true,title:RNAME[k],anchor:b});
 }
+// janela automática da regra adicionada no meio da partida (pode ser desligada nas Configurações; tocar no ícone sempre abre)
 function showRuleInfo(k){
+  if(CFG.ruleInfo===false)return;
   const b=$('rulestrip').querySelector(`[data-k="${k}"]`);if(!b)return;
   document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));b.classList.add('on');
   const a=(S&&S.added||[]).find(x=>x.k===k);

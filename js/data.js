@@ -156,6 +156,7 @@ const SEGS={
   mode:[['classic','Clássico'],['mix','Mix de regras'],['custom','Personalizado']],
   fx3d:[[true,'Ligados'],[false,'Desligados']],
   vibrate:[[true,'Ligada'],[false,'Desligada']],
+  ruleInfo:[[true,'Ligado'],[false,'Desligado']],
   bots:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],
   diff:[['easy','Fácil'],['normal','Normal'],['hard','Difícil'],['master','Mestre']],
   start:[3,4,5,6,7,8,9,10].map(n=>[n,String(n)]),
@@ -170,7 +171,7 @@ const DIFF={
 const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 
-const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.vibrate=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.vibrate=true;DEF.ruleInfo=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
 // configuração salva com duas regras incompatíveis (conflito novo): mantém só a primeira
 CONFLICT_PAIRS.forEach(([a,b])=>{if(CFG[a]&&CFG[b])CFG[b]=false});
