@@ -51,7 +51,7 @@ function wishSwap(pi,c){
   if(c.color==='w')c.chosen=null;
   p.hand.push(c);if(pi===0){S.newIds.push(c.id);S.handFrom=discardRect()}
   ghost(discardRect(),targetRect(pi),0);
-  fx('☄️',`${who(pi)} pegou ${cardName(c)} da pilha`,'var(--cy)','stamp');
+  fx(SP.wish.g,`${who(pi)} pegou ${cardName(c)} da pilha`,'var(--cy)','stamp');
   log(`${who(pi)} trocou uma carta com a pilha.`);
 }
 function giveBatata(pi,card,t){
@@ -252,7 +252,13 @@ function morphMine(card,before,after,sp=1){
   const mid={x:hr.left+hr.width/2-a.width/2,y:hr.top-a.height*1.15};
   const at=(x,y,extra='')=>`translate(${x-a.left}px,${y-a.top}px) ${extra}`;
   fly.animate([{transform:'none'},{transform:at(mid.x,mid.y,'scale(1.15)')}],{duration:MINE_GO*sp,easing:'cubic-bezier(.2,.9,.3,1.05)',fill:'forwards'});
-  setTimeout(()=>transformFx(fly,()=>{fly.innerHTML=faceHTML(after);fly.className=`card c-${after.color} flyclone`}),tMorph);
+  // antes de transformar, a cópia passa a ficar no centro por left/top: o salto da transformação (propriedade scale)
+  // multiplicaria o translate da ida e a carta escorregaria
+  setTimeout(()=>{
+    fly.getAnimations().forEach(x=>x.cancel());
+    Object.assign(fly.style,{left:mid.x+'px',top:mid.y+'px',transform:'scale(1.15)'});
+    transformFx(fly,()=>{fly.innerHTML=faceHTML(after);fly.className=`card c-${after.color} flyclone`});
+  },tMorph);
   // volta: a mão é redesenhada com a carta nova no lugar certo e a cópia voa até lá
   setTimeout(()=>{
     const el=document.querySelector(`#hand [data-id="${card.id}"]`);
@@ -261,7 +267,7 @@ function morphMine(card,before,after,sp=1){
     // a carta (escondida) não desliza: a cópia mede e voa direto para o lugar novo
     const ne=document.querySelector(`#hand [data-id="${card.id}"]`);ne?._flip?.cancel();
     const dst=(ne||src).getBoundingClientRect();
-    fly.animate([{transform:at(mid.x,mid.y,'scale(1.15)')},{transform:at(dst.left,dst.top)}],{duration:MINE_BACK*sp,easing:'cubic-bezier(.4,.1,.3,1)',fill:'forwards'});
+    fly.animate([{transform:'scale(1.15)'},{transform:`translate(${dst.left-mid.x}px,${dst.top-mid.y}px)`}],{duration:MINE_BACK*sp,easing:'cubic-bezier(.4,.1,.3,1)',fill:'forwards'});
     setTimeout(()=>{fly.remove();const e=document.querySelector(`#hand [data-id="${card.id}"]`);if(e)e.style.visibility=''},MINE_BACK*sp);
   },tMorph+PUF+MORPH_HOLD*sp);
   return total;
