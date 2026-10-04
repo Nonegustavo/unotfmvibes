@@ -66,7 +66,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **Eliminação por erro** (ser pego sem UNO, blefe desafiado, desafio errado) **só acontece com a Morte súbita**. Fora dela:
   - Pego sem UNO compra 2.
   - O desafio vale só para o **último** +4/+99. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.
-- **+99:** quem compra as cartas dele (inclusive no desafio) é sempre eliminado, logo depois da compra (`drawn99`). Só escapa quem não comprou por causa da Nevasca ou do Gelo.
+- **+99:** quem precisa comprar as cartas dele (inclusive no desafio) é eliminado na hora (`drawn99`), sem comprar de verdade: só uma enxurrada de cartas voa do monte até ele antes. Só escapa quem não comprou por causa da Nevasca ou do Gelo.
 - **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final limpo, Semáforo e compras acumuladas continuam valendo.
 - **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece, na sua vez, nas cartas jogáveis que mudam a cor. O raio que cai em você mira nas cartas compradas (`thunderDraw`).
 - **Transmutação** (chave `steal`) mostra as cartas como a Clarividência (`showCards`). A carta transmutada guarda a forma original em `c.tm`, que `restoreCard` desfaz.

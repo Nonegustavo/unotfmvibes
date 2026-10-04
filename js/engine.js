@@ -373,10 +373,10 @@ function endTurn(){
   if(S.pending>0&&R.combo==='none'&&!R.nou){
     const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
     if(noDraw(v)||curseOn('ice',v)||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
+    if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
     drawN(v,n);floatOn(v,`+${n}`,'var(--cr)');stampOn(v,'⊘','var(--cr)');hold(900);
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
-    const p99=S.pending>=99;S.pending=0;S.pendingType=null;
-    if(p99){S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
+    S.pending=0;S.pendingType=null;
     if(overloaded(v)&&markOut(v))return;
     S.turn=nextIdx(v,1);
   }
@@ -430,9 +430,9 @@ function takeDraw(pi){
     fx('🧊',`${who(pi)} não pode comprar e passa`,'var(--cb)','stamp');log(`${who(pi)} passou (gelo).`);endTurn();return;
   }
   if(S.pending>0){
-    const n=drawAmt(pi,S.pending),p99=S.pending>=99;S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);floatOn(pi,`+${n}`,'var(--cr)');hold(700);icemiceHook(pi);
+    if(S.pending>=99){S.pending=0;S.pendingType=null;S.chal=null;drawn99(pi,endTurn);return}
+    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);floatOn(pi,`+${n}`,'var(--cr)');hold(700);icemiceHook(pi);
     log(`${who(pi)} comprou ${n}.`);
-    if(p99){drawn99(pi,endTurn);return}
     if(overloaded(pi)&&markOut(pi))return;
     endTurn();return;
   }
@@ -468,15 +468,19 @@ function takeDraw(pi){
   icemiceHook(pi);
   afterDraw(pi,drawn,count);
 }
-// +99: quem compra as cartas dele é eliminado logo depois (só escapa quem não comprou por causa da Nevasca ou do Gelo)
+// +99: quem precisa comprar as cartas dele é eliminado na hora, depois de uma enxurrada de cartas voando do monte até ele.
+// As cartas não são compradas de verdade. Só escapa quem não compraria por causa da Nevasca ou do Gelo
 function drawn99(pi,then){
-  const g=S.gen;S.busy=true;clearFlash();render();
+  const g=S.gen,sp=S.spectate?.4:1,N=RM?0:22,step=50*sp;S.busy=true;clearFlash();render();
+  const from=$('deck').getBoundingClientRect();
+  for(let k=0;k<N;k++)setTimeout(()=>{if(g!==S.gen)return;ghost(from,targetRect(pi),0);if(k%3===0)sfx('draw')},k*step);
+  floatOn(pi,'+99','var(--cr)');log(`${who(pi)} ${pi===0?'precisa':'precisou'} comprar as cartas do +99.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;S.busy=false;
     fx('+99',`${pi===0?'Você não aguentou':who(pi)+' não aguentou'} o +99!`,'var(--cr)','slam');stampOn(pi,'+99','var(--cr)');
     if(markOut(pi,'comprou as cartas do +99','+99'))return;
     then();
-  },S.spectate?500:1100);
+  },N*step+450);
 }
 function afterDraw(pi,drawn,count){
   const p=S.players[pi];

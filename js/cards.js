@@ -307,9 +307,9 @@ function challengeResolve(pi){
   if(c.bluff){
     const cont=()=>{
       if(rest>0&&!frozen){
+        if(rest>=99){drawn99(pi,endTurn);return}
         const k2=drawAmt(pi,rest);if(k2){drawN(pi,k2);floatOn(pi,`+${k2}`,'var(--cr)')}
         log(`${who(pi)} comprou o restante acumulado: ${k2}.`);
-        if(rest>=99){drawn99(pi,endTurn);return}
         if(overloaded(pi)&&markOut(pi))return;endTurn();return;
       }
       S.tok++;render();if(cur().bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();
@@ -318,11 +318,14 @@ function challengeResolve(pi){
       fx('⚔️',`Blefe! ${c.by===0?'Você foi eliminado':who(c.by)+' foi eliminado'}`,'var(--cg)','slam');stampOn(c.by,'⚔️','var(--cr)');
       log(`${who(pi)} desafiou: ${who(c.by)} blefou com +${amt} na morte súbita e foi eliminado.`);
       if(markOut(c.by,`foi pego blefando com +${amt} na morte súbita`))return;
+    }else if(amt>=99&&!frozenBy){
+      fx('⚔️',`Blefe! ${c.by===0?'Você compra':who(c.by)+' compra'} o +99`,'var(--cg)','slam');
+      log(`${who(pi)} desafiou: ${who(c.by)} blefou com +99.`);
+      drawn99(c.by,cont);return;
     }else{
       const k=frozenBy?0:drawAmt(c.by,amt);if(k){drawN(c.by,k);floatOn(c.by,`+${k}`,'var(--cr)')}
       fx('⚔️',`Blefe! ${c.by===0?'Você compra':who(c.by)+' compra'} ${k}`+(rest?`, ${pi===0?'você compra':who(pi)+' compra'} o resto (+${rest})`:''),'var(--cg)','slam');
       log(`${who(pi)} desafiou: ${who(c.by)} blefou com +${amt} e comprou ${k}.`);
-      if(amt>=99&&!frozenBy){drawn99(c.by,cont);return}
       if(massCheck()==='win')return;
     }
     cont();
@@ -331,9 +334,9 @@ function challengeResolve(pi){
       fx('⚔️',`Jogada legal! ${pi===0?'Você foi eliminado':who(pi)+' foi eliminado'}`,'var(--cr)','slam');log(`${who(pi)} desafiou errado na morte súbita e foi eliminado.`);
       if(markOut(pi,'desafiou errado na morte súbita'))return;endTurn();return;
     }
+    if(n>=99&&!frozen){fx('⚔️',`Jogada legal! ${pi===0?'Você compra':who(pi)+' compra'} o +99`,'var(--cr)','slam');log(`${who(pi)} desafiou e errou.`);drawn99(pi,endTurn);return}
     const k=frozen?0:drawAmt(pi,n+2);if(k){drawN(pi,k);floatOn(pi,`+${k}`,'var(--cr)')}
     fx('⚔️',`Jogada legal! ${pi===0?'Você compra':who(pi)+' compra'} ${k}`,'var(--cr)','slam');log(`${who(pi)} desafiou e errou: comprou ${k}.`);
-    if(n>=99&&!frozen){drawn99(pi,endTurn);return}
     if(overloaded(pi)&&markOut(pi))return;endTurn();
   }
 }
