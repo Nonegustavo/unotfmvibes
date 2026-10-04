@@ -69,7 +69,8 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **+99:** quem compra as cartas dele (inclusive no desafio) é sempre eliminado, logo depois da compra (`drawn99`). Só escapa quem não comprou por causa da Nevasca ou do Gelo.
 - **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final limpo, Semáforo e compras acumuladas continuam valendo.
 - **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece, na sua vez, nas cartas jogáveis que mudam a cor. O raio que cai em você mira nas cartas compradas (`thunderDraw`).
-- **Transmutação** (chave `steal`) e **Banimento** mostram as cartas como a Clarividência (`showCards`). A carta transmutada guarda a forma original em `c.tm`, que `restoreCard` desfaz. No Banimento, as cartas do adversário somem descendo e as suas somem subindo.
+- **Transmutação** (chave `steal`) mostra as cartas como a Clarividência (`showCards`). A carta transmutada guarda a forma original em `c.tm`, que `restoreCard` desfaz.
+- **Banimento** (`vanishCards`): as cartas aparecem e já saem no mesmo movimento. As do adversário descem sumindo, até 4 por vez (as seguintes saem em levas de 4); as suas sobem e somem.
 - **Nevasca e Gelo:** ninguém compra. Os +2/+4 continuam acumulando, e quem não se defende perde a vez sem comprar. No desafio:
   - Se foi blefe, o desafiante segue jogando.
   - Se a jogada era legal, o desafiante perde a vez.

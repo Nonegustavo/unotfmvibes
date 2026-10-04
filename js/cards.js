@@ -132,11 +132,11 @@ function banType(pi,c){
   const n=S.players[pi].hand.filter(m).length+others.reduce((a,x)=>a+x.cards.length,0)+S.deck.filter(m).length+S.discard.slice(0,-1).filter(m).length;
   fx('✖️',`${c.type==='num'?`Número ${c.value}`:label(c)} banido do jogo (${n} carta${n===1?'':'s'})`,'var(--cr)','slam');
   // quem jogou mostra e some primeiro; depois, juntos, os outros jogadores (o monte e a pilha perdem as cartas sem animação)
-  const t1=showCards(pi,S.players[pi].hand.filter(m),'vanish',sp);
+  const t1=vanishCards(pi,S.players[pi].hand.filter(m),sp);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
     let t2=0;
-    others.forEach(x=>{t2=Math.max(t2,showCards(x.i,x.cards,'vanish',sp))});
+    others.forEach(x=>{t2=Math.max(t2,vanishCards(x.i,x.cards,sp))});
     setTimeout(()=>{
       if(g!==S.gen||S.phase==='over')return;
       S.fxUntil=0;S.busy=false;
@@ -175,15 +175,40 @@ function transmute(pi,col){
   },Math.max(t,RM?300:0));
   return 'defer';
 }
-/* cartas mostradas como na Clarividência: abaixo da cadeira do adversário ou, para você, na própria mão.
-   'vanish' faz as cartas sumirem (as do adversário descendo, as suas subindo); 'morph' gira e vira as cartas de "to". Devolve a duração em ms */
-const SHOW_IN=250,SHOW_HOLD=700,VANISH=800,MORPH=520,MORPH_HOLD=1000;
+/* Banimento: as cartas aparecem e já saem no mesmo movimento. As do adversário descem sumindo abaixo da cadeira,
+   até 4 por vez (as seguintes saem logo depois, em levas de 4); as suas sobem e somem na mão. Devolve a duração em ms */
+const VANISH=1100,VANISH_GAP=650,LIFT='translateY(-1.375rem) scale(1.08) ';
+function vanishCards(target,cards,sp=1){
+  if(RM||!cards.length)return 0;
+  sfx('ban');
+  if(target===0){
+    const els=cards.map(c=>document.querySelector(`#hand [data-id="${c.id}"]`)).filter(Boolean);
+    els.forEach((el,k)=>el.animate([{transform:'none',opacity:1},{transform:LIFT,opacity:1,offset:.25},{transform:LIFT+'translateY(-2.5rem)',opacity:0}],
+      {duration:VANISH*sp,delay:k*60*sp,easing:'ease-in',fill:'forwards'}));
+    return (VANISH+els.length*60)*sp;
+  }
+  const r=targetRect(target);if(!r)return 0;
+  const w=Math.min(r.width*.6,46,(r.width+24)/4.3),batches=[];
+  for(let k=0;k<cards.length;k+=4)batches.push(cards.slice(k,k+4));
+  batches.forEach((b,j)=>setTimeout(()=>{
+    const box=document.createElement('div');box.className='showc';
+    b.forEach(c=>{const el=makeCard(c);el.className=`card c-${c.chosen||c.color}`;el.disabled=true;el.style.setProperty('--cw',w+'px');box.appendChild(el)});
+    document.body.appendChild(box);
+    const bw=box.offsetWidth;box.style.left=Math.max(4,Math.min(innerWidth-bw-4,r.left+r.width/2-bw/2))+'px';box.style.top=(r.bottom+4)+'px';
+    box.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none',offset:.25},{opacity:0,transform:'translateY(2rem)'}],{duration:VANISH*sp,easing:'ease-in',fill:'forwards'});
+    if(j)sfx('ban');
+    setTimeout(()=>box.remove(),VANISH*sp+80);
+  },j*VANISH_GAP*sp));
+  return ((batches.length-1)*VANISH_GAP+VANISH)*sp;
+}
+/* Transmutação: cartas mostradas como na Clarividência (abaixo da cadeira do adversário ou, para você, na própria mão),
+   que giram e viram as cartas de "to". Devolve a duração em ms */
+const SHOW_IN=250,SHOW_HOLD=700,MORPH=520,MORPH_HOLD=1000;
 function showCards(target,cards,mode,sp=1,to){
-  const total=(SHOW_IN+SHOW_HOLD+(mode==='vanish'?VANISH:MORPH+MORPH_HOLD))*sp;
+  const total=(SHOW_IN+SHOW_HOLD+MORPH+MORPH_HOLD)*sp;
   if(RM)return 0;
   if(!cards.length)return total;
   let els=[],box=null;
-  const LIFT='translateY(-1.375rem) scale(1.08) ';
   if(target===0){
     els=cards.map(c=>document.querySelector(`#hand [data-id="${c.id}"]`)).filter(Boolean);
     els.forEach(el=>el.animate([{transform:'none'},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)'}],{duration:SHOW_IN*sp,fill:'forwards',easing:'ease-out'}));
@@ -201,13 +226,7 @@ function showCards(target,cards,mode,sp=1,to){
     box.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none'}],{duration:SHOW_IN*sp,easing:'ease-out',fill:'backwards'});
   }
   const at=(SHOW_IN+SHOW_HOLD)*sp,base=target===0?LIFT:'';
-  if(mode==='vanish'){
-    setTimeout(()=>{sfx('ban');
-      if(box)box.animate([{opacity:1,transform:'none'},{opacity:0,transform:'translateY(2rem)'}],{duration:VANISH*sp,easing:'ease-in',fill:'forwards'});
-      else els.forEach((el,k)=>el.animate([{transform:base,opacity:1},{transform:base+'translateY(-2.5rem)',opacity:0}],{duration:VANISH*sp,delay:k*60*sp,easing:'ease-in',fill:'forwards'}));
-    },at);
-    if(box)setTimeout(()=>box.remove(),total+100);
-  }else{
+  {
     setTimeout(()=>{sfx('mystery');els.forEach((el,k)=>{
       const half=MORPH/2*sp;
       // troca a face por tempo (não pelo fim da animação, que para com a aba em segundo plano)
