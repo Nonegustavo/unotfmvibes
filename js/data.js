@@ -236,7 +236,7 @@ function nextHand(pi){
 function icemiceHook(pi){
   if(!ab(pi,'icemice'))return;
   const o=alive().filter(i=>i!==pi);if(!o.length)return;const t=rand(o);
-  drawN(t,1);floatOn(t,'+1','var(--cb)');log(`Icemice comprou, então ${who(t)} comprou 1.`);
+  drawN(t,1);log(`Icemice comprou, então ${who(t)} comprou 1.`);
 }
 const topCard=()=>S.discard[S.discard.length-1];
 const cur=()=>S.players[S.turn];

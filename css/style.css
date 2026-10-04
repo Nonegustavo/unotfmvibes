@@ -88,10 +88,7 @@
 .fan.fog i{filter:saturate(.7) brightness(1.05)}
 .fan .cnt{position:absolute;left:50%;top:1.125rem;transform:none;translate:-50% -50%;z-index:2;font-size:2rem;font-weight:900;line-height:1;color:#fff;text-align:center;white-space:nowrap;
   text-shadow:0 0 2px #1d1435,1px 1px 0 #1d1435,-1px -1px 0 #1d1435,1px -1px 0 #1d1435,-1px 1px 0 #1d1435,0 2px 3px rgba(0,0,0,.4)}
-.fan .cnt.c4{color:#ffd24d}
-.fan .cnt.c3{color:#ffa94d}
-.fan .cnt.c2{color:#ff7a4d}
-.fan .cnt.c1{color:#ff5a52;animation:cntPop .35s}
+.fan .cnt.low{color:#ffd24d}
 .fan .cnt.nr{color:#ff5a52}
 .fan .cnt.said{top:1.5rem;color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);padding:2px 0.5rem;border-radius:999px;font-size:.78rem;text-shadow:none;animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
 @keyframes cntPop{0%{scale:.4}70%{scale:1.2}100%{scale:1}}
@@ -377,8 +374,6 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @keyframes burst2{from{transform:translate(-50%,-50%) scale(.4);opacity:1}to{transform:translate(-50%,-50%) scale(4);opacity:0;border-width:2px}}
 .stamp{position:fixed;z-index:20;display:grid;place-items:center;pointer-events:none;border-radius:1rem;background:color-mix(in srgb,var(--fxc) 22%,transparent);color:var(--fxc);font-weight:700;animation:stampSeat 1.1s ease-out forwards;text-shadow:0 0 0.75rem var(--fxc)}
 @keyframes stampSeat{0%{transform:scale(1.8) rotate(-20deg);opacity:0}25%{transform:none;opacity:1}75%{opacity:1}100%{opacity:0}}
-.floatx{position:fixed;z-index:20;pointer-events:none;font-weight:700;font-size:1.3rem;color:#fff;background:var(--fxc);padding:2px 0.625rem;border-radius:999px;transform:translate(-50%,0);animation:floatUp 1.1s ease-out forwards}
-@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0.625rem) scale(.6)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}100%{opacity:0;transform:translate(-50%,-2.125rem)}}
 .handwrap{position:relative;z-index:5;transition:background .4s}
 .handwrap.yourturn{background:linear-gradient(to top,color-mix(in srgb,var(--accent) 24%,transparent),transparent 90%)}
 .handwrap.arrive::before{content:"";position:absolute;left:0;right:0;top:0;height:0.25rem;border-radius:0.25rem;background:var(--accent);box-shadow:0 0 0.875rem var(--accent);transform-origin:var(--sweep,right);animation:sweep .5s .25s ease-out backwards,fade 1.4s .75s forwards}

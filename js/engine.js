@@ -186,7 +186,7 @@ function buildSideB(startOf){
 function switchSide(pi){
   endTurnHook(pi);
   const here=captureSide();applySide(S.other);S.other=here;
-  S.side=S.side==='b'?'a':'b';S.crossed=true;S.wxNow=true;
+  S.side=S.side==='b'?'a':'b';S.crossed=true;S.wxNow=true;S.cntJump=true;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.lastTop=null;
   applyBg();
   $('hand').innerHTML='';S.newIds=[];$('fx').innerHTML='';
@@ -283,7 +283,7 @@ function playCard(pi,card,chosen){
   if(card.color==='w'&&chosen&&peaceOn){card.chosen=chosen}
   else if(card.color==='w'&&chosen){card.chosen=chosen;burst(CVAR[chosen]);FX3D.sparks(discardRect(),CVAR[chosen]);if(!isDraw(card))fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,CNAME[chosen],CVAR[chosen],'stamp')}
   log(msg+'.');
-  if(sunPen){const k=drawN(pi,curseOn('anvil',pi)?2:1);floatOn(pi,'+1 ☀️','#e8a317');log(`${who(pi)} jogou fora da cor com sol e comprou ${k}.`)}
+  if(sunPen){const k=drawN(pi,curseOn('anvil',pi)?2:1);log(`${who(pi)} jogou fora da cor com sol e comprou ${k}.`)}
   if(p.hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
   if(p.hand.length===target())afterOneCard(pi);
   if(card.type==='num'&&R.perfection&&card.value===before){S.extra=true;log(`Perfeição! ${who(pi)} joga de novo.`);fx('★','Joga de novo','var(--cg)','stamp')}
@@ -293,7 +293,7 @@ function playCard(pi,card,chosen){
     if(o.length){const v=rand(o);thunderDraw(v,1);
       log(`Tempestade: ${who(pi)} mudou a cor e ${who(v)} ${v===0?'compra':'comprou'} 1.`);if(massCheck()==='win')return 'win'}
   }
-  if(curseOn('shoe',pi)&&orig!=='num'&&card.type!=='num'){drawN(pi,1);floatOn(pi,'+1','var(--cy)');log(`${who(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}
+  if(curseOn('shoe',pi)&&orig!=='num'&&card.type!=='num'){drawN(pi,1);log(`${who(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}
   if(card.type==='num'&&S.players[pi].name==='Charlotte'&&on){const k={r:'red',b:'blue',y:'yellow',g:'green'}[card.color];if(k&&R[k]){const r=charlotteFx(pi,card.color);if(r==='win')return r}}
   if(card.type==='chest'){fx('💰',`${who(pi)} abriu o tesouro!`,'var(--cy)','slam');endRound(pi);return 'win'}
   if(on&&SP[card.type]){const r=applySpecial(pi,card);if(r!=='done')return r}
@@ -332,7 +332,7 @@ function penalize(pi,by){
     render();return;
   }
   const n=S.weather==='blizzard'?0:drawAmt(pi,2);
-  if(n){drawN(pi,n);floatOn(pi,`+${n}`,'var(--cy)');icemiceHook(pi)}
+  if(n){drawN(pi,n);icemiceHook(pi)}
   log(`${who(by)} pegou ${pi===0?'você':p.name} sem ${word()}${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
   toast(`${pi===0?'Você foi pego':p.name+' foi pego'} sem ${word()}!${n?` +${n}`:''}`,'var(--cy)');
   if(overloaded(pi)){if(markOut(pi))return;if(pi===S.turn){endTurn();return}}
@@ -374,7 +374,7 @@ function endTurn(){
     const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
     if(noDraw(v)||curseOn('ice',v)||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
-    drawN(v,n);floatOn(v,`+${n}`,'var(--cr)');stampOn(v,'⊘','var(--cr)');hold(900);
+    drawN(v,n);stampOn(v,'⊘','var(--cr)');hold(900);
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
     S.pending=0;S.pendingType=null;
     if(overloaded(v)&&markOut(v))return;
@@ -431,7 +431,7 @@ function takeDraw(pi){
   }
   if(S.pending>0){
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.chal=null;drawn99(pi,endTurn);return}
-    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);floatOn(pi,`+${n}`,'var(--cr)');hold(700);icemiceHook(pi);
+    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);hold(700);icemiceHook(pi);
     log(`${who(pi)} comprou ${n}.`);
     if(overloaded(pi)&&markOut(pi))return;
     endTurn();return;
@@ -474,7 +474,7 @@ function drawn99(pi,then){
   const g=S.gen,sp=S.spectate?.4:1,N=RM?0:22,step=50*sp;S.busy=true;clearFlash();render();
   const from=$('deck').getBoundingClientRect();
   for(let k=0;k<N;k++)setTimeout(()=>{if(g!==S.gen)return;ghost(from,targetRect(pi),0);if(k%3===0)sfx('draw')},k*step);
-  floatOn(pi,'+99','var(--cr)');log(`${who(pi)} ${pi===0?'precisa':'precisou'} comprar as cartas do +99.`);
+  log(`${who(pi)} ${pi===0?'precisa':'precisou'} comprar as cartas do +99.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;S.busy=false;
     fx('+99',`${pi===0?'Você não aguentou':who(pi)+' não aguentou'} o +99!`,'var(--cr)','slam');stampOn(pi,'+99','var(--cr)');

@@ -380,7 +380,6 @@ function thunderDraw(pi,n){
   flashStorm();sfx('thunder');
   const h=S.players[pi].hand,before=h.length;drawN(pi,n);quietDraw(pi);
   const ids=S.players[pi].hand.slice(before).map(c=>c.id);
-  floatOn(pi,`+${n}`,'var(--cy)');
   if(pi!==0||!ids.length){boltOn(pi);stampOn(pi,'⚡','var(--cy)');return}
   // espera a mão ser desenhada com as cartas novas para mirar nelas
   setTimeout(()=>{
@@ -399,10 +398,4 @@ function cardDrop(c,to,delay){
   Object.assign(el.style,{left:to.left+'px',top:to.top+'px',width:cw+'px'});el.style.setProperty('--cw',cw+'px');
   document.body.appendChild(el);
   el.animate([{transform:`translateY(${-cw*2.2}px) rotate(${(Math.random()-.5)*30}deg)`,opacity:0},{opacity:1,offset:.35},{transform:'translateY(0) rotate(0)',opacity:1,offset:.8},{transform:'translateY(0) scale(.96)',opacity:0}],{duration:780,delay,easing:'ease-in',fill:'both'}).onfinish=()=>el.remove();
-}
-function floatOn(pi,text,color){
-  const r=targetRect(pi);if(!r)return;
-  const d=document.createElement('div');d.className='floatx';d.textContent=text;d.style.setProperty('--fxc',color);
-  d.style.left=(r.left+r.width/2)+'px';d.style.top=(r.top+(pi===0?4:r.height*.25))+'px';
-  document.body.appendChild(d);d.addEventListener('animationend',()=>d.remove());
 }

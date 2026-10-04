@@ -252,6 +252,28 @@ function showSeatInfoOld(i,anchor){
   const r=anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);
   requestAnimationFrame(()=>{const rr=anchor.getBoundingClientRect(),br=el.getBoundingClientRect();el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
 }
+/* Número de cartas nas cadeiras: anda uma unidade por vez até a quantidade real (a contagem inteira leva até ~0,7 s,
+   então quanto mais cartas, mais rápido), pulsando verde ao diminuir e vermelho ao aumentar. Oculto (Neblina,
+   Camuflagem), em trocas de mão e no Portal (S.cntJump) o número muda direto, sem pulso */
+const CNT={gen:null,shown:{},timer:{},step:{}};
+function cntShown(i,n,hidden){
+  if(CNT.gen!==S.gen){Object.values(CNT.timer).forEach(clearTimeout);Object.assign(CNT,{gen:S.gen,shown:{},timer:{},step:{}})}
+  if(CNT.shown[i]==null||hidden||RM||S.cntJump||S.phase==='over'){clearTimeout(CNT.timer[i]);CNT.timer[i]=null;return CNT.shown[i]=n}
+  const left=Math.abs(n-CNT.shown[i]);
+  if(left){const st=Math.max(25,Math.min(110,700/left));CNT.step[i]=CNT.timer[i]?Math.min(CNT.step[i],st):st;if(!CNT.timer[i])CNT.timer[i]=setTimeout(()=>cntTick(i),0)}
+  return CNT.shown[i];
+}
+function cntTick(i){
+  const p=S&&S.players[i];CNT.timer[i]=null;if(!p||CNT.gen!==S.gen)return;
+  const d=p.hand.length-CNT.shown[i];if(!d)return;
+  const v=CNT.shown[i]+=Math.sign(d);
+  const el=document.querySelector(`#seatrow [data-seat="${i}"] .cnt`);
+  if(el&&!el.classList.contains('said')&&el.textContent!=='?'){
+    if(el.classList.contains('nr'))el.textContent=`${v}/${limit()}`;else{el.textContent=v;el.classList.toggle('low',v<=3)}
+    el.animate([{scale:'1'},{scale:'1.18',color:d<0?'#4ade80':'#ff5a52',offset:.35},{scale:'1'}],{duration:Math.max(160,Math.min(260,CNT.step[i]*2)),easing:'ease-out'});
+  }
+  if(v!==p.hand.length)CNT.timer[i]=setTimeout(()=>cntTick(i),CNT.step[i]);
+}
 function renderRail(){
   const row=$('seatrow');$('rail').classList.toggle('many',S.players.length>=5);const ccw=S.dir===-1;
   const a=`<span class="arr ${S.flipArrows?'flip':''}" aria-hidden="true">${ccw?'‹':'›'}</span>`;
@@ -265,8 +287,9 @@ function renderRail(){
     const said=!p.out&&n===target()&&p.called&&!hidden;
     const lim=limit(),thr=Math.max(3,Math.round(lim*.25)),rem=lim-n;
     const near=!p.out&&!hidden&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
-    const badge=hidden?'?':said?`${word()}!`:near?`${n}/${lim}`:String(n);
-    const ctCls=said?'said':hidden?'':near?'nr':n<=4?'c'+n:'';
+    const v=p.out?n:cntShown(i,n,hidden);
+    const badge=hidden?'?':said?`${word()}!`:near?`${v}/${lim}`:String(v);
+    const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
     if(i>1)parts.push(a);
     parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
@@ -280,7 +303,7 @@ function renderRail(){
   });
   parts.push(edge);
   row.innerHTML=parts.join('');
-  S.flipArrows=false;
+  S.flipArrows=false;S.cntJump=false;
   $('rail').setAttribute('aria-label',`Ordem de jogada, sentido ${ccw?'anti-horário':'horário'}`);
 }
 /* turn marker */

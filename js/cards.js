@@ -99,9 +99,9 @@ function miniDie(pi,n,ms){
 function diceEffect(pi,t,n){
   const q=S.players[t];
   if(n===1&&S.players[pi].hand.length){const c=rand(S.players[pi].hand);S.players[pi].hand=S.players[pi].hand.filter(x=>x!==c);q.hand.push(c);if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}}
-  if(n===2){const k=drawAmt(t,2);drawN(t,k);floatOn(t,`+${k}`,'var(--cr)')}
+  if(n===2){const k=drawAmt(t,2);drawN(t,k);}
   if(n===3){let k=0;while(q.hand.length>3)discardCard(t,rand(q.hand),k++)}
-  if(n===4){const f=q.hand.find(c=>c.type==='num'&&c.value===4);if(f)discardCard(t,f);else{const k=drawAmt(t,4);drawN(t,k);floatOn(t,`+${k}`,'var(--cr)')}}
+  if(n===4){const f=q.hand.find(c=>c.type==='num'&&c.value===4);if(f)discardCard(t,f);else{const k=drawAmt(t,4);drawN(t,k);}}
   if(n===5){const others=alive().filter(i=>i!==t);const k=Math.min(5,q.hand.length-1);for(let j=0;j<k;j++){const c=rand(q.hand);const o=rand(others);q.hand=q.hand.filter(x=>x!==c);S.players[o].hand.push(c);S.players[o].called=false;if(o===0){S.newIds.push(c.id);S.handFrom=targetRect(t)}else ghost(targetRect(t),targetRect(o),j*60)}}
   if(n===6){while(q.hand.length<6&&drawOne(t)){}}
   q.called=q.hand.length<=target()&&q.called;
@@ -111,7 +111,7 @@ function diceEffect(pi,t,n){
 function resolveSimon(pi,card,ok,col){
   S.lastTop=null;
   if(ok){S.color=col;card.chosen=col;S.simon.push(col);burst(CVAR[col]);fx('🧠',S.simon.length>1?`Acertou! Sequência de ${S.simon.length}`:`Primeira cor: ${CNAME[col]}`,CVAR[col],'stamp');log(`${who(pi)} acertou a memorização (${S.simon.length}).`);return 'done'}
-  drawN(pi,1);floatOn(pi,'+1','var(--cr)');const c=rand(COLORS);S.color=c;card.chosen=c;
+  drawN(pi,1);const c=rand(COLORS);S.color=c;card.chosen=c;
   fx('🧠','Errou a sequência! +1','var(--cr)','slam');log(`${who(pi)} errou a memorização.`);return massCheck();
 }
 function stealWild(pi,t){
@@ -148,7 +148,7 @@ function banType(pi,c){
 function banApply(pi,c,m,n){
   const t=topCard();
   S.deck=S.deck.filter(x=>!m(x));S.discard=[...S.discard.slice(0,-1).filter(x=>!m(x)),t];
-  S.players.forEach((q,i)=>{if(q.out)return;const k=q.hand.filter(m).length;if(k){q.hand=q.hand.filter(x=>!m(x));floatOn(i,`-${k}`,'var(--cg)')}});
+  S.players.forEach((q,i)=>{if(q.out)return;const k=q.hand.filter(m).length;if(k){q.hand=q.hand.filter(x=>!m(x));}});
   if(SP[c.type]){const rk=SP[c.type].rule||c.type;if(R[rk]){R[rk]=false;S.removed.push({k:rk,by:pi===0?'você':who(pi)})}}
   log(`${who(pi)} baniu ${label(c)}: ${n} cartas saíram do jogo.`);
   if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
@@ -258,7 +258,9 @@ function morphMine(card,before,after,sp=1){
     const el=document.querySelector(`#hand [data-id="${card.id}"]`);
     if(el){el.innerHTML=faceHTML(card);el.setAttribute('aria-label',cardName(card));el.style.visibility='hidden'}
     render();
-    const dst=(document.querySelector(`#hand [data-id="${card.id}"]`)||src).getBoundingClientRect();
+    // a carta (escondida) não desliza: a cópia mede e voa direto para o lugar novo
+    const ne=document.querySelector(`#hand [data-id="${card.id}"]`);ne?._flip?.cancel();
+    const dst=(ne||src).getBoundingClientRect();
     fly.animate([{transform:at(mid.x,mid.y,'scale(1.15)')},{transform:at(dst.left,dst.top)}],{duration:MINE_BACK*sp,easing:'cubic-bezier(.4,.1,.3,1)',fill:'forwards'});
     setTimeout(()=>{fly.remove();const e=document.querySelector(`#hand [data-id="${card.id}"]`);if(e)e.style.visibility=''},MINE_BACK*sp);
   },tMorph+PUF+MORPH_HOLD*sp);
@@ -336,7 +338,7 @@ function challengeResolve(pi){
     const cont=()=>{
       if(rest>0&&!frozen){
         if(rest>=99){drawn99(pi,endTurn);return}
-        const k2=drawAmt(pi,rest);if(k2){drawN(pi,k2);floatOn(pi,`+${k2}`,'var(--cr)')}
+        const k2=drawAmt(pi,rest);if(k2){drawN(pi,k2);}
         log(`${who(pi)} comprou o restante acumulado: ${k2}.`);
         if(overloaded(pi)&&markOut(pi))return;endTurn();return;
       }
@@ -351,7 +353,7 @@ function challengeResolve(pi){
       log(`${who(pi)} desafiou: ${who(c.by)} blefou com +99.`);
       drawn99(c.by,cont);return;
     }else{
-      const k=frozenBy?0:drawAmt(c.by,amt);if(k){drawN(c.by,k);floatOn(c.by,`+${k}`,'var(--cr)')}
+      const k=frozenBy?0:drawAmt(c.by,amt);if(k){drawN(c.by,k);}
       fx('⚔️',`Blefe! ${c.by===0?'Você compra':who(c.by)+' compra'} ${k}`+(rest?`, ${pi===0?'você compra':who(pi)+' compra'} o resto (+${rest})`:''),'var(--cg)','slam');
       log(`${who(pi)} desafiou: ${who(c.by)} blefou com +${amt} e comprou ${k}.`);
       if(massCheck()==='win')return;
@@ -363,7 +365,7 @@ function challengeResolve(pi){
       if(markOut(pi,'desafiou errado na morte súbita'))return;endTurn();return;
     }
     if(n>=99&&!frozen){fx('⚔️',`Jogada legal! ${pi===0?'Você compra':who(pi)+' compra'} o +99`,'var(--cr)','slam');log(`${who(pi)} desafiou e errou.`);drawn99(pi,endTurn);return}
-    const k=frozen?0:drawAmt(pi,n+2);if(k){drawN(pi,k);floatOn(pi,`+${k}`,'var(--cr)')}
+    const k=frozen?0:drawAmt(pi,n+2);if(k){drawN(pi,k);}
     fx('⚔️',`Jogada legal! ${pi===0?'Você compra':who(pi)+' compra'} ${k}`,'var(--cr)','slam');log(`${who(pi)} desafiou e errou: comprou ${k}.`);
     if(overloaded(pi)&&markOut(pi))return;endTurn();
   }
@@ -535,7 +537,7 @@ function charlotteFx(pi,c){
     p.hand=p.hand.filter(y=>y!==x);S.players[t].hand.push(x);S.players[t].called=false;if(t===0){S.newIds.push(x.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);
     fx('💗',`Amor? Charlotte doou uma carta para ${t===0?'você':who(t)}`,'var(--cr)','stamp');return selfCheck(pi)}
   if(c==='b'){S.numOnly=2;fx('🕊️','Paz? No próximo turno, só cartas numéricas','var(--cb)','stamp');return 'done'}
-  if(c==='y'){const t=rand(others),n=1+Math.floor(Math.random()*3);drawN(t,n);floatOn(t,`+${n}`,'var(--cy)');fx('😠',`Ira? ${t===0?'Você compra':who(t)+' compra'} ${n}`,'var(--cy)','slam');return massCheck()}
+  if(c==='y'){const t=rand(others),n=1+Math.floor(Math.random()*3);drawN(t,n);fx('😠',`Ira? ${t===0?'Você compra':who(t)+' compra'} ${n}`,'var(--cy)','slam');return massCheck()}
   if(c==='g'){const m=Math.min(...others.map(i=>S.players[i].hand.length));let k=0;
     while(p.hand.length>m&&p.hand.length>1)discardCard(pi,rand(p.hand),k++);while(p.hand.length<m&&drawOne(pi)){}
     fx('⚖️',`Igualdade? Charlotte fica com ${p.hand.length} cartas`,'var(--cg)','stamp');return selfCheck(pi)}
@@ -617,7 +619,7 @@ function applySpecial(pi,card){
       // um adversário por vez, no sentido do jogo: a carta cai do céu até ele
       const order=[];for(let i=nextIdx(pi,1);i!==pi&&!order.includes(i);i=nextIdx(i,1))if(opp.includes(i))order.push(i);
       log('Chuva: todos os adversários compram 1.');sfx('rain');
-      return sequenceFx(order,(i,next,sp)=>rainDrop(i,560*sp,()=>{drawN(i,1);quietDraw(i);floatOn(i,'+1','var(--cb)');render();setTimeout(next,160*sp)}))}
+      return sequenceFx(order,(i,next,sp)=>rainDrop(i,560*sp,()=>{drawN(i,1);quietDraw(i);render();setTimeout(next,160*sp)}))}
     case 'thunder':{
       // 2 jogadores sorteados (pode ser quem jogou), cada um compra de 1 a 5; um por vez, as cartas aparecem de repente
       const vs=shuffle(alive().filter(i=>!ab(i,'drekkemaus'))).slice(0,2);
@@ -724,8 +726,8 @@ function applySpecial(pi,card){
       if(T!=='mix3'){S.dir*=-1;S.flipArrows=true;const r=$('dirring');r.classList.remove('flipped');void r.offsetWidth;r.classList.add('flipped')}
       const a=nextIdx(pi,1);
       if(T==='mix1'){S.skip=1;stampOn(a,'⊘','var(--cr)');fx(ARROWS,`Inverte e ${a===0?'você perde':who(a)+' perde'} a vez`,'var(--accent)',S.dir===1?'cw':'ccw')}
-      if(T==='mix2'){const n=drawAmt(a,2);drawN(a,n);floatOn(a,`+${n}`,'var(--cr)');stampOn(a,'⊘','var(--cr)');S.skip=1;fx(ARROWS,`Inverte e ${a===0?'você compra':who(a)+' compra'} ${n}`,'var(--cr)',S.dir===1?'cw':'ccw')}
-      if(T==='mix3'){const b=nextIdx(pi,2);const n=drawAmt(b,2);stampOn(a,'⊘','var(--cr)');drawN(b,n);floatOn(b,`+${n}`,'var(--cr)');stampOn(b,'⊘','var(--cr)');S.skip=2;fx('⊘+2',`${who(a)} perde a vez, ${who(b)} compra ${n}`,'var(--cr)','slam')}
+      if(T==='mix2'){const n=drawAmt(a,2);drawN(a,n);stampOn(a,'⊘','var(--cr)');S.skip=1;fx(ARROWS,`Inverte e ${a===0?'você compra':who(a)+' compra'} ${n}`,'var(--cr)',S.dir===1?'cw':'ccw')}
+      if(T==='mix3'){const b=nextIdx(pi,2);const n=drawAmt(b,2);stampOn(a,'⊘','var(--cr)');drawN(b,n);stampOn(b,'⊘','var(--cr)');S.skip=2;fx('⊘+2',`${who(a)} perde a vez, ${who(b)} compra ${n}`,'var(--cr)','slam')}
       return massCheck()}
     case 'rule':{
       const opts=ruleOptions(3);
@@ -779,7 +781,7 @@ function humanAskOpen(card){
 
 /* ---------- trade / carousel ---------- */
 function handTo(i,hand,fromIdx){
-  S.players[i].hand=hand;memReset(i);
+  S.players[i].hand=hand;memReset(i);S.cntJump=true; // o número de cartas nas cadeiras muda direto, sem contagem
   if(i===0){S.newIds=hand.map(c=>c.id);S.handFrom=targetRect(fromIdx)}
 }
 function graceCalls(){S.players.forEach(p=>{p.called=p.hand.length<=target()})}
