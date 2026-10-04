@@ -177,9 +177,9 @@ function transmute(pi,col){
 }
 // largura das cartas que os adversários mostram abaixo da cadeira: a mesma das cartas da mesa
 const shownW=()=>$('deck').getBoundingClientRect().width;
-/* Banimento: as cartas aparecem e já saem no mesmo movimento. As do adversário descem sumindo abaixo da cadeira,
+/* Banimento: as cartas aparecem e já saem no mesmo movimento. As do adversário caem da cadeira e somem,
    uma de cada vez, em sequência rápida; as suas sobem e somem na mão. Devolve a duração em ms */
-const VANISH=1100,VANISH_GAP=220,LIFT='translateY(-1.375rem) scale(1.08) ';
+const VANISH=1100,DROP=850,VANISH_GAP=220,LIFT='translateY(-1.375rem) scale(1.08) ';
 function vanishCards(target,cards,sp=1){
   if(RM||!cards.length)return 0;
   sfx('ban');
@@ -195,11 +195,13 @@ function vanishCards(target,cards,sp=1){
     const el=makeCard(c);el.className=`card c-${c.chosen||c.color} banc`;el.disabled=true;el.style.setProperty('--cw',w+'px');
     el.style.left=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+4)+'px';
     document.body.appendChild(el);
-    el.animate([{opacity:0,transform:'translateY(-0.75rem) scale(.6)'},{opacity:1,transform:'none',offset:.25},{opacity:0,transform:'translateY(3rem)'}],{duration:VANISH*sp,easing:'ease-in',fill:'forwards'});
+    // cai como as cartas que a Carta da Regra põe no monte (cardDrop), mas some no fim da queda
+    const rot=(Math.random()-.5)*30;
+    el.animate([{transform:`translateY(${-w*.5}px) rotate(${rot}deg)`,opacity:0},{opacity:1,offset:.3},{transform:`translateY(${w*.9}px) rotate(${-rot/3}deg)`,opacity:1,offset:.75},{transform:`translateY(${w*1.05}px) rotate(${-rot/3}deg) scale(.9)`,opacity:0}],{duration:DROP*sp,easing:'ease-in',fill:'forwards'});
     if(j&&j%2===0)sfx('ban');
-    setTimeout(()=>el.remove(),VANISH*sp+80);
+    setTimeout(()=>el.remove(),DROP*sp+80);
   },j*VANISH_GAP*sp));
-  return ((cards.length-1)*VANISH_GAP+VANISH)*sp;
+  return ((cards.length-1)*VANISH_GAP+DROP)*sp;
 }
 /* Transmutação de uma carta sua: ela sai da mão para o centro, logo acima da mão, gira e vira a carta nova,
    e volta animada para a posição nova na mão (a ordem muda com o símbolo). Devolve a duração em ms */

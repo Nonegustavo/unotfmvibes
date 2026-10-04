@@ -70,7 +70,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final limpo, Semáforo e compras acumuladas continuam valendo.
 - **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece, na sua vez, nas cartas jogáveis que mudam a cor. O raio que cai em você mira nas cartas compradas (`thunderDraw`).
 - **Transmutação** (chave `steal`) mostra as cartas como a Clarividência (`showCards`). A carta transmutada guarda a forma original em `c.tm`, que `restoreCard` desfaz.
-- **Banimento** (`vanishCards`): as cartas aparecem e já saem no mesmo movimento. As do adversário descem sumindo, uma de cada vez em sequência rápida; as suas sobem e somem. As cartas mostradas pelos adversários têm o tamanho das cartas da mesa (`shownW`).
+- **Banimento** (`vanishCards`): as cartas aparecem e já saem no mesmo movimento. As do adversário caem da cadeira e somem (como as cartas que a Carta da Regra põe no monte), uma de cada vez em sequência rápida; as suas sobem e somem. As cartas mostradas pelos adversários têm o tamanho das cartas da mesa (`shownW`).
 - **Nevasca e Gelo:** ninguém compra. Os +2/+4 continuam acumulando, e quem não se defende perde a vez sem comprar. No desafio:
   - Se foi blefe, o desafiante segue jogando.
   - Se a jogada era legal, o desafiante perde a vez.
