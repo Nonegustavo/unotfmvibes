@@ -175,8 +175,8 @@ function transmute(pi,col){
   },Math.max(t,RM?300:0));
   return 'defer';
 }
-// largura das cartas que os adversários mostram abaixo da cadeira (o dobro da antiga, até 5,75rem)
-const shownW=r=>Math.min(r.width*1.2,5.75*parseFloat(getComputedStyle(document.documentElement).fontSize));
+// largura das cartas que os adversários mostram abaixo da cadeira: a mesma das cartas da mesa
+const shownW=()=>$('deck').getBoundingClientRect().width;
 /* Banimento: as cartas aparecem e já saem no mesmo movimento. As do adversário descem sumindo abaixo da cadeira,
    uma de cada vez, em sequência rápida; as suas sobem e somem na mão. Devolve a duração em ms */
 const VANISH=1100,VANISH_GAP=220,LIFT='translateY(-1.375rem) scale(1.08) ';
