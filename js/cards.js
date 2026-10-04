@@ -158,7 +158,7 @@ function banApply(pi,c,m,n){
 }
 // Transmutação: uma carta de ação de cada adversário vira número aleatório (mesma cor; curinga ganha cor aleatória).
 // Volta a ser o que era ao retornar ao monte (restoreCard)
-const MAGIC=['Tadá!','Essa era a sua carta?','Diante dos seus olhos!','Voilà!','Abracadabra!','Nada nas mangas!','Plim!','Um aplauso, por favor!','Hocus pocus!','Mágica!','E não é que funcionou?'];
+const MAGIC=['Tadá!','Essa era a sua carta?','Diante dos seus olhos!','Voilà!','Abracadabra!','Nada nas mangas!','Plim!','Um aplauso, por favor!','Hocus pocus!'];
 function transmute(pi,col){
   const picks=alive().filter(i=>i!==pi).map(i=>{const acts=S.players[i].hand.filter(c=>c.type!=='num');return acts.length?{i,c:rand(acts)}:null}).filter(Boolean);
   if(!picks.length){fx('🎩','Ninguém tinha carta de ação',col,'stamp');log('Transmutação: ninguém tinha carta de ação.');return 'done'}
@@ -166,7 +166,9 @@ function transmute(pi,col){
   picks.forEach(x=>{const c=x.c;x.before={...c};
     c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(Math.random()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
   let t=0;picks.forEach(x=>{t=Math.max(t,x.i===0?morphMine(x.c,x.before,x.after,sp):showCards(x.i,[x.before],'morph',sp,[x.after]))});
-  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('',rand(MAGIC),col,'stamp',1800*sp)},RM?0:(SHOW_IN+SHOW_HOLD+MORPH/2)*sp);
+  // as cartas giram juntas: um único som, a partir do primeiro giro (a sua carta gira um pouco antes)
+  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')sfx('transmute')},RM?0:(picks.some(x=>x.i===0)?MINE_GO+SHOW_HOLD/2:SHOW_IN+SHOW_HOLD)*sp);
+  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('🎩',rand(MAGIC),col,'stamp',1800*sp,true)},RM?0:(SHOW_IN+SHOW_HOLD+MORPH/2)*sp);
   log(`Transmutação: ${picks.map(x=>`${label(x.before)} de ${who(x.i)} virou ${x.after.value}`).join(', ')}.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
@@ -185,9 +187,9 @@ const tiltKeys=(dy,rot)=>[{transform:'translateY(0) rotate(0deg)',opacity:1},{tr
 const tilt=()=>(Math.random()<.5?-1:1)*(8+Math.random()*10);
 function vanishCards(target,cards,sp=1){
   if(RM||!cards.length)return 0;
-  sfx('ban');
   if(target===0){
     const els=cards.map(c=>document.querySelector(`#hand [data-id="${c.id}"]`)).filter(Boolean);
+    const g=S.gen;els.forEach((_,k)=>setTimeout(()=>{if(g===S.gen)sfx('vanishUp')},k*VANISH_GAP*sp));
     els.forEach((el,k)=>el.animate(tiltKeys(-el.offsetWidth*1.6,tilt()),{duration:DROP*sp,delay:k*VANISH_GAP*sp,easing:'ease-in',fill:'forwards'}));
     return ((els.length-1)*VANISH_GAP+DROP)*sp;
   }
@@ -198,7 +200,7 @@ function vanishCards(target,cards,sp=1){
     el.style.left=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+4)+'px';
     document.body.appendChild(el);
     el.animate(tiltKeys(w*1.05,tilt()),{duration:DROP*sp,easing:'ease-in',fill:'forwards'});
-    if(j&&j%2===0)sfx('ban');
+    sfx('vanishDown');
     setTimeout(()=>el.remove(),DROP*sp+80);
   },j*VANISH_GAP*sp));
   return ((cards.length-1)*VANISH_GAP+DROP)*sp;
@@ -218,7 +220,7 @@ function morphMine(card,before,after,sp=1){
   const at=(x,y,extra='')=>`translate(${x-a.left}px,${y-a.top}px) ${extra}`;
   fly.animate([{transform:'none'},{transform:at(mid.x,mid.y,'scale(1.15)')}],{duration:MINE_GO*sp,easing:'cubic-bezier(.2,.9,.3,1.05)',fill:'forwards'});
   const tMorph=(MINE_GO+SHOW_HOLD/2)*sp,half=MORPH/2*sp;
-  setTimeout(()=>{sfx('mystery');
+  setTimeout(()=>{
     fly.animate([{transform:at(mid.x,mid.y,'scale(1.15) rotateY(0)')},{transform:at(mid.x,mid.y,'scale(1.15) rotateY(90deg)')}],{duration:half,easing:'ease-in',fill:'forwards'});
     setTimeout(()=>{fly.innerHTML=faceHTML(after);fly.className=`card c-${after.color} flyclone`;
       fly.animate([{transform:at(mid.x,mid.y,'scale(1.15) rotateY(90deg)')},{transform:at(mid.x,mid.y,'scale(1.15) rotateY(0)')}],{duration:half,easing:'cubic-bezier(.2,.9,.3,1.2)',fill:'forwards'})},half);
@@ -260,7 +262,7 @@ function showCards(target,cards,mode,sp=1,to){
   }
   const at=(SHOW_IN+SHOW_HOLD)*sp,base=target===0?LIFT:'';
   {
-    setTimeout(()=>{sfx('mystery');els.forEach((el,k)=>{
+    setTimeout(()=>{els.forEach((el,k)=>{
       const half=MORPH/2*sp;
       // troca a face por tempo (não pelo fim da animação, que para com a aba em segundo plano)
       el.animate([{transform:base+'rotateY(0)'},{transform:base+'rotateY(90deg)'}],{duration:half,easing:'ease-in',fill:'forwards'});

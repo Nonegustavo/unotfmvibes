@@ -384,6 +384,9 @@ function render(){
   const hand=$('hand');const turn=myTurn();
   hand.classList.toggle('myturn',turn);
   const existing=new Map([...hand.children].map(e=>[+e.dataset.id,e]));
+  // posição de cada carta antes de redesenhar (inclui o deslize em andamento), para ela deslizar até o lugar novo
+  const handX=e=>e.offsetLeft-hand.scrollLeft;
+  const oldX=RM?null:new Map([...existing].map(([id,e])=>[id,handX(e)+(e._flip?.playState==='running'?parseFloat(getComputedStyle(e).translate)||0:0)]));
   sortHand(me.hand).forEach((c,idx)=>{
     let el=existing.get(c.id);if(!el)el=makeCard(c);existing.delete(c.id);
     let cls=`card c-${c.color}`;
@@ -404,6 +407,11 @@ function render(){
   const n=me.hand.length,avail=hand.clientWidth-28;
   let ov=n>1?Math.min(6,(avail-cw)/(n-1)-cw):0;
   hand.style.setProperty('--ov',Math.max(ov,-cw*.72)+'px');
+  if(oldX)[...hand.children].forEach(e=>{
+    const x0=oldX.get(+e.dataset.id);if(x0===undefined)return;
+    const dx=x0-handX(e);if(Math.abs(dx)<1)return;
+    e._flip?.cancel();e._flip=e.animate([{translate:`${dx}px 0`},{translate:'0 0'}],{duration:180,easing:'cubic-bezier(.2,.8,.3,1)'});
+  });
   // animations for draws
   const deckR=deck.getBoundingClientRect();
   const from=S.handFrom||deckR;S.handFrom=null;
