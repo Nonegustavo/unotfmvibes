@@ -255,10 +255,19 @@ function showSeatInfoOld(i,anchor){
 /* Número de cartas nas cadeiras: anda uma unidade por vez até a quantidade real (a contagem inteira leva até ~0,7 s,
    então quanto mais cartas, mais rápido), pulsando verde ao diminuir e vermelho ao aumentar. Oculto (Neblina,
    Camuflagem), em trocas de mão e no Portal (S.cntJump) o número muda direto, sem pulso */
-const CNT={gen:null,shown:{},timer:{},step:{}};
+const CNT={gen:null,shown:{},timer:{},step:{},flash:{}};
+// a cor verde/vermelha fica firme por CNT_HOLD ms depois do último passo e volta em CNT_FADE ms
+// (refeita a cada render, que recria as cadeiras, a partir do ponto em que estava)
+const CNT_HOLD=500,CNT_FADE=400;
+function cntColor(el,i){
+  const f=CNT.flash[i];if(!el||!f||el.classList.contains('said')||el.textContent==='?')return;
+  const t=performance.now()-f.t,tot=CNT_HOLD+CNT_FADE;if(t>=tot){delete CNT.flash[i];return}
+  el._col?.cancel();
+  el._col=el.animate([{color:f.col},{color:f.col,offset:CNT_HOLD/tot}],{duration:tot,easing:'ease-in'});el._col.currentTime=t;
+}
 function cntShown(i,n,hidden){
-  if(CNT.gen!==S.gen){Object.values(CNT.timer).forEach(clearTimeout);Object.assign(CNT,{gen:S.gen,shown:{},timer:{},step:{}})}
-  if(CNT.shown[i]==null||hidden||RM||S.cntJump||S.phase==='over'){clearTimeout(CNT.timer[i]);CNT.timer[i]=null;return CNT.shown[i]=n}
+  if(CNT.gen!==S.gen){Object.values(CNT.timer).forEach(clearTimeout);Object.assign(CNT,{gen:S.gen,shown:{},timer:{},step:{},flash:{}})}
+  if(CNT.shown[i]==null||hidden||RM||S.cntJump||S.phase==='over'){clearTimeout(CNT.timer[i]);CNT.timer[i]=null;delete CNT.flash[i];return CNT.shown[i]=n}
   const left=Math.abs(n-CNT.shown[i]);
   if(left){const st=Math.max(25,Math.min(110,700/left));CNT.step[i]=CNT.timer[i]?Math.min(CNT.step[i],st):st;if(!CNT.timer[i])CNT.timer[i]=setTimeout(()=>cntTick(i),0)}
   return CNT.shown[i];
@@ -270,7 +279,8 @@ function cntTick(i){
   const el=document.querySelector(`#seatrow [data-seat="${i}"] .cnt`);
   if(el&&!el.classList.contains('said')&&el.textContent!=='?'){
     if(el.classList.contains('nr'))el.textContent=`${v}/${limit()}`;else{el.textContent=v;el.classList.toggle('low',v<=3)}
-    el.animate([{scale:'1'},{scale:'1.18',color:d<0?'#4ade80':'#ff5a52',offset:.35},{scale:'1'}],{duration:Math.max(160,Math.min(260,CNT.step[i]*2)),easing:'ease-out'});
+    el.animate([{scale:'1'},{scale:'1.18',offset:.35},{scale:'1'}],{duration:Math.max(160,Math.min(260,CNT.step[i]*2)),easing:'ease-out'});
+    CNT.flash[i]={col:d<0?'#4ade80':'#ff5a52',t:performance.now()};cntColor(el,i);
   }
   if(v!==p.hand.length)CNT.timer[i]=setTimeout(()=>cntTick(i),CNT.step[i]);
 }
@@ -304,6 +314,7 @@ function renderRail(){
   parts.push(edge);
   row.innerHTML=parts.join('');
   S.flipArrows=false;S.cntJump=false;
+  Object.keys(CNT.flash).forEach(i=>cntColor(row.querySelector(`[data-seat="${i}"] .cnt`),i));
   $('rail').setAttribute('aria-label',`Ordem de jogada, sentido ${ccw?'anti-horário':'horário'}`);
 }
 /* turn marker */
