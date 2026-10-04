@@ -177,17 +177,19 @@ function transmute(pi,col){
 }
 // largura das cartas que os adversários mostram abaixo da cadeira: a mesma das cartas da mesa
 const shownW=()=>$('deck').getBoundingClientRect().width;
-/* Banimento: as cartas aparecem e já saem no mesmo movimento. As do adversário caem da cadeira e somem,
-   uma de cada vez, em sequência rápida; as suas sobem e somem na mão. Devolve a duração em ms */
-const VANISH=1100,DROP=850,VANISH_GAP=220,LIFT='translateY(-1.375rem) scale(1.08) ';
+/* Banimento: as cartas saem na hora, uma de cada vez em sequência rápida. Começam retas e vão se inclinando de leve
+   pelo caminho, sumindo no fim (o contrário das cartas que a Carta da Regra põe no monte): as do adversário caem da
+   cadeira e as suas sobem da mão, com a mesma velocidade. Devolve a duração em ms */
+const DROP=850,VANISH_GAP=220,LIFT='translateY(-1.375rem) scale(1.08) ';
+const tiltKeys=(dy,rot)=>[{transform:'translateY(0) rotate(0deg)',opacity:1},{transform:`translateY(${dy*.85}px) rotate(${rot}deg)`,opacity:1,offset:.75},{transform:`translateY(${dy}px) rotate(${rot}deg) scale(.9)`,opacity:0}];
+const tilt=()=>(Math.random()<.5?-1:1)*(8+Math.random()*10);
 function vanishCards(target,cards,sp=1){
   if(RM||!cards.length)return 0;
   sfx('ban');
   if(target===0){
     const els=cards.map(c=>document.querySelector(`#hand [data-id="${c.id}"]`)).filter(Boolean);
-    els.forEach((el,k)=>el.animate([{transform:'none',opacity:1},{transform:LIFT,opacity:1,offset:.25},{transform:LIFT+'translateY(-2.5rem)',opacity:0}],
-      {duration:VANISH*sp,delay:k*60*sp,easing:'ease-in',fill:'forwards'}));
-    return (VANISH+els.length*60)*sp;
+    els.forEach((el,k)=>el.animate(tiltKeys(-el.offsetWidth*1.6,tilt()),{duration:DROP*sp,delay:k*VANISH_GAP*sp,easing:'ease-in',fill:'forwards'}));
+    return ((els.length-1)*VANISH_GAP+DROP)*sp;
   }
   const r=targetRect(target);if(!r)return 0;
   const w=shownW(r);
@@ -195,9 +197,7 @@ function vanishCards(target,cards,sp=1){
     const el=makeCard(c);el.className=`card c-${c.chosen||c.color} banc`;el.disabled=true;el.style.setProperty('--cw',w+'px');
     el.style.left=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+4)+'px';
     document.body.appendChild(el);
-    // cai como as cartas que a Carta da Regra põe no monte (cardDrop), mas some no fim da queda
-    const rot=(Math.random()-.5)*30;
-    el.animate([{transform:`translateY(${-w*.5}px) rotate(${rot}deg)`,opacity:0},{opacity:1,offset:.3},{transform:`translateY(${w*.9}px) rotate(${-rot/3}deg)`,opacity:1,offset:.75},{transform:`translateY(${w*1.05}px) rotate(${-rot/3}deg) scale(.9)`,opacity:0}],{duration:DROP*sp,easing:'ease-in',fill:'forwards'});
+    el.animate(tiltKeys(w*1.05,tilt()),{duration:DROP*sp,easing:'ease-in',fill:'forwards'});
     if(j&&j%2===0)sfx('ban');
     setTimeout(()=>el.remove(),DROP*sp+80);
   },j*VANISH_GAP*sp));
