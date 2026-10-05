@@ -147,7 +147,7 @@ const MODE_DESC={classic:'UNO tradicional, sem nenhuma regra especial.',mix:'Ant
 const TIPS=[
   pc('Toque','Clique')+' nas cartas jogadas para ver o histórico de jogadas.',
   pc('Toque em','Pare o cursor sobre')+' um ícone de regra abaixo dos jogadores para ver o que ela faz.',
-  'Aperte "UNO!" quando for jogar sua penúltima carta. Se um adversário perceber, você compra 2 cartas.',
+  'Aperte "UNO!" quando for jogar sua penúltima carta. Se não fizer e um adversário perceber, você compra 2 cartas.',
   'Um adversário esqueceu de dizer UNO? '+pc('Toque','Clique')+' em "Pegar!" para forçá-lo a comprar 2 cartas.',
   'Blefar com +4 é arriscado: se jogar um +4 mesmo tendo outra carta da cor para jogar e for desafiado, você é que comprará as cartas.',
   'Recebeu um +4 suspeito? Desafie! Se foi blefe, quem jogou é que comprará as cartas. Mas se não foi, você compra 2 cartas a mais.',
