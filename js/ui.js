@@ -221,7 +221,7 @@ function deckBadges(){
   if(S.weather==='blizzard'){const w=WEATHER.blizzard;L.push({ic:w.g,name:`Clima ${w.n}`,txt:w.t})}
   return L;
 }
-function showDeckInfo(){const L=S?deckBadges():[];if(!L.length)return false;infoPopup('deck','',L,$('deck'));buzz(15);return true}
+function showDeckInfo(){const L=S?deckBadges():[];if(!L.length)return false;infoPopup('deck','',L,$('deck'),true);buzz(15);return true}
 function tableStatus(){
   const L=[];
   if(S.weather){const w=WEATHER[S.weather];L.push({short:w.g,ic:w.g,name:`Clima ${w.n}`,txt:w.t})}
