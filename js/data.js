@@ -61,7 +61,7 @@ const SP={
   justice:{n:'Carta da Misericórdia',g:'🙏',d:'Ao jogar esta carta, descarte 1 carta por cada jogador com menos cartas que você.',deck:['r','b','y','g']},
   magnet:{n:'Carta do Imã',g:'🧲',d:'Ao jogar esta carta, descarte todas as cartas da mesma cor que esta.',deck:['r','b','y','g','r','b','y','g']},
   tornado:{n:'Carta do Tornado',g:'🌪️',d:'Ao jogar esta carta, embaralhe as cartas dos outros jogadores.',deck:['r','b','y','g','r','b','y','g']},
-  steal:{n:'Carta da Transmutação',g:'🎩',d:'Ao jogar, faça uma carta de cada adversário se transformar em carta numérica.',deck:['r','b','y','g']},
+  steal:{n:'Carta da Mágica',g:'🎩',d:'Ao jogar, faça uma carta de cada adversário se transformar em carta numérica.',deck:['r','b','y','g']},
   wish:{n:'Carta do Desejo',g:'🪄',d:'Ao jogar esta carta, troque uma carta aleatória da sua mão por uma da pilha de descartes.',deck:['r','b','y','g']},
   peace:{n:'Carta da Paz',g:'🌼',d:'Ao jogar esta carta, cartas de ação não terão efeito por alguns turnos.',deck:['r','b','y','g']},
   luck:{n:'Carta da Sorte',g:'🍀',d:'Ao jogar esta carta, a sua próxima carta comprada será uma carta jogável naquele turno.',deck:['r','b','y','g','r','b','y','g']},

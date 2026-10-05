@@ -534,13 +534,13 @@ body>.top{grid-row:1}body>.rail{grid-row:2}body>.rulestrip{grid-row:3}body>.tabl
 .home-btns{display:flex;gap:0.625rem;width:min(20rem,100%)}
 .home-btns .btn.main{flex:1;font-size:1.15rem}
 .home-btns .btn:not(.main){flex:0 0 3.5rem}
-/* Banimento e Transmutação: cartas mostradas perto da cadeira (como na Clarividência) ou na mão */
+/* Banimento e Mágica: cartas mostradas perto da cadeira (como na Clarividência) ou na mão */
 .showc{position:fixed;z-index:21;pointer-events:none;display:flex;align-items:center;gap:0.1875rem}
 .showc .card{flex:none}
 /* Banimento: carta solta (não usa .showc, que é flex e desalinharia os símbolos da carta) */
 .banc{position:fixed;z-index:21;pointer-events:none}
 .showc .xn{font-weight:800;font-size:.8rem;color:#fff;background:var(--cr);border-radius:999px;padding:0 0.3125rem;margin-left:0.125rem}
-/* Transmutação: nuvem de fumaça e faíscas no "puf" (o centro da carta fica em left/top; --s é a largura da carta) */
+/* Mágica: nuvem de fumaça e faíscas no "puf" (o centro da carta fica em left/top; --s é a largura da carta) */
 .puff{position:fixed;z-index:22;width:0;height:0;pointer-events:none}
 .puff i,.puff b{position:absolute;left:0;top:0;border-radius:50%}
 .puff i{width:calc(var(--s)*.8);height:calc(var(--s)*.8);margin:calc(var(--s)*-.4) 0 0 calc(var(--s)*-.4);background:radial-gradient(circle,rgba(255,255,255,.95),rgba(225,220,245,.7) 45%,rgba(225,220,245,0) 70%);animation:puffSmoke .8s ease-out both}

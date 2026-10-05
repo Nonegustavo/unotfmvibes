@@ -71,7 +71,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **Maldição do espinho:** qualquer compra (`drawOne`) marca o jogador (`thornHit`, `p.thorned`) sem dar a carta, e ele é eliminado no fim do efeito (`massCheck`, `checkLimits` ou `endTurn`). A Morte súbita só elimina quem precisa comprar pelo monte ou erra.
 - **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final limpo, Semáforo e compras acumuladas continuam valendo.
 - **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece, na sua vez, nas cartas jogáveis que mudam a cor. O raio que cai em você mira nas cartas compradas (`thunderDraw`).
-- **Transmutação** (chave `steal`) mostra as cartas como a Clarividência (`showCards`). A carta transmutada guarda a forma original em `c.tm`, que `restoreCard` desfaz.
+- **Mágica** (chave `steal`) mostra as cartas como a Clarividência (`showCards`). A carta transformada guarda a forma original em `c.tm`, que `restoreCard` desfaz.
 - **Banimento** (`vanishCards`): as cartas aparecem e já saem no mesmo movimento. Uma de cada vez, em sequência rápida, as cartas começam retas, vão se inclinando de leve e somem no fim: as do adversário caem da cadeira e as suas sobem da mão, na mesma velocidade. As cartas mostradas pelos adversários têm o tamanho das cartas da mesa (`shownW`).
 - **Nevasca e Gelo:** ninguém compra. Os +2/+4 continuam acumulando, e quem não se defende perde a vez sem comprar. No desafio:
   - Se foi blefe, o desafiante segue jogando.

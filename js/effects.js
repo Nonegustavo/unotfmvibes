@@ -293,7 +293,7 @@ const SND={
   lock:()=>{noise(.06,{f:2500,vol:.2});tone(200,.12,{type:'square',vol:.1,at:.04})},
   sneak:()=>{tone(500,.35,{to:150,vol:.1,type:'triangle'});noise(.25,{f:1500,fTo:400,vol:.06})},
   ban:()=>{tone(110,.45,{type:'sawtooth',vol:.12});tone(116,.45,{type:'sawtooth',vol:.08})},
-  // Transmutação: brilho mágico subindo que termina num "puf"
+  // Mágica: brilho mágico subindo que termina num "puf"
   transmute:()=>{noise(.7,{f:600,fTo:5000,vol:.08,q:3});arp([1318,1568,1760,2093,2637],.06,{type:'sine',vol:.06,d:.25});
     noise(.22,{f:900,filter:'lowpass',vol:.14,at:.55});tone(620,.22,{type:'triangle',to:300,vol:.07,at:.55})},
   // Banimento: cada carta que some (as dos adversários caem, as suas sobem)

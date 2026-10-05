@@ -156,12 +156,12 @@ function banApply(pi,c,m,n){
   const empty=alive().find(i=>S.players[i].hand.length===0&&!nextHand(i));if(empty!=null){endRound(empty);return 'win'}
   graceCalls();return 'done';
 }
-// Transmutação: uma carta de ação de cada adversário vira número aleatório (mesma cor; curinga ganha cor aleatória).
+// Mágica: uma carta de ação de cada adversário vira número aleatório (mesma cor; curinga ganha cor aleatória).
 // Volta a ser o que era ao retornar ao monte (restoreCard)
 const MAGIC=['Tadá!','Essa era a sua carta?','Diante dos seus olhos!','Voilà!','Abracadabra!','Nada nas mangas!','Plim!','Um aplauso, por favor!','Hocus pocus!'];
 function transmute(pi,col){
   const picks=alive().filter(i=>i!==pi).map(i=>{const acts=S.players[i].hand.filter(c=>c.type!=='num');return acts.length?{i,c:rand(acts)}:null}).filter(Boolean);
-  if(!picks.length){fx('🎩','Ninguém tinha carta de ação',col,'stamp');log('Transmutação: ninguém tinha carta de ação.');return 'done'}
+  if(!picks.length){fx('🎩','Ninguém tinha carta de ação',col,'stamp');log('Mágica: ninguém tinha carta de ação.');return 'done'}
   const g=S.gen,sp=S.spectate?.4:1;S.busy=true;clearFlash();hold(99999);
   picks.forEach(x=>{const c=x.c;x.before={...c};
     c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(Math.random()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
@@ -169,7 +169,7 @@ function transmute(pi,col){
   // todas as cartas se transformam juntas, no "puf" do único som (PUF ms depois de ele começar)
   setTimeout(()=>{if(g===S.gen&&S.phase!=='over')sfx('transmute')},RM?0:(SHOW_IN+SHOW_HOLD)*sp);
   setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('🎩',rand(MAGIC),col,'stamp',1800*sp,true)},RM?0:(SHOW_IN+SHOW_HOLD)*sp+PUF);
-  log(`Transmutação: ${picks.map(x=>`${label(x.before)} de ${who(x.i)} virou ${x.after.value}`).join(', ')}.`);
+  log(`Mágica: ${picks.map(x=>`${label(x.before)} de ${who(x.i)} virou ${x.after.value}`).join(', ')}.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
     picks.forEach(x=>{if(x.i===0){const el=document.querySelector(`#hand [data-id="${x.c.id}"]`);if(el){el.innerHTML=faceHTML(x.c);el.setAttribute('aria-label',cardName(x.c))}}});
@@ -215,7 +215,7 @@ function vanishCards(target,cards,sp=1){
   },j*VANISH_GAP*sp));
   return ((cards.length-1)*VANISH_GAP+DROP)*sp;
 }
-/* Transformação da Transmutação: enquanto o som sobe (PUF ms, fixo como o áudio), a carta treme e vai brilhando;
+/* Transformação da Mágica: enquanto o som sobe (PUF ms, fixo como o áudio), a carta treme e vai brilhando;
    no "puf" um clarão e uma nuvem de fumaça com faíscas a cobrem, a face troca (swap) e a carta nova salta.
    Usa as propriedades translate/scale/filter, que se somam ao transform de posição das outras animações */
 const PUF=550,POP=450;
@@ -239,7 +239,7 @@ function puffAt(el){
     html.push(`<b style="--x:${Math.cos(a)*dist}px;--y:${Math.sin(a)*dist}px"></b>`)}
   d.innerHTML=html.join('');document.body.appendChild(d);setTimeout(()=>d.remove(),1000);
 }
-/* Transmutação de uma carta sua: ela sai da mão para o centro, logo acima da mão, se transforma junto com as outras
+/* Mágica de uma carta sua: ela sai da mão para o centro, logo acima da mão, se transforma junto com as outras
    e volta animada para a posição nova na mão (a ordem muda com o símbolo). Devolve a duração em ms */
 const MINE_GO=450,MINE_BACK=450;
 function morphMine(card,before,after,sp=1){
@@ -273,7 +273,7 @@ function morphMine(card,before,after,sp=1){
   },tMorph+PUF+MORPH_HOLD*sp);
   return total;
 }
-/* Transmutação: cartas mostradas como na Clarividência (abaixo da cadeira do adversário ou, para você, na própria mão),
+/* Mágica: cartas mostradas como na Clarividência (abaixo da cadeira do adversário ou, para você, na própria mão),
    que se transformam nas cartas de "to". Devolve a duração em ms */
 const SHOW_IN=250,SHOW_HOLD=700,MORPH_HOLD=1000;
 function showCards(target,cards,mode,sp=1,to){
