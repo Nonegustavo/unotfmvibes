@@ -1,6 +1,9 @@
 /* unotfm solo: dados do jogo (cores, regras, cartas especiais, maldições, climas, dificuldades, configuração salva) */
 const $=id=>document.getElementById(id);
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// computador com mouse: as janelas de informação abrem ao parar o cursor; pc(celular, computador) escolhe o texto
+const HOVER=matchMedia('(hover:hover) and (pointer:fine)').matches;
+const pc=(m,c)=>HOVER?c:m;
 const COLORS=['r','y','g','b'];
 const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Cinza'};
 const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'var(--cgray)'};
@@ -19,7 +22,7 @@ const AVCOL=['#d9534f','#2b8a9e','#8e5bd0','#d4892b','#3c9d5d','#c2477f','#4a6fd
 
 const RULES=[
   {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho não tem as cartas +2, +4, reverter e bloqueios.'},
-  {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho tem só cartas de ação: as comuns e as especiais de todas as regras. '+(matchMedia('(hover:hover) and (pointer:fine)').matches?'Pare o cursor numa carta para ver o que ela faz.':'Toque e segure uma carta para ver o que ela faz.')},
+  {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho tem só cartas de ação: as comuns e as especiais de todas as regras. '+pc('Toque e segure uma carta para ver o que ela faz.','Pare o cursor numa carta para ver o que ela faz.')},
   {g:'Baralho e mão',k:'revelation',n:'Revelação',d:'A carta no topo do baralho é visível para todos.'},
   {g:'Baralho e mão',k:'mulligan',n:'Segunda chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
   {g:'Baralho e mão',k:'camouflage',n:'Camuflagem',d:'Você não enxerga quantas cartas os adversários têm até que fiquem com 1 carta.'},
@@ -142,10 +145,10 @@ const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[])
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
 const MODE_DESC={classic:'UNO tradicional, sem nenhuma regra especial.',mix:'Antes de distribuir as cartas, cada jogador escolhe uma regra para colocar na partida.',custom:'Você escolhe todas as regras da partida na lista abaixo.'};
 const TIPS=[
-  'Toque nas cartas jogadas para ver o histórico de jogadas.',
-  'Toque em um ícone de regra abaixo dos jogadores para ver o que ela faz.',
+  pc('Toque','Clique')+' nas cartas jogadas para ver o histórico de jogadas.',
+  pc('Toque em','Pare o cursor sobre')+' um ícone de regra abaixo dos jogadores para ver o que ela faz.',
   'Aperte "UNO!" quando for jogar sua penúltima carta. Se um adversário perceber, você compra 2 cartas.',
-  'Um adversário esqueceu de dizer UNO? Toque em "Pegar!" para forçá-lo a comprar 2 cartas.',
+  'Um adversário esqueceu de dizer UNO? '+pc('Toque','Clique')+' em "Pegar!" para forçá-lo a comprar 2 cartas.',
   'Blefar com +4 é arriscado: se jogar um +4 mesmo tendo outra carta da cor para jogar e for desafiado, você é que comprará as cartas.',
   'Recebeu um +4 suspeito? Desafie! Se foi blefe, quem jogou é que comprará as cartas. Mas se não foi, você compra 2 cartas a mais.',
   'O ranking do fim da partida é por pontos: guarde números baixos e livre-se dos curingas (50) e ações (20) quando alguém estiver perto de vencer.',
@@ -155,12 +158,12 @@ const TIPS=[
   'Durante o clima Nevasca, ninguém compra cartas. Caso todos passem a vez, a nevasca acaba.',
   'Com a regra Azul e Verde, as cartas azuis e verdes são da mesma cor. Azul?! Verde?! Já nem sei que cores são essas.',
   'O ícone 🍀 na cadeira de um adversário mostra que ele guardou uma Carta da Sorte: a próxima compra dele vai ser jogável.',
-  'Os efeitos 3D podem ser desligados aqui se o seu celular ficar lento.',
+  'Os efeitos 3D podem ser desligados aqui se '+pc('o seu celular','o jogo')+' ficar lento.',
   'Dizem que existe um nível acima do Difícil…',
   'Só tem um 0 de cada cor no baralho. Os outros números têm dois de cada cor.',
-  'Toque nos adversários para entender as condições dos ícones deles.',
-  'Toque nos ícones da mesa para ver mais detalhes do que está acontecendo durante a partida.',
-  'Toque e segure uma carta sua para ver o que ela faz.',
+  pc('Toque nos adversários para entender as condições dos ícones deles.','Pare o cursor sobre os ícones dos adversários para entender as condições deles.'),
+  pc('Toque nos','Pare o cursor sobre os')+' ícones da mesa para ver mais detalhes do que está acontecendo durante a partida.',
+  pc('Toque e segure uma carta sua','Pare o cursor sobre uma carta sua')+' para ver o que ela faz.',
 ];
 const COMBO_DESC={rise:'Crescente: você pode se defender com outra carta de compra de mesmo valor ou maior: +2 em +2, +4 em +2 ou em +4. As compras se acumulam para o próximo jogador.',normal:'Combinar: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.',super:'Qualquer: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.',none:'Desativado: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'};
 const SEGS={
