@@ -586,7 +586,8 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
         else hardClicks.n=0}
       if(k==='sound'){MUTED=!CFG.sound;save('unotfm-solo-mute',MUTED);if(!MUTED)sfx('special')}
       if(k==='vibrate'&&CFG.vibrate)buzz(40);
-      if(k==='fx3d'||k==='sound'||k==='vibrate'||k==='ruleInfo'||k==='fast'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
+      if(k==='compact')applyCompact();
+      if(k==='fx3d'||k==='sound'||k==='vibrate'||k==='ruleInfo'||k==='fast'||k==='compact'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
       buildSettings()};
   });
   $('comboLegend').textContent=COMBO_DESC[CFG.combo]||'';$('modeLegend').textContent=MODE_DESC[CFG.mode]||'';$('rulesField').hidden=CFG.mode!=='custom';$('botsField').hidden=CFG.mode!=='custom';$('startField').hidden=CFG.mode!=='custom';
@@ -784,6 +785,15 @@ $('endRules').onclick=openSettings;
 $('closeSettings').onclick=()=>$('settingsOv').classList.remove('show');
 $('startBtn').onclick=()=>{save('unotfm-solo-cfg',CFG);R=rulesForMode();TOUR=null;$('settingsOv').classList.remove('show');newGame()};
 $('againBtn').onclick=()=>{$('endOv').classList.remove('show');R=rulesForMode();newGame()};
+/* Altura da mesa: a Compacta limita a mesa em telas altas e estreitas (o CSS decide pela proporção, TALL);
+   nas outras telas a opção não muda nada, e as Configurações avisam */
+const TALL=matchMedia('(max-aspect-ratio:10/19)');
+function applyCompact(){
+  document.documentElement.classList.toggle('compact',CFG.compact!==false);
+  $('compactWarn').hidden=TALL.matches;
+  if(S){render();if(S.turn!==0&&S.phase!=='over')placeMarker(S.turn,false)}
+}
+applyCompact();TALL.addEventListener('change',applyCompact);
 window.addEventListener('resize',()=>{if(!S)return;render();if(S.turn!==0&&S.phase!=='over')placeMarker(S.turn,false)});
 /* PWA: instalação dentro do jogo */
 let installEvt=null;
