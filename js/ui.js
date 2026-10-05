@@ -319,7 +319,7 @@ function renderRail(){
       <div class="nm">${p.name}</div>
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
       ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${ctCls}">${badge}</span></div>`}
-      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" title="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const st=seatStatus(i).map(x=>x.short);
+      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" aria-label="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const st=seatStatus(i).map(x=>x.short);
         return st.length?`<span class="tag stat">${st.join(' ')}</span>`:''})()}${!p.out&&partner(i)===0?'<span class="tag top">🤝</span>':''}</div>`);
   });
   parts.push(edge);
@@ -777,7 +777,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
 {const FINE=matchMedia('(hover:hover) and (pointer:fine)');let hov=null,hovT=null;
  const openKey=k=>k.startsWith('rule:')?$('notices').querySelector(`[data-k="${k.slice(5)}"]`):$('notices').querySelector(`[data-info="${k}"]`);
  function hoverTarget(t){
-   const ri=t.closest('#rulestrip .ri');if(ri)return {key:'rule:'+ri.dataset.k,open:()=>openRuleIcon(ri)};
+   const ri=t.closest('#rulestrip .ri');if(ri)return {key:'rule:'+ri.dataset.k,fast:1,open:()=>openRuleIcon(ri)};
    const c=t.closest('#hand .card');if(c)return {key:'card'+c.dataset.id,slow:1,open:()=>showCardInfo(+c.dataset.id,c)};
    if(t.closest('#deck')&&deckBadges().length)return {key:'deck',slow:1,open:showDeckInfo};
    const st=t.closest('.seat .tag.stat,.seat .outic');if(st){const seat=st.closest('.seat'),i=+seat.dataset.seat;return {key:'seat'+i,open:()=>showSeatInfo(i,seat)}}
@@ -793,7 +793,8 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
    if(hov&&openKey(hov)){$('notices').innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))}
    hov=k;const x=e.clientX,y=e.clientY;
    // reabre a partir do elemento atual sob o mouse: o render() pode ter trocado o ícone nesse intervalo
-   // cartas da mão e monte: espera mais (HOVER_SLOW), para a janela não abrir só de passar o mouse
+   // regras abrem na hora; cartas da mão e monte esperam mais (HOVER_SLOW), para a janela não abrir só de passar o mouse
+   if(h&&h.fast){h.open();return}
    if(h)hovT=setTimeout(()=>{if(hov!==k||openKey(k))return;const el=document.elementFromPoint(x,y),h2=el&&hoverTarget(el);if(h2&&h2.key===k)h2.open()},h.slow?HOVER_SLOW:300);
  });}
 /* neve 2D: flocos individuais com posição, tamanho, velocidade e balanço sorteados */

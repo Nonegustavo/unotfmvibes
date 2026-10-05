@@ -473,7 +473,7 @@ function renderRuleStrip(){
   const fresh=S.freshRules||[];S.freshRules=[];
   strip.innerHTML=keys.map(k=>{const ic=ruleIcon(k);const txt=txtIcon(ic);
     const bot=BOTRULES.includes(k);
-    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''} ${S.stripHold?'pre':''}" data-k="${k}" title="${RNAME[k]}" aria-label="${RNAME[k]}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</button>`}).join('');
+    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''} ${S.stripHold?'pre':''}" data-k="${k}" aria-label="${RNAME[k]}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</button>`}).join('');
   const f=strip.querySelector('.fresh');if(f){S.progScroll=Date.now();f.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'})}
   strip.querySelectorAll('.fresh').forEach(freshen);
 }
