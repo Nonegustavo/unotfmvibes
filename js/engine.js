@@ -80,9 +80,9 @@ function canPlay(p,c,any){
   const t=topCard();
   if(S.pending>0){
     if(R.nou&&c.type==='rev')return true;
-    if(R.combo==='super')return isDraw(c);
-    if(R.combo==='rise')return isDraw(c)&&drawVal(c)>=drawVal({type:S.pendingType});
-    if(R.combo==='normal')return c.type===S.pendingType;
+    if(comboMode()==='super')return isDraw(c);
+    if(comboMode()==='rise')return isDraw(c)&&drawVal(c)>=drawVal({type:S.pendingType});
+    if(comboMode()==='normal')return c.type===S.pendingType;
     return false;
   }
   return !!any||matchTop(c)||S.weather==='sun';
@@ -377,7 +377,7 @@ function endTurn(){
   let steps=S.extra?0:1;steps+=S.skip===true?1:(S.skip||0);
   S.extra=false;S.skip=false;
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
-  if(S.pending>0&&R.combo==='none'&&!R.nou){
+  if(S.pending>0&&comboMode()==='none'&&!R.nou){
     const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
     if(noDraw(v)||curseOn('ice',v)||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}

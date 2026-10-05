@@ -398,7 +398,7 @@ function autoPlay(card){
 }
 const CARD_RULES=()=>RULES.filter(r=>r.g==='Cartas especiais').map(r=>r.k);
 function ruleOptions(n=2,pre){
-  const pool=[...RULE_POOL,...CARD_RULES(),...(pre?['noaction','mess','mulligan','mini','maxi','twohands']:[])].filter(k=>!R[k]&&!(CONFLICT[k]||[]).some(x=>R[x])&&!(k==='bg'&&S&&S.side==='b')&&!(k==='portal'&&!pre)
+  const pool=[...RULE_POOL,...CARD_RULES(),...Object.keys(DEF_RULES).filter(k=>DEF_RULES[k]!==R.combo),...(pre?['noaction','mess','mulligan','mini','maxi','twohands']:[])].filter(k=>!R[k]&&!(CONFLICT[k]||[]).some(x=>R[x])&&!(k==='bg'&&S&&S.side==='b')&&!(k==='portal'&&!pre)
     // Mini e Maxi não mudam nada se as cartas iniciais já forem 4 ou menos / 9 ou mais
     &&!(k==='mini'&&R.start<=4)&&!(k==='maxi'&&R.start>=9));
   return shuffle(pool).slice(0,n);
@@ -442,7 +442,7 @@ function ruleReveal(k,cards,done){
 const RICON={stack:'📚',sequence:'🔢',neighbor:'↕️',hell:'🔥',jumpin:'✂️',perfection:'💯',clean:'🧼',nou:'↩️',satisfaction:'😤',insatisfaction:'👋',
   fastdraw:'⏩',tracking:'🔎',flash:'🏃',overload:'🏋️',limbo:'🪜',hard:'🎯',dos:'✌️',shiny:'🌈',team:'🤝',black:'🔘',noaction:'🥱',mess:'🎭',
   revelation:'🔦',mini:'🤏',maxi:'🤌',mulligan:'🆕',camouflage:'😶‍🌫️',bg:'🩵',nochallenge:'🤐',time:'⏰',limitless:'♾️',twohands:'✋',poker:'🃏',addrules:'➕',
-  tournament:'🏆',survivor:'🏅',drekkemaus:'🐉',jingle:'🔔',papaille:'🦋',charlotte:'🕷️',elisah:'🔮',buffy:'🐣',snowy:'⛄',icemice:'🐭',elise:'⚜️',red:'🔴',blue:'🔵',yellow:'🟡',green:'🟢',weather:'🌤️',mix:'⇄⊘',plus99:'+99'};
+  tournament:'🏆',survivor:'🏅',drekkemaus:'🐉',jingle:'🔔',papaille:'🦋',charlotte:'🕷️',elisah:'🔮',buffy:'🐣',snowy:'⛄',icemice:'🐭',elise:'⚜️',red:'🔴',blue:'🔵',yellow:'🟡',green:'🟢',weather:'🌤️',mix:'⇄⊘',plus99:'+99',dfnormal:'✅',dfrise:'📶',dfsuper:'✳️',dfnone:'❎'};
 // ícones de texto (+99, ⇄⊘) usam fonte menor para caber no círculo
 const txtIcon=ic=>/[+⇄⊘]/.test(ic);
 function ruleIcon(k){

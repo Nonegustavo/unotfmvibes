@@ -593,6 +593,7 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
   let html='',g='';
   if(CFG.bots%2===0)CFG.team=false;
   RULES.forEach(r=>{
+    if(DEF_RULES[r.k])return; // regras de defesa: a defesa já é escolhida na configuração
     if(r.g!==g){g=r.g;html+=`<div class="group">${g}</div>`}
     const block=(CONFLICT[r.k]||[]).filter(x=>CFG[x]);
     let why=block.length?`Incompatível com ${block.map(x=>RNAME[x]).join(', ')}`:'';
@@ -625,10 +626,10 @@ $('ruleSearch').addEventListener('input',e=>{RF.q=e.target.value;filterRules()})
 function openActive(){
   if(!S){openSettings();return}
   const segName=(k,v)=>{const e=SEGS[k].find(x=>String(x[0])===String(v));return e?e[1]:v};
-  const basics=[`${S.players.length-1} adversário${S.players.length>2?'s':''}`,`Dificuldade: ${segName('diff',R.diff)}`,`Cartas iniciais: ${segName('start',R.start)}`,`Defesa contra compras: ${segName('combo',R.combo)}`];
+  const basics=[`${S.players.length-1} adversário${S.players.length>2?'s':''}`,`Dificuldade: ${segName('diff',R.diff)}`,`Cartas iniciais: ${segName('start',R.start)}`,`Defesa contra compras: ${segName('combo',comboMode())}`];
   const added=Object.fromEntries(S.added.map(a=>[a.k,a.by]));
   const on=RULES.filter(r=>R[r.k]);
-  let html=`<div class="act-basics">${basics.map(b=>`<span class="chip">${b}</span>`).join('')}</div><p class="legend">${COMBO_DESC[R.combo]}</p>`;
+  let html=`<div class="act-basics">${basics.map(b=>`<span class="chip">${b}</span>`).join('')}</div><p class="legend">${COMBO_DESC[comboMode()]}</p>`;
   if(!R.nochallenge)html+=`<div class="act"><b>Desafio do +4</b><span>Quem recebe um +4 pode desafiar: se foi blefe, quem jogou compra; se não, quem desafiou compra 2 a mais.</span></div>`;
   let g='';
   on.forEach(r=>{

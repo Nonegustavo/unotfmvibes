@@ -122,9 +122,21 @@ const CURSES={
   thorn:{nm:'Espinho',g:'🌵',t:'Quem comprar cartas será eliminado',n:1},
   poison:{nm:'Veneno',g:'🧪',t:'Todos ficam confusos',n:1},
 };
+// Regras de defesa: valem no lugar da defesa contra compras da configuração (R.combo). Só saem no Mix de regras e na
+// Carta da Regra, nunca a que repete a configuração, e não aparecem na lista do Personalizado
+const DEF_RULES={dfnormal:'normal',dfrise:'rise',dfsuper:'super',dfnone:'none'};
+RULES.push(
+  {g:'Compras',k:'dfnormal',n:'Defesa - Combinar',d:'Substitui a defesa contra compras da partida: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.'},
+  {g:'Compras',k:'dfrise',n:'Defesa - Crescente',d:'Substitui a defesa contra compras da partida: você pode se defender com outra carta de compra de mesmo valor ou maior (+2 em +2, +4 em +2 ou em +4). As compras se acumulam para o próximo jogador.'},
+  {g:'Compras',k:'dfsuper',n:'Defesa - Qualquer',d:'Substitui a defesa contra compras da partida: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.'},
+  {g:'Compras',k:'dfnone',n:'Defesa - Desativada',d:'Substitui a defesa contra compras da partida: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'},
+);
+// defesa em vigor: a da regra de defesa ativa ou, sem ela, a da configuração
+function comboMode(){for(const k in DEF_RULES)if(R[k])return DEF_RULES[k];return R.combo}
 const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload'];
 ['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{const i=RULES.findIndex(r=>r.k===k);if(i>=0)RULES.splice(i,1)});
 const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw'],['satisfaction','fastdraw']];
+Object.keys(DEF_RULES).forEach((a,i,l)=>l.slice(i+1).forEach(b=>CONFLICT_PAIRS.push([a,b])));
 RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k],['noaction',r.k]));
 const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));

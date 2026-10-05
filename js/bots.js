@@ -114,7 +114,7 @@ function botChoose(p,opts){
      if(S.peace>0&&c.type!=='num')s+=mn<=2?6:-12;
      const lim=limit();
      if(lim<999&&isDraw(c)&&lim-nn<=drawVal(c))s+=35;
-     if(S.pending>0&&R.combo==='rise')s+=c.type==='d2'?6:c.type==='d4'?3:0;
+     if(S.pending>0&&comboMode()==='rise')s+=c.type==='d2'?6:c.type==='d4'?3:0;
      if(R.clean&&p.hand.length<=3&&c.type==='num'&&p.hand.filter(x=>x.type==='num').length===1)s-=20;
      if(c.type==='batata'&&p.batata>=3)s+=40;
      if(S.weather==='blizzard'&&isDraw(c))s-=10;
