@@ -86,7 +86,7 @@ function flyClone(target,from,o={}){
   const dx=from.left+from.width/2-cx,dy=from.top+from.height/2-cy;
   const sc=Math.max(.35,Math.min(1.3,from.width/w));
   const a=g.animate([{transform:`translate(${dx}px,${dy}px) rotate(${o.rot||0}deg) scale(${sc})`},{transform:`rotate(${o.endRot||0}deg)`}],
-    {duration:o.dur||420,delay:o.delay||0,easing:'cubic-bezier(.2,.9,.25,1.05)',fill:'both'});
+    {duration:o.dur||420,delay:o.delay||0,easing:o.ease||'cubic-bezier(.2,.9,.25,1.05)',fill:'both'});
   const end=()=>{g.remove();target.style.visibility=''};
   a.onfinish=end;a.oncancel=end;setTimeout(end,(o.delay||0)+(o.dur||420)+400);
 }
@@ -443,7 +443,7 @@ function render(){
     S.lastTop=t.id;
     dis.innerHTML=S.discard.slice(-3).map(c=>`<div class="dc" style="--rot:${c.rot.toFixed(1)}deg"><div class="card c-${c.chosen||c.color}">${faceHTML(c)}</div></div>`).join('');
     if(S.morph&&!RM){dis.lastElementChild.firstElementChild.animate([{transform:'rotateY(90deg) scale(1.15)'},{transform:'none'}],{duration:450,easing:'cubic-bezier(.2,.9,.3,1.2)'})}
-    else if(S.animPlay){const tc=S.discard[S.discard.length-1];flyClone(dis.lastElementChild.firstElementChild,S.animPlay,{rot:-25,dur:430,endRot:tc.rot||0})}
+    else if(S.animPlay){const tc=S.discard[S.discard.length-1];flyClone(dis.lastElementChild.firstElementChild,S.animPlay,{rot:-25,dur:430,endRot:tc.rot||0,ease:'cubic-bezier(.2,.8,.3,1)'})}
     S.morph=false;
   }
   S.animPlay=null;

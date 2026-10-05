@@ -398,7 +398,9 @@ function autoPlay(card){
 }
 const CARD_RULES=()=>RULES.filter(r=>r.g==='Cartas especiais').map(r=>r.k);
 function ruleOptions(n=2,pre){
-  const pool=[...RULE_POOL,...CARD_RULES(),...(pre?['noaction','mess','mulligan','mini','maxi','twohands']:[])].filter(k=>!R[k]&&!(CONFLICT[k]||[]).some(x=>R[x])&&!(k==='bg'&&S&&S.side==='b')&&!(k==='portal'&&!pre));
+  const pool=[...RULE_POOL,...CARD_RULES(),...(pre?['noaction','mess','mulligan','mini','maxi','twohands']:[])].filter(k=>!R[k]&&!(CONFLICT[k]||[]).some(x=>R[x])&&!(k==='bg'&&S&&S.side==='b')&&!(k==='portal'&&!pre)
+    // Mini e Maxi não mudam nada se as cartas iniciais já forem 4 ou menos / 9 ou mais
+    &&!(k==='mini'&&R.start<=4)&&!(k==='maxi'&&R.start>=9));
   return shuffle(pool).slice(0,n);
 }
 function addRule(pi,k,quiet,done){

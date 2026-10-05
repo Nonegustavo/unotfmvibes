@@ -70,7 +70,7 @@ const SP={
   dice:{n:'Carta do Dado',g:'🎲',d:'Ao jogar esta carta, force o próximo jogador a rolar o dado e sofrer uma consequência.',deck:C4},
   oddeven:{n:'Carta do Semáforo',g:'🚦',d:'Ao jogar esta carta, será proibido vencer com cartas pares ou ímpares (escolhido aleatoriamente). Ao jogar isso de novo, mude.',deck:C8},
   half:{n:'Carta do Rei',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
-  death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem dizer UNO, ter o blefe de um +4 ou +99 desafiado ou desafiar uma dessas cartas quando a jogada era legal.',deck:['r','b']},
+  death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem dizer UNO, ter o blefe de um +4 desafiado ou desafiar um +4 quando a jogada era legal.',deck:['r','b']},
   share:{n:'Carta da Partilha',g:'🤲',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
   simon:{n:'Carta da Memorização',g:'🧠',d:'Ao jogar esta carta, repita as cores escolhidas por outras cartas desta. Se errar, compre 1 carta. Se acertar, escolha a próxima cor.',deck:['w','w','w','w','w','w','w','w']},
   chair:{n:'Carta da Dança das Cadeiras',g:'🪑',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente.',deck:C4},
@@ -98,7 +98,7 @@ Object.entries(SP).forEach(([k,v])=>{if(!v.hide)RULES.push({g:'Cartas especiais'
 RULES.push({g:'Cartas especiais',k:'weather',n:'Cartas de clima',d:'Cada carta de clima tem um efeito global que perdura até que outra carta de clima seja jogada.'});
 RULES.push({g:'Cartas especiais',k:'mix',n:'Cartas Combo',d:'Estas cartas ativam os dois efeitos correspondentes aos símbolos delas (Inverter+Bloqueio, Inverter+2, Bloqueio+2).'});
 RULES.splice(RULES.findIndex(r=>r.k==='hell'),0,{g:'Jogadas',k:'bg',n:'Azul e Verde',d:'Cartas azuis e verdes serão tratadas como se fossem da mesma cor.'});
-RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem desafiar',d:'Os +4 não podem mais ser desafiados. (Sem esta regra, quem recebe um +4 ou +99 pode desafiar o último jogado: se foi blefe, quem jogou compra as cartas dessa carta e o desafiante compra o restante acumulado; se não foi, o desafiante compra tudo e mais 2.)'});
+RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem desafiar',d:'Os +4 não podem mais ser desafiados. (Sem esta regra, quem recebe um +4 pode desafiar o último jogado: se foi blefe, quem jogou compra as cartas dessa carta e o desafiante compra o restante acumulado; se não foi, o desafiante compra tudo e mais 2.)'});
 RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'time',n:'Tempo reduzido',d:'Após 6 minutos, vence quem tiver menos pontos na mão.'});
 RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'limitless',n:'Sem limite',d:'Os jogadores agora podem ter mais de 30 cartas na mão. (Sem esta regra, quem passar de 30 cartas é eliminado.)'});
 RULES.push(
@@ -150,7 +150,7 @@ const TIPS=[
   'Toque nos ícones da mesa para ver mais detalhes do que está acontecendo durante a partida.',
   'Toque e segure uma carta sua para ver o que ela faz.',
 ];
-const COMBO_DESC={rise:'Crescente: você pode se defender com outra carta de compra de mesmo valor ou maior: +2 em +2, +4 em +2 ou +4, +99 em qualquer um. As compras se acumulam para o próximo jogador.',normal:'Igual: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.',super:'Super combo: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.',none:'Sem combo: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'};
+const COMBO_DESC={rise:'Crescente: você pode se defender com outra carta de compra de mesmo valor ou maior: +2 em +2, +4 em +2 ou em +4. As compras se acumulam para o próximo jogador.',normal:'Combinar: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.',super:'Qualquer: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.',none:'Desativado: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'};
 const SEGS={
   sound:[[true,'Ligado'],[false,'Desligado']],
   mode:[['classic','Clássico'],['mix','Mix de regras'],['custom','Personalizado']],
@@ -160,7 +160,7 @@ const SEGS={
   bots:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],
   diff:[['easy','Fácil'],['normal','Normal'],['hard','Difícil'],['master','Mestre']],
   start:[3,4,5,6,7,8,9,10].map(n=>[n,String(n)]),
-  combo:[['normal','Igual'],['rise','Crescente'],['super','Super combo'],['none','Sem combo']],
+  combo:[['normal','Combinar'],['rise','Crescente'],['super','Qualquer'],['none','Desativado']],
 };
 const DIFF={
   easy:{call:.65,catchP:.45,catchMs:2600,jump:.2},
