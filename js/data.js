@@ -153,7 +153,7 @@ const TIPS=[
   'Recebeu um +4 suspeito? Desafie! Se foi blefe, quem jogou é que comprará as cartas. Mas se não foi, você compra 2 cartas a mais.',
   'O ranking do fim da partida é por pontos: guarde números baixos e livre-se dos curingas (50) e ações (20) quando alguém estiver perto de vencer.',
   'Selos nos topos das cartas indicam por que elas podem ser jogadas ou não e algumas outras informações especiais.',
-  'A seta e a moldura brilhante nas cadeiras mostram a ordem da vez. Quando a moldura sai pela ponta, é sua vez.',
+  'A moldura brilhante nas cadeiras mostra de quem é a vez. Quando ela sai pela ponta, é sua vez. As setas no topo e embaixo da mesa mostram o sentido do jogo.',
   'Na Paz, cartas de ação não fazem efeito e curingas não trocam a cor. Às vezes vale guardar suas ações para depois.',
   'Durante o clima Nevasca, ninguém compra cartas. Caso todos passem a vez, a nevasca acaba.',
   'Com a regra Azul e Verde, as cartas azuis e verdes são da mesma cor. Azul?! Verde?! Já nem sei que cores são essas.',
