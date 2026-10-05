@@ -19,7 +19,7 @@ const AVCOL=['#d9534f','#2b8a9e','#8e5bd0','#d4892b','#3c9d5d','#c2477f','#4a6fd
 
 const RULES=[
   {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho não tem as cartas +2, +4, reverter e bloqueios.'},
-  {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho tem só cartas de ação: as comuns e as especiais de todas as regras.'},
+  {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho tem só cartas de ação: as comuns e as especiais de todas as regras. '+(matchMedia('(hover:hover) and (pointer:fine)').matches?'Pare o cursor numa carta para ver o que ela faz.':'Toque e segure uma carta para ver o que ela faz.')},
   {g:'Baralho e mão',k:'revelation',n:'Revelação',d:'A carta no topo do baralho é visível para todos.'},
   {g:'Baralho e mão',k:'mulligan',n:'Segunda chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
   {g:'Baralho e mão',k:'camouflage',n:'Camuflagem',d:'Você não enxerga quantas cartas os adversários têm até que fiquem com 1 carta.'},
