@@ -50,7 +50,7 @@ const RULES=[
   {g:'Jogadas',k:'stack',n:'Empilhar',d:'Você pode jogar várias cartas do mesmo número de uma só vez.'},
   {g:'Jogadas',k:'sequence',n:'Sequência',d:'Você pode jogar várias cartas da mesma cor, desde que formem uma sequência numérica.'},
   {g:'Jogadas',k:'neighbor',n:'Vizinho',d:'Números iguais não combinam mais. Números só combinam com um número acima ou abaixo.'},
-  {g:'Jogadas',k:'hell',n:'Inferno',d:'Cartas de ação podem ser jogadas em cima de outras cartas de ação de qualquer cor, inclusive cinza.'},
+  {g:'Jogadas',k:'hell',n:'Inferno',d:'Cartas de ação podem ser jogadas em cima de outras cartas de ação de qualquer cor.'},
   {g:'Jogadas',k:'jumpin',n:'Corte',d:'Se você tiver uma carta idêntica à da mesa, pode jogá-la mesmo que não seja sua vez!'},
   {g:'Jogadas',k:'black',n:'Descolorir',d:'Se jogar uma carta idêntica à da mesa, ela fica cinza. Em cima dela, só vale uma carta com o mesmo número ou símbolo, ou um curinga.'},
   {g:'Jogadas',k:'perfection',n:'Perfeccionista',d:'Se jogar um número igual ao número de cartas na mão, jogue novamente.'},
