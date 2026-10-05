@@ -347,16 +347,16 @@ function stampOn(pi,glyph,color){
   d.style.fontSize=(h*.62)+'px';if(pi===0)d.style.borderRadius='50%';
   document.body.appendChild(d);d.addEventListener('animationend',()=>d.remove());
 }
-/* Chuva: uma carta cai do céu até o jogador, junto com gotas */
-function rainDrop(pi,ms,cb){
-  const r=targetRect(pi);if(RM||!r){cb();return}
-  const cw=Math.min(pi===0?$('deck').getBoundingClientRect().width:r.width*.42,r.height*.8),ch=cw*1.5;
+/* Chuva: uma carta cai do céu até o jogador, junto com gotas. to: lugar exato da carta (a nova carta da sua mão) */
+function rainDrop(pi,ms,cb,to){
+  const r=to||targetRect(pi);if(RM||!r){cb();return}
+  const cw=to?to.width:Math.min(pi===0?$('deck').getBoundingClientRect().width:r.width*.42,r.height*.8),ch=to?to.height:cw*1.5;
   const x=r.left+r.width/2,y=r.top+r.height/2;
   const c=document.createElement('div');c.className='card back raincard';c.innerHTML='<span class="face">unotfm</span>';
   Object.assign(c.style,{left:(x-cw/2)+'px',top:(y-ch/2)+'px',width:cw+'px'});c.style.setProperty('--cw',cw+'px');
   document.body.appendChild(c);
   const fall=y+ch;
-  c.animate([{transform:`translateY(${-fall}px) rotate(-8deg)`,opacity:.9},{transform:'translateY(0) rotate(4deg)',opacity:1}],{duration:ms,easing:'cubic-bezier(.55,0,1,.6)',fill:'both'}).onfinish=()=>{c.remove();splash(x,y);cb()};
+  c.animate([{transform:`translateY(${-fall}px) rotate(-8deg)`,opacity:.9},{transform:`translateY(0) rotate(${to?0:4}deg)`,opacity:1}],{duration:ms,easing:'cubic-bezier(.55,0,1,.6)',fill:'both'}).onfinish=()=>{c.remove();splash(x,y);cb()};
   for(let k=0;k<7;k++){const d=document.createElement('i');d.className='raindrop';const dx=(Math.random()-.5)*cw*2.4,len=10+Math.random()*14;
     Object.assign(d.style,{left:(x+dx)+'px',top:'0px',height:len+'px'});document.body.appendChild(d);
     d.animate([{transform:`translateY(${-len}px)`,opacity:.9},{transform:`translateY(${y+Math.random()*ch*.4}px)`,opacity:.2}],{duration:ms*(.75+Math.random()*.4),delay:Math.random()*ms*.3,easing:'linear',fill:'both'}).onfinish=()=>d.remove()}

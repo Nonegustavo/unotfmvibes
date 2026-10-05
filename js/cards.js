@@ -628,7 +628,14 @@ function applySpecial(pi,card){
       // um adversário por vez, no sentido do jogo: a carta cai do céu até ele
       const order=[];for(let i=nextIdx(pi,1);i!==pi&&!order.includes(i);i=nextIdx(i,1))if(opp.includes(i))order.push(i);
       log('Chuva: todos os adversários compram 1.');sfx('rain');
-      return sequenceFx(order,(i,next,sp)=>rainDrop(i,560*sp,()=>{drawN(i,1);quietDraw(i);render();setTimeout(next,160*sp)}))}
+      return sequenceFx(order,(i,next,sp)=>{
+        if(i!==0)return rainDrop(i,560*sp,()=>{drawN(i,1);quietDraw(i);render();setTimeout(next,160*sp)});
+        // em você: a carta já entra na mão (escondida) e a chuva cai exatamente no lugar dela
+        const had=new Set(S.players[0].hand.map(c=>c.id));drawN(0,1);quietDraw(0);render();
+        const nc=S.players[0].hand.find(c=>!had.has(c.id)),slot=()=>nc&&document.querySelector(`#hand [data-id="${nc.id}"]`);
+        let el=slot();if(el){el.scrollIntoView({block:'nearest',inline:'nearest'});el._flip?.cancel();el.style.visibility='hidden'}
+        rainDrop(0,560*sp,()=>{const e=slot();if(e)e.style.visibility='';render();setTimeout(next,160*sp)},el?el.getBoundingClientRect():null);
+      })}
     case 'thunder':{
       // 2 jogadores sorteados (pode ser quem jogou), cada um compra de 1 a 5; um por vez, as cartas aparecem de repente
       const vs=shuffle(alive().filter(i=>!ab(i,'drekkemaus'))).slice(0,2);
