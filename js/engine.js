@@ -23,10 +23,18 @@ function give(pi,c){
   if(p.hand.length>target())p.called=false;
   if(pi===0)S.newIds.push(c.id);else S.botDraw[pi]=(S.botDraw[pi]||0)+1;
 }
-function drawOne(pi){if(S.weather==='blizzard'&&S.phase!=='deal')return null;const c=popDeck();if(c)give(pi,c);return c}
+function drawOne(pi){if(S.weather==='blizzard'&&S.phase!=='deal')return null;if(thornHit(pi))return null;const c=popDeck();if(c)give(pi,c);return c}
+// Maldição do espinho: qualquer compra (dado, chuva, desafio, sol, pego sem UNO…) marca o jogador, que não recebe a carta
+// e é eliminado no fim do efeito (massCheck/checkLimits/endTurn), sem interromper o efeito no meio
+function thornHit(pi){
+  const p=S.players[pi];
+  if(!curseOn('thorn',pi)||immune(pi)||p.out)return false;
+  if(!p.thorned){p.thorned=true;ghost($('deck').getBoundingClientRect(),targetRect(pi),0);stampOn(pi,'🌵','var(--cg)')}
+  return true;
+}
 function drawN(pi,n){let k=0;for(let i=0;i<n;i++)if(drawOne(pi))k++;return k}
 const limit=()=>Math.min(R.overload?10:Infinity,R.limbo?S.limit:Infinity);
-const overloaded=pi=>!S.players[pi].out&&(S.players[pi].hand.length>limit()||S.boom===pi);
+const overloaded=pi=>!S.players[pi].out&&(S.players[pi].hand.length>limit()||S.boom===pi||!!S.players[pi].thorned);
 function checkLimits(){
   for(const i of alive())if(overloaded(i)&&markOut(i))return;
   if(S.players[S.turn].out)endTurn();else render();
@@ -41,7 +49,7 @@ function markOut(pi,reason,icon){
     cards.forEach((c,k)=>{const t=rand(alive());S.players[t].hand.push(c);S.players[t].called=false;if(t===0)S.newIds.push(c.id);else if(k<8)ghost(targetRect(pi),targetRect(t),k*60)});
     S.handFrom=targetRect(pi);log('Snowy distribuiu as cartas dele para os outros.');
   }else{S.deck.unshift(...returnable(cards));shuffle(S.deck)}
-  const why=reason||(S.boom===pi?'explodiu com a bomba':`passou de ${limit()} cartas`);
+  const why=reason||(S.boom===pi?'explodiu com a bomba':p.thorned?'comprou com a maldição do espinho':`passou de ${limit()} cartas`);p.thorned=false;
   p.outIcon=icon||(S.boom===pi?'💣':/morte súbita/.test(why)?'☠️':/espinho/.test(why)?'🌵':/batata/.test(why)?'🥔':(R.overload&&limit()<=10?'🏋️':String(limit())));
   if(S.boom===pi)S.boom=null;
   log(`${who(pi)} foi eliminado: ${why}.`);toast(`${who(pi)} foi eliminado!`,'var(--cr)');
@@ -268,11 +276,9 @@ function playCard(pi,card,chosen){
   if(!on&&card.type!=='num'){msg+=' (sem efeito: Paz)';fx('🌼',card.color==='w'?`Sem efeito: Paz. A cor continua ${CNAME[S.color]||'a mesma'}`:'Sem efeito: Paz','var(--cg)','stamp')}
   if(on&&card.type==='skip'){S.skip=true;const v=nextIdx(pi,1);fx('⊘',v===0?'Você perdeu a vez':`${who(v)} perdeu a vez`,'var(--cr)','stamp');stampOn(v,'⊘','var(--cr)')}
   if(on&&card.type==='rev'){
-    S.dir*=-1;
-    S.flipArrows=true;
+    S.dir*=-1;chevFlip();
     if(S.pending>0){fx(ARROWS,`Contra-ataque! +${S.pending} volta`,'var(--accent)',S.dir===1?'cw':'ccw');msg+=' e devolveu a compra'}
     else{fx(ARROWS,'Sentido invertido',S.dir===1?'var(--accent)':'var(--accent)',S.dir===1?'cw':'ccw');if(alive().length===2)S.skip=true}
-    const r=$('dirring');r.classList.remove('flipped');void r.offsetWidth;r.classList.add('flipped');
   }
   if(on&&isDraw(card)){
     S.pending+=drawVal(card);S.pendingType=card.type;
@@ -365,6 +371,7 @@ function endTurn(){
   if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}S.histCur=null;
   clearFlash();S.auto=false;
   const crossed=S.crossed;S.crossed=false;
+  for(const i of alive())if(S.players[i].thorned&&markOut(i))return;
   if(!crossed&&endTurnHook(S.turn))return;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.busy=false;
   let steps=S.extra?0:1;steps+=S.skip===true?1:(S.skip||0);

@@ -186,6 +186,7 @@ function statusText(){
 }
 function seatStatus(i){
   const p=S.players[i],L=[];if(p.out)return L;
+  if(TOUR&&i===0)L.push(tourItem('Você'));
   const n=p.hand.length;
   const shiny=R.shiny&&colorful(p);
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
@@ -207,10 +208,24 @@ function seatStatus(i){
 const OUT_INFO={'+99':['+99','comprou as cartas do +99'],'💣':['Bomba','comprou a Carta Bomba'],'🏋️':['Sobrecarga','passou de 10 cartas na mão'],'☠️':['Morte súbita','precisou comprar ou cometeu um erro durante a Morte súbita'],'🥔':['Batata','ficou 5 turnos com a Batata'],'🌵':['Maldição do espinho','comprou cartas com a maldição ativa']};
 function seatInfoItems(i){
   const p=S.players[i];
-  if(p.out){const ic=p.outIcon||'✖';const inf=OUT_INFO[ic]||['Limite de cartas',`passou de ${ic} cartas na mão`];return [{ic,name:inf[0],txt:inf[1]}]}
+  if(p.out){const ic=p.outIcon||'✖';const inf=OUT_INFO[ic]||['Limite de cartas',`passou de ${ic} cartas na mão`];return [{ic,name:inf[0],txt:inf[1]},...(TOUR?[tourItem(p.name)]:[])]}
   const L=seatStatus(i);
+  if(TOUR)L.unshift(tourItem(p.name));
   if(partner(i)===0)L.unshift({ic:'🤝',name:'Sua dupla',txt:'se ele vencer, você vence junto'});
   return L;
+}
+/* Torneio e Torneio de sobrevivência: pontos de cada jogador (selo na cadeira e no seu selo) e classificação (selo da mesa) */
+const tourIc=()=>TOUR.mode==='tournament'?'🏆':'🏅';
+const tourGoal=()=>TOUR.mode==='tournament'?500:300;
+function tourItem(name){
+  const pts=TOUR.pts[name]||0,me=name==='Você';
+  return {ic:tourIc(),short:`${tourIc()}${pts}`,name:TOUR.mode==='tournament'?'Torneio':'Sobrevivência',
+    txt:`${me?'você tem':'tem'} ${pts} de ${tourGoal()} pontos. ${TOUR.mode==='tournament'?`Quem chegar a ${tourGoal()} vence o torneio`:`Quem chegar a ${tourGoal()} sai do torneio`}`};
+}
+function tourRanking(){
+  const all=['Você',...TOUR.names],up=TOUR.mode==='tournament';
+  const sorted=all.sort((a,b)=>{const oa=TOUR.out.includes(a),ob=TOUR.out.includes(b);if(oa!==ob)return oa?1:-1;return up?TOUR.pts[b]-TOUR.pts[a]:TOUR.pts[a]-TOUR.pts[b]});
+  return sorted.map((n,k)=>({ic:TOUR.out.includes(n)?'✖':`${k+1}º`,name:n,txt:`${TOUR.pts[n]||0} pontos${TOUR.out.includes(n)?' (fora do torneio)':''}`}));
 }
 // selos do monte de compra (regras e efeitos que mudam a compra), com a explicação de cada um
 function deckBadges(){
@@ -231,7 +246,8 @@ function tableStatus(){
   if(S.traffic)L.push({short:`🚦${S.traffic==='odd'?'ímpar':'par'}`,ic:'🚦',name:'Semáforo',txt:`proibido vencer com carta ${S.traffic==='odd'?'ímpar':'par'}`});
   if(R.overload)L.push({short:`🏋️${limit()}`,ic:'🏋️',name:'Sobrecarga',txt:`quem passar de ${limit()} cartas na mão é eliminado`});
   if(S.simon&&S.simon.length)L.push({short:`🧠${S.simon.length}`,ic:'🧠',name:'Memorização',txt:`a sequência a repetir tem ${S.simon.length} cor${S.simon.length===1?'':'es'}`});
-  if(TOUR){const goal=TOUR.mode==='tournament'?500:300;L.push({short:`🏆${TOUR.pts['Você']||0}`,ic:'🏆',name:TOUR.mode==='tournament'?'Torneio':'Sobrevivência',txt:`você tem ${TOUR.pts['Você']||0} de ${goal} pontos`})}
+  if(TOUR){const nm=TOUR.mode==='tournament'?'Torneio':'Torneio de sobrevivência',head={ic:tourIc(),name:`${nm}, rodada ${TOUR.round}`,txt:TOUR.mode==='tournament'?`o primeiro a ${tourGoal()} pontos vence`:`quem chega a ${tourGoal()} pontos sai. Vence quem sobrar`};
+    L.push({...head,short:`${tourIc()}${TOUR.round}ª`,rows:[head,...tourRanking()]})}
   return L;
 }
 function infoPopup(key,head,items,anchor,up,force){
@@ -295,11 +311,29 @@ function cntTick(i){
   }
   if(v!==p.hand.length)CNT.timer[i]=setTimeout(()=>cntTick(i),CNT.step[i]);
 }
+/* Sentido do jogo: as filas de chevrons andam devagar para onde apontam (--chx, fração de um chevron).
+   Ao inverter, viram na hora e aceleram, desacelerando aos poucos até a velocidade normal */
+const CHEV={off:0,boost:0,last:0};
+function chevFlip(){$('chevs').classList.toggle('ccw',S.dir===-1);CHEV.boost=1}
+function chevLoop(t){
+  const dt=Math.min(.1,(t-(CHEV.last||t))/1000);CHEV.last=t;
+  if(!RM){CHEV.boost*=Math.exp(-dt/.9);CHEV.off=(CHEV.off+dt*.4*(1+9*CHEV.boost))%1;$('chevs').style.setProperty('--chx',CHEV.off.toFixed(4))}
+  requestAnimationFrame(chevLoop);
+}
+/* Maldição do espinho: ramo com espinhos em volta do monte (viewBox com a carta em 8..108 × 7.5..157.5) */
+function thornsSVG(){
+  const X0=8,Y0=7.5,W=100,H=150,th=[],f=n=>n.toFixed(1);
+  const tri=(x,y,nx,ny,len)=>{const b=3.2;len*=1.35;th.push(`<path d="M${f(x-ny*b)} ${f(y+nx*b)}L${f(x+nx*len)} ${f(y+ny*len)}L${f(x+ny*b)} ${f(y-nx*b)}z"/>`)};
+  for(let k=0;k<7;k++){const x=X0+16+k*(W-32)/6,l=k%2?5.5:7.5;tri(x,Y0,0,-1,l);tri(x+5,Y0+H,0,1,l)}
+  for(let k=0;k<9;k++){const y=Y0+20+k*(H-40)/8,l=k%2?7.5:5.5;tri(X0,y,-1,0,l);tri(X0+W,y+7,1,0,l)}
+  [[X0+4,Y0+4,-.7,-.7],[X0+W-4,Y0+4,.7,-.7],[X0+4,Y0+H-4,-.7,.7],[X0+W-4,Y0+H-4,.7,.7]].forEach(([x,y,nx,ny])=>tri(x,y,nx,ny,8));
+  const leaves=[[X0+30,Y0,-25],[X0+W,Y0+60,65],[X0+70,Y0+H,160],[X0,Y0+105,-110]].map(([x,y,r])=>`<ellipse cx="${x}" cy="${y}" rx="5.5" ry="2.4" transform="rotate(${r} ${x} ${y})"/>`).join('');
+  const rect=a=>`<rect x="${X0}" y="${Y0}" width="${W}" height="${H}" rx="14" fill="none" ${a}/>`;
+  return `<svg viewBox="0 0 116 165"><g fill="#e2d7a0" stroke="#5b4b1f" stroke-width=".6" stroke-linejoin="round">${th.join('')}</g>${rect('stroke="#2f6b26" stroke-width="3.6"')}${rect('stroke="#5aa845" stroke-width="1.5" stroke-dasharray="9 6"')}<g fill="#5fae48">${leaves}</g></svg>`;
+}
 function renderRail(){
   const row=$('seatrow');$('rail').classList.toggle('many',S.players.length>=5);const ccw=S.dir===-1;
-  const a=`<span class="arr ${S.flipArrows?'flip':''}" aria-hidden="true">${ccw?'‹':'›'}</span>`;
-  const edge=`<span class="arr edge ${S.flipArrows?'flip':''}" aria-hidden="true">${ccw?'‹':'›'}</span>`;
-  const parts=[edge];
+  const parts=[];
   S.players.forEach((p,i)=>{
     if(i===0)return;
     const n=p.hand.length;
@@ -312,7 +346,6 @@ function renderRail(){
     const badge=hidden?'?':said?`${word()}!`:near?`${v}/${lim}`:String(v);
     const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
-    if(i>1)parts.push(a);
     parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
@@ -320,11 +353,11 @@ function renderRail(){
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
       ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${ctCls}">${badge}</span></div>`}
       ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" aria-label="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const st=seatStatus(i).map(x=>x.short);
-        return st.length?`<span class="tag stat">${st.join(' ')}</span>`:''})()}${!p.out&&partner(i)===0?'<span class="tag top">🤝</span>':''}</div>`);
+        return st.length?`<span class="tag stat">${st.join(' ')}</span>`:''})()}${(()=>{const t=[];if(!p.out&&partner(i)===0)t.push('🤝');if(TOUR)t.push(tourItem(p.name).short);
+        return t.length?`<span class="tops">${t.map(x=>`<span class="tag top">${x}</span>`).join('')}</span>`:''})()}</div>`);
   });
-  parts.push(edge);
   row.innerHTML=parts.join('');
-  S.flipArrows=false;S.cntJump=false;
+  S.cntJump=false;
   Object.keys(CNT.flash).forEach(i=>cntColor(row.querySelector(`[data-seat="${i}"] .cnt`),i));
   $('rail').setAttribute('aria-label',`Ordem de jogada, sentido ${ccw?'anti-horário':'horário'}`);
 }
@@ -387,7 +420,8 @@ function render(){
    hw.classList.toggle('near',near);hw.style.setProperty('--lv',lv.toFixed(2));
    const w=$('limitwarn');w.hidden=!near;w.style.setProperty('--lv',lv.toFixed(2));w.classList.toggle('hot',lv>=.66);
    if(near)w.textContent=rem<=0?`⚠️ ${n}/${lim} cartas: mais uma e você é eliminado!`:`⚠️ ${n}/${lim} cartas na mão (limite ${lim})`;}
-  $('dirring').classList.toggle('ccw',S.dir===-1);
+  $('chevs').classList.toggle('ccw',S.dir===-1);
+  $('thorns').classList.toggle('on',curseIs('thorn')&&S.phase!=='over');
   // deck
   const deck=$('deck');const dtop=S.deck[S.deck.length-1];
   const mine=myTurn()&&S.phase==='play';
@@ -704,7 +738,8 @@ $('chalBtn').onclick=()=>{if(myTurn()&&S.chal)doChallenge(0)};
 $('openSettings').onclick=openSettings;
 $('discard').addEventListener('click',openHistory);
 $('mystat').addEventListener('click',e=>{e.stopPropagation();showSeatInfo(0,$('mystat'))});
-$('meta').addEventListener('click',e=>{const b=e.target.closest('.tst');if(!b)return;e.stopPropagation();const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',[x],b)});
+$('thorns').innerHTML=thornsSVG();requestAnimationFrame(chevLoop);
+$('meta').addEventListener('click',e=>{const b=e.target.closest('.tst');if(!b)return;e.stopPropagation();const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',x.rows||[x],b)});
 document.addEventListener('pointerdown',e=>{if(e.target.closest('#mystat')||e.target.closest('.tst'))e.stopPropagation()},true);$('histClose').onclick=()=>$('histOv').classList.remove('show');
 document.addEventListener('pointerdown',e=>{
   if(e.target.closest('#notices')||e.target.closest('.ri'))return;
@@ -782,7 +817,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
    if(t.closest('#deck')&&deckBadges().length)return {key:'deck',slow:1,open:showDeckInfo};
    const st=t.closest('.seat .tag.stat,.seat .outic');if(st){const seat=st.closest('.seat'),i=+seat.dataset.seat;return {key:'seat'+i,open:()=>showSeatInfo(i,seat)}}
    if(t.closest('#mystat'))return {key:'seat0',open:()=>showSeatInfo(0,$('mystat'))};
-   const b=t.closest('.tst');if(b)return {key:'tst'+b.dataset.k,open:()=>{const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',[x],b)}};
+   const b=t.closest('.tst');if(b)return {key:'tst'+b.dataset.k,open:()=>{const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',x.rows||[x],b)}};
    return null;
  }
  document.addEventListener('pointerover',e=>{

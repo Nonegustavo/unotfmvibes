@@ -67,6 +67,8 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Pego sem UNO compra 2.
   - O desafio vale só para o **último** +4/+99. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.
 - **+99:** quem precisa comprar as cartas dele (inclusive no desafio) é eliminado na hora (`drawn99`), sem comprar de verdade: só uma enxurrada de cartas voa do monte até ele antes. Só escapa quem não comprou por causa da Nevasca ou do Gelo.
+- **Sentido do jogo:** filas de chevrons no topo da mesa (sentido em que a vez passa pelos adversários) e embaixo (oposto), movidas por `chevLoop()`. Ao inverter, `chevFlip()` vira na hora e acelera.
+- **Maldição do espinho:** qualquer compra (`drawOne`) marca o jogador (`thornHit`, `p.thorned`) sem dar a carta, e ele é eliminado no fim do efeito (`massCheck`, `checkLimits` ou `endTurn`). A Morte súbita só elimina quem precisa comprar pelo monte ou erra.
 - **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final limpo, Semáforo e compras acumuladas continuam valendo.
 - **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece, na sua vez, nas cartas jogáveis que mudam a cor. O raio que cai em você mira nas cartas compradas (`thunderDraw`).
 - **Transmutação** (chave `steal`) mostra as cartas como a Clarividência (`showCards`). A carta transmutada guarda a forma original em `c.tm`, que `restoreCard` desfaz.
@@ -86,7 +88,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - `infoPopup()` abre a janela explicativa com seta. Essas janelas não têm botão Ok e fecham ao tocar em qualquer lugar.
   - Segurar uma carta da mão por 0,5 s (`showCardInfo`) abre essa janela com o que a carta faz e a explicação de cada selo. Cartas numéricas só abrem se tiverem selo, e segurar nunca joga a carta.
 - **Escala:** o tamanho de tudo vem de `--u` (no `:root` do `style.css`), que vale 1px num celular de 390×800 e acompanha a largura e a altura da tela. `--cw` (largura da carta) e o `font-size` da raiz derivam dele, e as medidas do CSS estão em `rem`. Use `rem` (ou `var(--cw)`) em vez de `px` em medidas novas; `px` só para bordas finas (até 3px).
-  O centro da mesa (`.arena`) reduz o `--cw` para caber na altura da mesa (`.table` é um container query), então o círculo e o +2/+4 nunca são cortados. As partes da página têm linha fixa na grade do `body`.
+  O centro da mesa (`.arena`) reduz o `--cw` para caber na altura da mesa (`.table` é um container query), então o +2/+4 nunca é cortado. As partes da página têm linha fixa na grade do `body`.
 - **Telas grandes:** `@media (min-width:900px) and (min-height:560px)` no fim do `style.css` troca a referência para 1440×900 (cartas maiores), numa coluna central. Com mouse, passar sobre uma carta da mão, um selo da mesa, um selo de jogador ou o seu selo abre a mesma janela do toque.
 - **Cartas na mão:** os selos no topo (`cardBadges`) indicam por que a carta pode ser jogada (🛡️ defesa, ✂️ corte, 📚/🔢 combo, ↕️ vizinho, 🔥 inferno, ☀️+1, 💯, 🌼, 👢, ⛈️) ou o que a bloqueia, com selo vermelho (🔒, 🧼, 🚦, ↕️). A carta bloqueada não tem borda vermelha, só o selo.
 

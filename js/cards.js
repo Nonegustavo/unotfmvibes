@@ -729,7 +729,7 @@ function applySpecial(pi,card){
       const t=nextIdx(pi,1);S.players[t].hand.forEach(c=>{if(c.color!=='w'){if(c.baseColor==null)c.baseColor=c.color;c.color=card.color}});
       stampOn(t,'🖌️',col);fx('🖌️',`Cartas de ${t===0?'você':who(t)} pintadas de ${CNAME[card.color].toLowerCase()}`,col,'slam');log(`Tinta: cartas de ${who(t)} pintadas.`);return 'done'}
     case 'mix1':case 'mix2':case 'mix3':{
-      if(T!=='mix3'){S.dir*=-1;S.flipArrows=true;const r=$('dirring');r.classList.remove('flipped');void r.offsetWidth;r.classList.add('flipped')}
+      if(T!=='mix3'){S.dir*=-1;chevFlip()}
       const a=nextIdx(pi,1);
       if(T==='mix1'){S.skip=1;stampOn(a,'⊘','var(--cr)');fx(ARROWS,`Inverte e ${a===0?'você perde':who(a)+' perde'} a vez`,'var(--accent)',S.dir===1?'cw':'ccw')}
       if(T==='mix2'){const n=drawAmt(a,2);drawN(a,n);stampOn(a,'⊘','var(--cr)');S.skip=1;fx(ARROWS,`Inverte e ${a===0?'você compra':who(a)+' compra'} ${n}`,'var(--cr)',S.dir===1?'cw':'ccw')}
