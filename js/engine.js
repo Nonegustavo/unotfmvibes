@@ -91,7 +91,8 @@ function canPlay(p,c,any){
 }
 function matchTop(c){
   const t=topCard();
-  if(S.color==='k')return c.color==='w'||c.type===t.type&&(c.type!=='num'||c.value===t.value);
+  // carta cinza (Descolorir): só coringa ou mesmo símbolo; com o Inferno, também ação sobre ação
+  if(S.color==='k')return c.color==='w'||c.type===t.type&&(c.type!=='num'||c.value===t.value)||R.hell&&c.type!=='num'&&t.type!=='num';
   if(c.color==='w'||sameCol(c.color,S.color))return true;
   if(R.hell&&c.type!=='num'&&t.type!=='num')return true;
   if(c.type!=='num')return c.type===t.type;
