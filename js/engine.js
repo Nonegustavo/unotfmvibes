@@ -43,6 +43,8 @@ function markOut(pi,reason,icon){
   const p=S.players[pi];
   if(immune(pi)){if(S.boom===pi)S.boom=null;toast('Charlotte não pode ser eliminada!','var(--cg)');return false}
   FX3D.smoke(targetRect(pi));p.out=true;p.outAt=S.outSeq=(S.outSeq||0)+1;sfx('out');
+  // torneios: a mão do eliminado vale os pontos das cartas que ele tinha, no mínimo 50
+  p.outPts=Math.max(50,[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0));
   if(S.other){const o=S.other.players[pi];S.other.deck.unshift(...returnable([...o.hand,...(o.hand2||[])]));o.hand=[];o.hand2=[]}
   const cards=[...p.hand,...(p.hand2||[])];p.hand=[];p.hand2=[];
   if(ab(pi,'snowy')&&alive().length){
@@ -526,9 +528,9 @@ function endRound(pi){
   }
   let tourMsg='';
   if(TOUR){
-    const handPts=p=>p.out?50:[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
+    const handPts=p=>p.out?(p.outPts||50):[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
     if(TOUR.mode==='tournament'){
-      if(pi>=0)winners.forEach(i=>TOUR.pts[S.players[i].name]+=pts);
+      if(pi>=0){pts=S.players.reduce((s,p)=>s+handPts(p),0);winners.forEach(i=>TOUR.pts[S.players[i].name]+=pts)}
       const champ=Object.entries(TOUR.pts).find(([n,v])=>v>=500);
       if(champ){TOUR.done=true;tourMsg=champ[0]==='Você'?'Você venceu o torneio!':`${champ[0]} venceu o torneio.`}
     }else{
