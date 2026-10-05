@@ -133,7 +133,7 @@ function newGame(){
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,log:[],busy:false,
      newIds:[],botDraw:{},animPlay:null,mull:R.mulligan,autoResolve:null,lastTop:null};
-  applyBg();S.added=[];S.removed=[];S.freshRules=[];S.ruleOrder=[];S.stripHold=false;$('notices').innerHTML='';$('rulestrip').dataset.sig='';
+  applyBg();S.added=[];S.removed=[];S.freshRules=[];S.ruleOrder=[];S.stripHold=false;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
   S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
   if(timeT){clearInterval(timeT);timeT=null}
