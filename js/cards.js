@@ -72,7 +72,7 @@ function diceSVG(n,sz='calc(var(--cw)*1.3)'){
 const DICE_WAIT=3000;
 function rollDice(pi,t,then,n0,cap){
   const n=n0||1+Math.floor(Math.random()*6);
-  const txt=['Doa 1 carta ao jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Mostra um 4 ou compra 4','Distribui até 5 cartas','Compra até ficar com 6'][n-1]+' e perde a vez';
+  const txt=['Pega 1 carta do jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Mostra um 4 ou compra 4','Distribui até 5 cartas','Compra até ficar com 6'][n-1]+' e perde a vez';
   const wait=S.spectate?700:DICE_WAIT,show=wait+1000;
   if(cap){$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${show}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${t===0?'Você':who(t)}: ${txt}</div></div>`;hold(show)}
   else{fx(diceSVG(n),`${t===0?'Você':who(t)}: ${txt}`,'var(--accent)','slam',show);sfx('dice')}log(`Dado de ${who(t)}: ${n} (${txt.toLowerCase()}).`);
@@ -98,8 +98,7 @@ function miniDie(pi,n,ms){
 }
 function diceEffect(pi,t,n){
   const q=S.players[t];
-  // 1: quem rolou doa 1 carta ao anterior (quem jogou o dado), sem ficar com a mão vazia
-  if(n===1&&q.hand.length>1&&!S.players[pi].out){const pp=S.players[pi],c=rand(q.hand);q.hand=q.hand.filter(x=>x!==c);pp.hand.push(c);pp.called=false;if(pi===0){S.newIds.push(c.id);S.handFrom=targetRect(t)}else ghost(targetRect(t),targetRect(pi),0)}
+  if(n===1&&S.players[pi].hand.length){const c=rand(S.players[pi].hand);S.players[pi].hand=S.players[pi].hand.filter(x=>x!==c);q.hand.push(c);if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}}
   if(n===2){const k=drawAmt(t,2);drawN(t,k);}
   if(n===3){let k=0;while(q.hand.length>3)discardCard(t,rand(q.hand),k++)}
   // 4: mostra um 4 (a carta continua na mão) ou compra 4

@@ -67,7 +67,7 @@ const SP={
   bomb:{n:'Carta Bomba',g:'💣',d:'Se comprar esta carta, você perde.',deck:[]},
   batata:{n:'Carta da Batata',g:'🥔',d:'Ao jogar esta carta, coloque-a na mão de um jogador. Quem ficar com esta carta na mão por 5 turnos perde.',deck:['r']},
   curse:{n:'Carta da Maldição',g:'😈',d:'Ao jogar esta carta, aplique uma maldição aleatória que dura alguns turnos.',deck:C4},
-  dice:{n:'Carta do Dado',g:'🎲',d:'Ao jogar esta carta, force o próximo jogador a rolar o dado, sofrer uma consequência e perder a vez. 1: doa 1 carta a quem jogou o dado. 2: compra 2. 3: descarta até ficar com 3. 4: mostra um 4 ou compra 4. 5: distribui até 5 cartas entre os outros jogadores, sem ficar sem cartas. 6: compra até ficar com 6.',deck:C4},
+  dice:{n:'Carta do Dado',g:'🎲',d:'Ao jogar esta carta, force o próximo jogador a rolar o dado, sofrer uma consequência e perder a vez. 1: pega 1 carta de quem jogou o dado. 2: compra 2. 3: descarta até ficar com 3. 4: mostra um 4 ou compra 4. 5: distribui até 5 cartas entre os outros jogadores, sem ficar sem cartas. 6: compra até ficar com 6.',deck:C4},
   oddeven:{n:'Carta do Semáforo',g:'🚦',d:'Ao jogar esta carta, será proibido vencer com cartas pares ou ímpares (escolhido aleatoriamente). Ao jogar isso de novo, mude.',deck:C8},
   half:{n:'Carta do Rei',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
   death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem dizer UNO, ter o blefe de um +4 desafiado ou desafiar um +4 quando a jogada era legal.',deck:['r','b']},
