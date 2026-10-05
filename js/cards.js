@@ -72,7 +72,7 @@ function diceSVG(n,sz='calc(var(--cw)*1.3)'){
 const DICE_WAIT=3000;
 function rollDice(pi,t,then,n0,cap){
   const n=n0||1+Math.floor(Math.random()*6);
-  const txt=['Pega 1 carta do jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Joga um 4 ou compra 4','Distribui 5 cartas','Compra até ficar com 6'][n-1];
+  const txt=['Doa 1 carta ao jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Mostra um 4 ou compra 4','Distribui até 5 cartas','Compra até ficar com 6'][n-1]+' e perde a vez';
   const wait=S.spectate?700:DICE_WAIT,show=wait+1000;
   if(cap){$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${show}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${t===0?'Você':who(t)}: ${txt}</div></div>`;hold(show)}
   else{fx(diceSVG(n),`${t===0?'Você':who(t)}: ${txt}`,'var(--accent)','slam',show);sfx('dice')}log(`Dado de ${who(t)}: ${n} (${txt.toLowerCase()}).`);
@@ -98,10 +98,12 @@ function miniDie(pi,n,ms){
 }
 function diceEffect(pi,t,n){
   const q=S.players[t];
-  if(n===1&&S.players[pi].hand.length){const c=rand(S.players[pi].hand);S.players[pi].hand=S.players[pi].hand.filter(x=>x!==c);q.hand.push(c);if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}}
+  // 1: quem rolou doa 1 carta ao anterior (quem jogou o dado), sem ficar com a mão vazia
+  if(n===1&&q.hand.length>1&&!S.players[pi].out){const pp=S.players[pi],c=rand(q.hand);q.hand=q.hand.filter(x=>x!==c);pp.hand.push(c);pp.called=false;if(pi===0){S.newIds.push(c.id);S.handFrom=targetRect(t)}else ghost(targetRect(t),targetRect(pi),0)}
   if(n===2){const k=drawAmt(t,2);drawN(t,k);}
   if(n===3){let k=0;while(q.hand.length>3)discardCard(t,rand(q.hand),k++)}
-  if(n===4){const f=q.hand.find(c=>c.type==='num'&&c.value===4);if(f)discardCard(t,f);else{const k=drawAmt(t,4);drawN(t,k);}}
+  // 4: mostra um 4 (a carta continua na mão) ou compra 4
+  if(n===4){const f=q.hand.find(c=>c.type==='num'&&c.value===4);if(f){if(t!==0)peek(t,f);else if(!RM)document.querySelector(`#hand [data-id="${f.id}"]`)?.animate([{transform:'none'},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)',offset:.2},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)',offset:.8},{transform:'none'}],{duration:2000,easing:'ease-out'});log(`${who(t)} ${t===0?'mostra':'mostrou'} um 4.`)}else{const k=drawAmt(t,4);drawN(t,k);}}
   if(n===5){const others=alive().filter(i=>i!==t);const k=Math.min(5,q.hand.length-1);for(let j=0;j<k;j++){const c=rand(q.hand);const o=rand(others);q.hand=q.hand.filter(x=>x!==c);S.players[o].hand.push(c);S.players[o].called=false;if(o===0){S.newIds.push(c.id);S.handFrom=targetRect(t)}else ghost(targetRect(t),targetRect(o),j*60)}}
   if(n===6){while(q.hand.length<6&&drawOne(t)){}}
   q.called=q.hand.length<=target()&&q.called;
@@ -684,7 +686,9 @@ function applySpecial(pi,card){
       else fx('🎲',`${t===0?'Você rola':who(t)+' rola'} o dado…`,'var(--accent)','roll',1100);
       setTimeout(()=>{
         if(g!==S.gen||S.phase==='over')return;
-        rollDice(pi,t,()=>{if(mini)mini.remove();if(g!==S.gen||S.phase==='over')return;S.busy=false;render();if(S.phase!=='over')endTurn()},n,!!(mini||d3));
+        rollDice(pi,t,()=>{if(mini)mini.remove();if(g!==S.gen||S.phase==='over')return;S.busy=false;
+          // quem rolou sempre perde a vez (se ainda estiver no jogo)
+          const q=S.players[t];if(!q.out&&!q.thorned){S.skip=true;stampOn(t,'⊘','var(--cr)')}render();if(S.phase!=='over')endTurn()},n,!!(mini||d3));
       },S.spectate?500:(mini?1350:d3?1450:900));
       return 'defer'}
     case 'oddeven':S.traffic=S.traffic==='odd'?'even':S.traffic==='even'?'odd':rand(['odd','even']);
