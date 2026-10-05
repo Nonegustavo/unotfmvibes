@@ -56,7 +56,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 ## Conceitos importantes do código
 
 - **Estado:** `S` guarda a partida atual e `R` as regras ativas do lado atual. `CFG` é a configuração salva. `rulesForMode()` monta `R` a partir do modo.
-- **Modos:** Clássico (sem regras), Mix de regras (chave `poker`: cada jogador escolhe uma regra **antes** da distribuição) e Personalizado. Clássico e Mix usam sempre 3 adversários e 7 cartas.
+- **Modos:** Clássico (sem regras), Mix de Regras (chave `poker`: cada jogador escolhe uma regra **antes** da distribuição) e Personalizado. Clássico e Mix usam sempre 3 adversários e 7 cartas.
 - **Dificuldades:** Fácil, Normal, Difícil e **Mestre** (oculto). O Mestre é desbloqueado tocando 7 vezes seguidas em "Difícil", fica salvo em `unotfm-solo-master` e não mostra nenhuma indicação antes disso. Ele usa memória (`S.mem`: cores que faltam a cada jogador, última cor jogada, cartas já saídas) sem nunca ver mãos ocultas.
 - **Regras:** `RULES` (grupo, chave, nome, descrição). As cartas especiais ficam em `SP` (nome, ícone `g`, descrição, `deck` com cores e quantidades do `deck.lua`, `rule` quando a chave da regra é diferente, e `hide`). Os conflitos ficam em `CONFLICT_PAIRS`. As regras de defesa (`DEF_RULES`, "Defesa - …") substituem a defesa da configuração (use sempre `comboMode()`, nunca `R.combo` direto), só saem no Mix e na Carta da Regra (nunca a igual à configuração) e não aparecem no Personalizado. Os ícones das regras (`RICON` + `SP.g`) **não podem se repetir**.
 - **Anúncio antes do efeito:** toda carta de ação primeiro pousa na mesa (`announce`) e só depois aplica o efeito.
@@ -69,7 +69,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **+99:** quem precisa comprar as cartas dele (inclusive no desafio) é eliminado na hora (`drawn99`), sem comprar de verdade: só uma enxurrada de cartas voa do monte até ele antes. Só escapa quem não comprou por causa da Nevasca ou do Gelo.
 - **Sentido do jogo:** filas de chevrons no topo da mesa (sentido em que a vez passa pelos adversários) e embaixo (oposto), movidas por `chevLoop()`. Ao inverter, `chevFlip()` vira na hora e acelera.
 - **Maldição do espinho:** qualquer compra (`drawOne`) marca o jogador (`thornHit`, `p.thorned`) sem dar a carta, e ele é eliminado no fim do efeito (`massCheck`, `checkLimits` ou `endTurn`). A Morte súbita só elimina quem precisa comprar pelo monte ou erra.
-- **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final limpo, Semáforo e compras acumuladas continuam valendo.
+- **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final Limpo, Semáforo e compras acumuladas continuam valendo.
 - **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece, na sua vez, nas cartas jogáveis que mudam a cor. O raio que cai em você mira nas cartas compradas (`thunderDraw`).
 - **Mágica** (chave `steal`) mostra as cartas como a Clarividência (`showCards`). A carta transformada guarda a forma original em `c.tm`, que `restoreCard` desfaz.
 - **Banimento** (`vanishCards`): as cartas aparecem e já saem no mesmo movimento. Uma de cada vez, em sequência rápida, as cartas começam retas, vão se inclinando de leve e somem no fim: as do adversário caem da cadeira e as suas sobem da mão, na mesma velocidade. As cartas mostradas pelos adversários têm o tamanho das cartas da mesa (`shownW`).
@@ -79,7 +79,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Perder a vez por penalidade não conta como "passar" para encerrar a Nevasca.
 - **Compra:** depois de comprar, o jogador pode jogar **qualquer** carta jogável ou passar.
   - Compra e Passa passa a vez ao comprar.
-  - Compra rápida joga a carta comprada sozinha, mesmo que não combine (exceto a Bomba).
+  - Compra Rápida joga a carta comprada sozinha, mesmo que não combine (exceto a Bomba).
   - Compra Implacável compra 1 por vez (2 com a Bigorna) e não deixa passar enquanto não houver carta jogável.
 - **Reembaralhar:** `restoreCard`/`returnable` devolvem as cartas à forma original (coringa preto, Misteriosa e Clonagem desfeitas, cor de antes da Tinta, Batata vermelha). Cartas com `extra: true` (Misteriosas do Presente, cópias da Partilha, Tesouro) não voltam ao baralho.
 - **Status:**

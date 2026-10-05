@@ -494,7 +494,7 @@ function openPoker(){
     flyRules(src,()=>{S.busy=false;dealAndStart()});
   };
 }
-// Mix de regras: os ícones escolhidos voam até a faixa e ficam centralizados sozinhos; depois os ícones das
+// Mix de Regras: os ícones escolhidos voam até a faixa e ficam centralizados sozinhos; depois os ícones das
 // outras regras entram um por vez na ponta direita, crescendo, e a fileira se recentraliza aos poucos. Só então as cartas são distribuídas
 function flyRules(src,done){
   const g=S.gen,strip=$('rulestrip');S.stripHold=false;

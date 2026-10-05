@@ -13,7 +13,7 @@ function humanClick(id,el){
 }
 function humanPlay(card){
   S.mull=false;
-  // a última carta (com Duas mãos, só a última da segunda mão) vence direto, sem escolhas
+  // a última carta (com Duas Mãos, só a última da segunda mão) vence direto, sem escolhas
   const me=S.players[0],last=me.hand.length===1&&!(me.hand2&&me.hand2.length);
   if(last&&(isWildPick(card)||card.type==='clone'||card.type==='random')){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
   if(S.peace>0&&card.color==='w'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
@@ -214,7 +214,7 @@ function seatInfoItems(i){
   if(partner(i)===0)L.unshift({ic:'🤝',name:'Sua dupla',txt:'se ele vencer, você vence junto'});
   return L;
 }
-/* Torneio e Torneio de sobrevivência: pontos de cada jogador (selo na cadeira e no seu selo) e classificação (selo da mesa) */
+/* Torneio e Torneio de Sobrevivência: pontos de cada jogador (selo na cadeira e no seu selo) e classificação (selo da mesa) */
 const tourIc=()=>TOUR.mode==='tournament'?'🏆':'🏅';
 const tourGoal=()=>TOUR.mode==='tournament'?500:300;
 function tourItem(name){
@@ -246,7 +246,7 @@ function tableStatus(){
   if(S.traffic)L.push({short:`🚦${S.traffic==='odd'?'ímpar':'par'}`,ic:'🚦',name:'Semáforo',txt:`proibido vencer com carta ${S.traffic==='odd'?'ímpar':'par'}`});
   if(R.overload)L.push({short:`🏋️${limit()}`,ic:'🏋️',name:'Sobrecarga',txt:`quem passar de ${limit()} cartas na mão é eliminado`});
   if(S.simon&&S.simon.length)L.push({short:`🧠${S.simon.length}`,ic:'🧠',name:'Memorização',txt:`a sequência a repetir tem ${S.simon.length} cor${S.simon.length===1?'':'es'}`});
-  if(TOUR){const nm=TOUR.mode==='tournament'?'Torneio':'Torneio de sobrevivência',head={ic:tourIc(),name:`${nm}, rodada ${TOUR.round}`,txt:TOUR.mode==='tournament'?`o primeiro a ${tourGoal()} pontos vence`:`quem chega a ${tourGoal()} pontos sai. Vence quem sobrar`};
+  if(TOUR){const nm=TOUR.mode==='tournament'?'Torneio':'Torneio de Sobrevivência',head={ic:tourIc(),name:`${nm}, rodada ${TOUR.round}`,txt:TOUR.mode==='tournament'?`o primeiro a ${tourGoal()} pontos vence`:`quem chega a ${tourGoal()} pontos sai. Vence quem sobrar`};
     L.push({...head,short:`${tourIc()}${TOUR.round}ª`,rows:[head,...tourRanking()]})}
   return L;
 }

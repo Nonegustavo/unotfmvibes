@@ -70,7 +70,7 @@ function comboOk(c){
   }
   return false;
 }
-// any: jogada da Confusão, que ignora cor e símbolo (tranca, Final limpo, Semáforo e compras acumuladas continuam valendo)
+// any: jogada da Confusão, que ignora cor e símbolo (tranca, Final Limpo, Semáforo e compras acumuladas continuam valendo)
 function canPlay(p,c,any){
   if(S.phase==='combo')return comboOk(c);
   if(c.type==='bomb'||c.lock)return false;
@@ -141,7 +141,7 @@ function newGame(){
     // a faixa de regras fica vazia até o fim do Mix (flyRules)
     S.busy=true;S.stripHold=!RM;render();
     const go=()=>{S.players.forEach((p,i)=>{if(i===0)return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=false;openPoker()};
-    if(o.length){openRuleChoice(o,k=>{addRule(0,k,true);go()},'Mix de regras','Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.');return}
+    if(o.length){openRuleChoice(o,k=>{addRule(0,k,true);go()},'Mix de Regras','Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.');return}
     go();return;
   }
   dealAndStart();
@@ -493,7 +493,7 @@ function drawn99(pi,then){
     then();
   },N*step+450);
 }
-// wasCalled: se o jogador já tinha pedido UNO antes de comprar (a Compra rápida mantém o pedido)
+// wasCalled: se o jogador já tinha pedido UNO antes de comprar (a Compra Rápida mantém o pedido)
 function afterDraw(pi,drawn,count,wasCalled){
   const p=S.players[pi];
   log(`${who(pi)} comprou ${count} carta${count===1?'':'s'}.`);
@@ -505,7 +505,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   }
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
-    S.forcedPlay=true;toast('Compra rápida!');
+    S.forcedPlay=true;toast('Compra Rápida!');
     // quem estava de UNO e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
     if(wasCalled&&p.hand.length-1<=target())p.called=true;
     S.fastSrc=$('deck').getBoundingClientRect();S.newIds=S.newIds.filter(id=>id!==drawn.id);if(S.botDraw[pi]){S.botDraw[pi]--;if(!S.botDraw[pi])delete S.botDraw[pi]}

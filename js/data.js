@@ -21,14 +21,14 @@ const BOTNAMES=['Snowy','Buffy','Elise','Jingle','Charlotte','Papaille','Drekkem
 const AVCOL=['#d9534f','#2b8a9e','#8e5bd0','#d4892b','#3c9d5d','#c2477f','#4a6fd1','#7c8b2a','#b0563a'];
 
 const RULES=[
-  {g:'Baralho e mão',k:'noaction',n:'Sem ação',d:'O baralho não tem as cartas +2, +4, reverter e bloqueios.'},
+  {g:'Baralho e mão',k:'noaction',n:'Sem Ação',d:'O baralho não tem as cartas +2, +4, reverter e bloqueios.'},
   {g:'Baralho e mão',k:'mess',n:'Bagunça',d:'O baralho tem só cartas de ação: as comuns e as especiais de todas as regras. '+pc('Toque e segure uma carta para ver o que ela faz.','Pare o cursor numa carta para ver o que ela faz.')},
   {g:'Baralho e mão',k:'revelation',n:'Revelação',d:'A carta no topo do baralho é visível para todos.'},
-  {g:'Baralho e mão',k:'mulligan',n:'Segunda chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
+  {g:'Baralho e mão',k:'mulligan',n:'Segunda Chance',d:'No início do jogo, você pode trocar sua mão por uma nova.'},
   {g:'Baralho e mão',k:'camouflage',n:'Camuflagem',d:'Você não enxerga quantas cartas os adversários têm até que fiquem com 1 carta.'},
   {g:'Baralho e mão',k:'mini',n:'Mini',d:'Todos começam com 4 cartas (ignora a quantidade de cartas iniciais escolhida).'},
   {g:'Baralho e mão',k:'maxi',n:'Maxi',d:'Todos começam com 9 cartas (ignora a quantidade de cartas iniciais escolhida).'},
-  {g:'Baralho e mão',k:'twohands',n:'Duas mãos',d:'Você tem duas mãos de cartas para jogar. Termine uma primeiro para poder usar a outra e ganhar o jogo!'},
+  {g:'Baralho e mão',k:'twohands',n:'Duas Mãos',d:'Você tem duas mãos de cartas para jogar. Termine uma primeiro para poder usar a outra e ganhar o jogo!'},
   {g:'Baralho e mão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
   {g:'Baralho e mão',k:'dos',n:'DOS!',d:'Ao invés de declarar UNO, você precisa declarar DOS quando tiver duas cartas na mão.'},
   {g:'Baralho e mão',k:'shiny',n:'Mão Colorida',d:'Se um jogador segurar todas as cores ou um curinga, este ícone aparecerá.'},
@@ -39,11 +39,11 @@ const RULES=[
   {g:'Jogadas',k:'jumpin',n:'Corte',d:'Se você tiver uma carta idêntica à da mesa, pode jogá-la mesmo que não seja sua vez!'},
   {g:'Jogadas',k:'black',n:'Descolorir',d:'Se jogar uma carta idêntica à da mesa, ela fica cinza. Em cima dela, só vale uma carta com o mesmo número ou símbolo, ou um curinga.'},
   {g:'Jogadas',k:'perfection',n:'Perfeccionista',d:'Se jogar um número igual ao número de cartas na mão, jogue novamente.'},
-  {g:'Jogadas',k:'clean',n:'Final limpo',d:'Você só pode vencer se sua última carta for numérica.'},
+  {g:'Jogadas',k:'clean',n:'Final Limpo',d:'Você só pode vencer se sua última carta for numérica.'},
   {g:'Compras',k:'nou',n:'Contra-ataque',d:'Você pode jogar cartas Inverter para devolver compras de carta.'},
   {g:'Compras',k:'satisfaction',n:'Compra Implacável',d:'Compre cartas até poder jogar uma.'},
   {g:'Compras',k:'insatisfaction',n:'Compra e Passa',d:'Comprar carta fará você passar a vez automaticamente.'},
-  {g:'Compras',k:'fastdraw',n:'Compra rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem com a mesa (exceto a Carta Bomba e compras de penalidade).'},
+  {g:'Compras',k:'fastdraw',n:'Compra Rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem com a mesa (exceto a Carta Bomba e compras de penalidade).'},
   {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
   {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
   {g:'Pressão',k:'limbo',n:'Limbo',d:'Quem ultrapassar o limite de cartas na mão será eliminado. O limite começa em 12 e reduz em 1 a cada minuto.'},
@@ -98,18 +98,18 @@ const SP={
   rule:{n:'Carta da Regra',g:'📜',d:'Ao jogar esta carta, adicione uma nova regra à partida atual.',deck:C4},
 };
 Object.entries(SP).forEach(([k,v])=>{if(!v.hide)RULES.push({g:'Cartas especiais',k:v.rule||k,n:v.n,d:v.d})});
-RULES.push({g:'Cartas especiais',k:'weather',n:'Cartas de clima',d:'Cada carta de clima tem um efeito global que perdura até que outra carta de clima seja jogada.'});
+RULES.push({g:'Cartas especiais',k:'weather',n:'Cartas de Clima',d:'Cada carta de clima tem um efeito global que perdura até que outra carta de clima seja jogada.'});
 RULES.push({g:'Cartas especiais',k:'mix',n:'Cartas Combo',d:'Estas cartas ativam os dois efeitos correspondentes aos símbolos delas (Inverter+Bloqueio, Inverter+2, Bloqueio+2).'});
 RULES.splice(RULES.findIndex(r=>r.k==='hell'),0,{g:'Jogadas',k:'bg',n:'Azul e Verde',d:'Cartas azuis e verdes serão tratadas como se fossem da mesma cor.'});
-RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem desafiar',d:'Os +4 não podem mais ser desafiados. (Sem esta regra, quem recebe um +4 pode desafiar o último jogado: se foi blefe, quem jogou compra as cartas dessa carta e o desafiante compra o restante acumulado; se não foi, o desafiante compra tudo e mais 2.)'});
+RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem Desafiar',d:'Os +4 não podem mais ser desafiados. (Sem esta regra, quem recebe um +4 pode desafiar o último jogado: se foi blefe, quem jogou compra as cartas dessa carta e o desafiante compra o restante acumulado; se não foi, o desafiante compra tudo e mais 2.)'});
 RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'time',n:'Tempo reduzido',d:'Após 6 minutos, vence quem tiver menos pontos na mão.'});
 RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'limitless',n:'Sem limite',d:'Os jogadores agora podem ter mais de 30 cartas na mão. (Sem esta regra, quem passar de 30 cartas é eliminado.)'});
 RULES.push(
-  {g:'Partida',k:'poker',n:'Mix de regras',d:'No início do jogo, cada jogador escolhe uma regra para colocar na partida.'},
-  {g:'Partida',k:'team',n:'Jogo em duplas',d:'Cada jogador tem uma dupla (quem senta à frente). Se um vencer, a equipe toda vence.'},
+  {g:'Partida',k:'poker',n:'Mix de Regras',d:'No início do jogo, cada jogador escolhe uma regra para colocar na partida.'},
+  {g:'Partida',k:'team',n:'Jogo em Duplas',d:'Cada jogador tem uma dupla (quem senta à frente). Se um vencer, a equipe toda vence.'},
   {g:'Partida',k:'addrules',n:'Mais regras',d:'O jogo adiciona outras regras de vez em quando (a cada 75 segundos).'},
   {g:'Partida',k:'tournament',n:'Torneio',d:'Várias partidas ocorrerão. Quando um jogador atingir 500 pontos, ele será o vencedor. Quem vence a rodada ganha os pontos das cartas que sobraram na mão dos outros.'},
-  {g:'Partida',k:'survivor',n:'Torneio de sobrevivência',d:'Várias partidas ocorrerão. Quando um jogador atingir 300 pontos, ele será eliminado do torneio. Vence quem sobrar. Cada um soma os pontos das cartas que sobraram na própria mão.'},
+  {g:'Partida',k:'survivor',n:'Torneio de Sobrevivência',d:'Várias partidas ocorrerão. Quando um jogador atingir 300 pontos, ele será eliminado do torneio. Vence quem sobrar. Cada um soma os pontos das cartas que sobraram na própria mão.'},
 );
 const BOTRULES=['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise'];
 const WEATHER={
@@ -125,7 +125,7 @@ const CURSES={
   thorn:{nm:'Espinho',g:'🌵',t:'Quem comprar cartas será eliminado',n:1},
   poison:{nm:'Veneno',g:'🧪',t:'Todos ficam confusos',n:1},
 };
-// Regras de defesa: valem no lugar da defesa contra compras da configuração (R.combo). Só saem no Mix de regras e na
+// Regras de defesa: valem no lugar da defesa contra compras da configuração (R.combo). Só saem no Mix de Regras e na
 // Carta da Regra, nunca a que repete a configuração, e não aparecem na lista do Personalizado
 const DEF_RULES={dfnormal:'normal',dfrise:'rise',dfsuper:'super',dfnone:'none'};
 RULES.push(
@@ -168,7 +168,7 @@ const TIPS=[
 const COMBO_DESC={rise:'Crescente: você pode se defender com outra carta de compra de mesmo valor ou maior: +2 em +2, +4 em +2 ou em +4. As compras se acumulam para o próximo jogador.',normal:'Combinar: você pode se defender de um +2 jogando outro +2, e de um +4 jogando outro +4. As compras se acumulam para o próximo jogador.',super:'Qualquer: você pode se defender de qualquer carta de compra com qualquer carta com +. As compras se acumulam para o próximo jogador.',none:'Desativado: não é possível se defender. Quem recebe um +2 ou +4 compra na hora e perde a vez.'};
 const SEGS={
   sound:[[true,'Ligado'],[false,'Desligado']],
-  mode:[['classic','Clássico'],['mix','Mix de regras'],['custom','Personalizado']],
+  mode:[['classic','Clássico'],['mix','Mix de Regras'],['custom','Personalizado']],
   fx3d:[[true,'Ligados'],[false,'Desligados']],
   vibrate:[[true,'Ligada'],[false,'Desligada']],
   ruleInfo:[[true,'Ligado'],[false,'Desligado']],
