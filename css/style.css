@@ -76,7 +76,6 @@
 .w-snow i{position:absolute;top:-1rem;left:var(--x);width:var(--sz);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff 0 45%,rgba(150,185,230,.7) 60%,transparent 72%);opacity:var(--o);animation:snowfall var(--d) linear var(--dl) infinite,snowsway var(--sd) ease-in-out var(--dl) infinite alternate}
 @keyframes snowfall{from{top:-1rem}to{top:calc(100% + 1rem)}}
 @keyframes snowsway{from{translate:calc(var(--sw)*-1) 0}to{translate:var(--sw) 0}}
-.w-snow b{position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 1.625rem 0.5rem rgba(225,242,255,.9),inset 0 0 0.25rem 2px rgba(255,255,255,.95)}
 .fxin.roul{animation:none}
 .roul .fxg{min-width:1.2em;text-align:center}
 .seat .nm{margin-bottom:3px}
@@ -192,13 +191,17 @@
 .deckbtn.frozen .face{background:#e8f6ff;color:#2b6bd6}
 .deckbtn.frozen::after{content:"";position:absolute;left:6%;right:6%;top:-3px;height:0.75rem;background:repeating-linear-gradient(90deg,#e8f6ff 0 0.375rem,transparent 0.375rem 0.6875rem);clip-path:polygon(0 0,100% 0,100% 30%,95% 100%,88% 30%,80% 90%,70% 30%,62% 100%,52% 30%,44% 80%,35% 30%,26% 100%,18% 30%,10% 85%,0 30%);pointer-events:none}
 .thorns{position:absolute;left:calc(var(--cw)*-.08);top:calc(var(--cw)*-.075);width:calc(var(--cw)*1.16);height:calc(var(--cw)*1.65);z-index:2;pointer-events:none;
-  opacity:0;scale:.82;transition:opacity .3s,scale .45s cubic-bezier(.2,.9,.3,1.35);filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+  opacity:0;scale:.82;transition:opacity .3s,scale .45s cubic-bezier(.2,.9,.3,1.35),translate .18s;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
 .thorns.on{opacity:1;scale:1}
+/* selos do monte: irmãos do monte, por cima dos espinhos; sobem junto com o monte no mouse */
+.pile .cb.deckcb{z-index:3;transition:translate .18s}
+.pile .deckcb[hidden]{display:none}
+.deckbtn.can:hover~.thorns,.deckbtn.can:hover~.deckcb{translate:0 -3px}
 .thorns svg{display:block;width:100%;height:100%}
 .deckbtn.gone{background:transparent!important;border:3px dashed var(--muted);box-shadow:none}
 .deckbtn.gone::before{border-color:transparent}
 .deckbtn.gone .face,.deckbtn.gone .cn,.deckbtn.gone .wheel,.deckbtn.gone .eye{visibility:hidden}
-.card .cb{position:absolute;top:-0.8125rem;left:50%;transform:translateX(-50%);font-size:.72rem;font-weight:700;line-height:1.35;background:var(--panel);color:var(--ink);border:1.5px solid var(--accent);border-radius:999px;padding:0 0.375rem;white-space:nowrap;text-shadow:none;z-index:2;pointer-events:none;box-shadow:0 2px 0.25rem rgba(0,0,0,.15)}
+.card .cb,.pile .deckcb{position:absolute;top:-0.8125rem;left:50%;transform:translateX(-50%);font-size:.72rem;font-weight:700;line-height:1.35;background:var(--panel);color:var(--ink);border:1.5px solid var(--accent);border-radius:999px;padding:0 0.375rem;white-space:nowrap;text-shadow:none;z-index:2;pointer-events:none;box-shadow:0 2px 0.25rem rgba(0,0,0,.15)}
 .dizzytag{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;background:linear-gradient(90deg,#c2477f,#8e5bd0,#2b9aa0,#c2477f);background-size:300% 100%;color:#fff;font-weight:700;font-size:.74rem;padding:2px 0.75rem;border-radius:999px;white-space:nowrap;pointer-events:none;animation:dzbg 3s linear infinite}
 @keyframes dzbg{to{background-position:-300% 0}}
 .hand.dizzy .card{animation:dizzy 2.2s ease-in-out infinite}

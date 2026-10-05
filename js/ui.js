@@ -430,7 +430,8 @@ function render(){
   // sem "disabled": o monte precisa receber o toque longo e o mouse para mostrar os selos (a compra confere a vez)
   deck.classList.toggle('can',mine);deck.classList.toggle('off',!mine);deck.setAttribute('aria-disabled',String(!mine));
   {const ic=deckBadges().map(x=>x.ic);
-   if(ic.length){const sp=document.createElement('span');sp.className='cb deckcb';sp.textContent=ic.join(' ');deck.appendChild(sp)}
+   // os selos ficam fora do monte (depois dos espinhos) para não ficarem cobertos por eles
+   const cb=$('deckcb');cb.hidden=!ic.length;cb.textContent=ic.join(' ');
    deck.classList.toggle('frozen',S.weather==='blizzard'||curseIs('ice'));deck.classList.toggle('gone',!!S.death);}
   // altura do monte: 1 px a cada 8 cartas, até 14 px
   deck.parentElement.style.setProperty('--stk',(S.death?0:Math.min(14,Math.ceil(S.deck.length/8)))+'px');
