@@ -6,7 +6,7 @@ function scheduleBot(){
     if(g!==S.gen||tok!==S.tok||S.phase==='over'||!cur().bot||S.busy)return;
     if(cur().out){endTurn();return}
     botAct();
-  },S.spectate?Math.max(350+Math.random()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+Math.random()*700,(S.fxUntil||0)-Date.now()+400));
+  },fastMode()?Math.max(350+Math.random()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+Math.random()*700,(S.fxUntil||0)-Date.now()+400));
 }
 function colorCounts(hand){const o={r:0,y:0,g:0,b:0};hand.forEach(c=>{if(c.color!=='w')o[c.color]++});return o}
 /* ---------- Mestre: memória e decisões ---------- */
@@ -175,14 +175,14 @@ function announce(pi,card,cont,wait){
       const og=SP[card.type].g;
       morphCard(card,S.discard[S.discard.length-2]);S.lastTop=null;S.morph=true;card.flipped=true;
       fx(og,`Virou ${card.color==='w'?label(card):cardName(card)}`,CVAR[card.color]||'var(--accent)','stamp');
-      render();setTimeout(done,S.spectate?400:950);
+      render();setTimeout(done,fastMode()?400:950);
     }else done();
-  },wait||(S.spectate?400:950));
+  },wait||(fastMode()?400:950));
 }
 function botPlay(card){
   const pi=S.turn;
   if(needsAnn(pi,card)){announce(pi,card,()=>botPlayNow(card,pi));return}
-  if(card.type!=='num'){announce(pi,card,()=>botPlayNow(card,pi),S.spectate?250:480);return}
+  if(card.type!=='num'){announce(pi,card,()=>botPlayNow(card,pi),fastMode()?250:480);return}
   botPlayNow(card,pi);
 }
 function botPlayNow(card,pi0){

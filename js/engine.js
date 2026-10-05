@@ -201,7 +201,7 @@ function switchSide(pi){
   log(`${who(pi)} abriu o portal: a mesa foi para ${S.side==='b'?'o outro lado':'o lado normal'}.`);
 }
 function portalSequence(pi){
-  const g=S.gen,sp=S.spectate?.35:1;
+  const g=S.gen,sp=fastMode()?.35:1;
   S.busy=true;clearFlash();render();
   const finish=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()};
   if(RM){switchSide(pi);render();finish();return}
@@ -482,7 +482,7 @@ function takeDraw(pi){
 // +99: quem precisa comprar as cartas dele é eliminado na hora, depois de uma enxurrada de cartas voando do monte até ele.
 // As cartas não são compradas de verdade. Só escapa quem não compraria por causa da Nevasca ou do Gelo
 function drawn99(pi,then){
-  const g=S.gen,sp=S.spectate?.4:1,N=RM?0:22,step=50*sp;S.busy=true;clearFlash();render();
+  const g=S.gen,sp=fastMode()?.4:1,N=RM?0:22,step=50*sp;S.busy=true;clearFlash();render();
   const from=$('deck').getBoundingClientRect();
   for(let k=0;k<N;k++)setTimeout(()=>{if(g!==S.gen)return;ghost(from,targetRect(pi),0);if(k%3===0)sfx('draw')},k*step);
   log(`${who(pi)} ${pi===0?'precisa':'precisou'} comprar as cartas do +99.`);

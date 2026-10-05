@@ -4,6 +4,8 @@ const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 // computador com mouse: as janelas de informação abrem ao parar o cursor; pc(celular, computador) escolhe o texto
 const HOVER=matchMedia('(hover:hover) and (pointer:fine)').matches;
 const pc=(m,c)=>HOVER?c:m;
+// jogo acelerado: quando você foi eliminado (só assiste) ou com a opção "Velocidade do jogo: Acelerada"
+const fastMode=()=>!!(S&&S.spectate)||CFG.fast===true;
 const COLORS=['r','y','g','b'];
 const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Cinza'};
 const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'var(--cgray)'};
@@ -171,6 +173,7 @@ const SEGS={
   mode:[['classic','Clássico'],['mix','Mix de Regras'],['custom','Personalizado']],
   fx3d:[[true,'Ligados'],[false,'Desligados']],
   vibrate:[[true,'Ligada'],[false,'Desligada']],
+  fast:[[false,'Normal'],[true,'Acelerada']],
   ruleInfo:[[true,'Ligado'],[false,'Desligado']],
   bots:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],
   diff:[['easy','Fácil'],['normal','Normal'],['hard','Difícil'],['master','Mestre']],
@@ -186,7 +189,7 @@ const DIFF={
 const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 
-const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.vibrate=true;DEF.ruleInfo=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.vibrate=true;DEF.ruleInfo=true;DEF.fast=false;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
 // configuração salva com duas regras incompatíveis (conflito novo): mantém só a primeira
 CONFLICT_PAIRS.forEach(([a,b])=>{if(CFG[a]&&CFG[b])CFG[b]=false});
