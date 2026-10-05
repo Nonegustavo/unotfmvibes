@@ -212,6 +212,16 @@ function seatInfoItems(i){
   if(partner(i)===0)L.unshift({ic:'🤝',name:'Sua dupla',txt:'se ele vencer, você vence junto'});
   return L;
 }
+// selos do monte de compra (regras e efeitos que mudam a compra), com a explicação de cada um
+function deckBadges(){
+  const L=[],rule=(k,ic)=>{if(R[k])L.push({ic,name:RNAME[k],txt:(RULES.find(x=>x.k===k)||{}).d||''})};
+  rule('revelation','🔦');rule('satisfaction','😤');rule('insatisfaction','👋');rule('tracking','🔎');rule('fastdraw','⏩');
+  if(S.death)L.push({ic:'☠️',name:'Morte súbita',txt:'quem precisar comprar ou cometer um erro é eliminado'});
+  if(S.curse&&S.curse.k!=='shoe'){const c=CURSES[S.curse.k];L.push({ic:c.g,name:`Maldição ${c.nm}`,txt:`${c.t.toLowerCase()}. Faltam ${S.curse.left} turno${S.curse.left===1?'':'s'}`})}
+  if(S.weather==='blizzard'){const w=WEATHER.blizzard;L.push({ic:w.g,name:`Clima ${w.n}`,txt:w.t})}
+  return L;
+}
+function showDeckInfo(){const L=S?deckBadges():[];if(!L.length)return false;infoPopup('deck','',L,$('deck'));buzz(15);return true}
 function tableStatus(){
   const L=[];
   if(S.weather){const w=WEATHER[S.weather];L.push({short:w.g,ic:w.g,name:`Clima ${w.n}`,txt:w.t})}
@@ -383,13 +393,14 @@ function render(){
   const mine=myTurn()&&S.phase==='play';
   if(R.revelation&&dtop){deck.className=`card deckbtn reveal c-${dtop.color}`;deck.innerHTML=faceHTML(dtop)}
   else{deck.className='card back deckbtn';deck.innerHTML='<span class="face">unotfm</span>'}
-  deck.classList.toggle('can',mine);deck.disabled=!mine;
-  {const ic=[];if(R.revelation)ic.push('🔦');if(R.satisfaction)ic.push('😤');if(R.insatisfaction)ic.push('👋');if(R.tracking)ic.push('🔎');if(R.fastdraw)ic.push('⏩');
-   if(S.death)ic.push('☠️');if(S.curse&&S.curse.k!=='shoe')ic.push(CURSES[S.curse.k].g);if(S.weather==='blizzard')ic.push('❄️');
+  // sem "disabled": o monte precisa receber o toque longo e o mouse para mostrar os selos (a compra confere a vez)
+  deck.classList.toggle('can',mine);deck.classList.toggle('off',!mine);deck.setAttribute('aria-disabled',String(!mine));
+  {const ic=deckBadges().map(x=>x.ic);
    if(ic.length){const sp=document.createElement('span');sp.className='cb deckcb';sp.textContent=ic.join(' ');deck.appendChild(sp)}
    deck.classList.toggle('frozen',S.weather==='blizzard'||curseIs('ice'));deck.classList.toggle('gone',!!S.death);}
   // altura do monte: 1 px a cada 8 cartas, até 14 px
   deck.parentElement.style.setProperty('--stk',(S.death?0:Math.min(14,Math.ceil(S.deck.length/8)))+'px');
+  $('deckStack').style.visibility=S.death?'hidden':''; // na Morte súbita o monte some, e a ilusão de monte cheio também
   // discard
   const t=topCard();const dis=$('discard');
   dis.style.setProperty('--ring',S.color?CVAR[S.color]:'transparent');
@@ -665,10 +676,12 @@ function showCardInfo(id,el){
 // vibração leve (pode ser desligada nas Configurações; o iPhone não vibra pelo navegador)
 function buzz(ms){if(CFG.vibrate!==false&&navigator.vibrate)try{navigator.vibrate(ms)}catch(e){}}
 /* ---------- wiring ---------- */
+// tempo segurando (toque/clique) e com o mouse parado em cima de uma carta da mão ou do monte para abrir a explicação
+const HOLD_MS=500,HOVER_SLOW=700;
 {let lp=null,fired=false;
  const cancel=()=>{if(lp){clearTimeout(lp.t);lp=null}};
  $('hand').addEventListener('pointerdown',e=>{const b=e.target.closest('.card');fired=false;cancel();if(!b||!S)return;
-   lp={x:e.clientX,y:e.clientY,t:setTimeout(()=>{lp=null;fired=true;showCardInfo(+b.dataset.id,b)},500)}});
+   lp={x:e.clientX,y:e.clientY,t:setTimeout(()=>{lp=null;fired=true;showCardInfo(+b.dataset.id,b)},HOLD_MS)}});
  $('hand').addEventListener('pointermove',e=>{if(lp&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10)cancel()});
  ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('hand').addEventListener(ev,cancel));
  $('hand').addEventListener('contextmenu',e=>{if(e.target.closest('.card'))e.preventDefault()});
@@ -676,7 +689,14 @@ function buzz(ms){if(CFG.vibrate!==false&&navigator.vibrate)try{navigator.vibrat
 ['pointerdown','click'].forEach(ev=>$('rail').addEventListener(ev,e=>{const b=e.target.closest('[data-catch]');if(b){e.preventDefault();humanCatch(+b.dataset.catch)}}));
 $('rail').addEventListener('click',e=>{if(e.target.closest('[data-catch]')||!S)return;const seat=e.target.closest('.seat');if(!seat)return;showSeatInfo(+seat.dataset.seat,seat)});
 document.addEventListener('pointerdown',e=>{if(e.target.closest('.seat')&&!e.target.closest('[data-catch]'))e.stopPropagation()},true);
-$('deck').onclick=()=>{if(myTurn()&&S.phase==='play')takeDraw(0)};
+// monte: segurar 0,5 s mostra a explicação dos selos (como nas cartas da mão) e não compra
+{let lp=null,fired=false;const deck=$('deck'),cancel=()=>{if(lp){clearTimeout(lp.t);lp=null}};
+ deck.addEventListener('pointerdown',e=>{fired=false;cancel();if(!S||!deckBadges().length)return;
+   lp={x:e.clientX,y:e.clientY,t:setTimeout(()=>{lp=null;fired=showDeckInfo()},HOLD_MS)}});
+ deck.addEventListener('pointermove',e=>{if(lp&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10)cancel()});
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>deck.addEventListener(ev,cancel));
+ deck.addEventListener('contextmenu',e=>e.preventDefault());
+ deck.onclick=()=>{if(fired){fired=false;return}if(myTurn()&&S.phase==='play')takeDraw(0)};}
 $('drawBtn').onclick=humanMain;
 $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
@@ -758,7 +778,8 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
  const openKey=k=>k.startsWith('rule:')?$('notices').querySelector(`[data-k="${k.slice(5)}"]`):$('notices').querySelector(`[data-info="${k}"]`);
  function hoverTarget(t){
    const ri=t.closest('#rulestrip .ri');if(ri)return {key:'rule:'+ri.dataset.k,open:()=>openRuleIcon(ri)};
-   const c=t.closest('#hand .card');if(c)return {key:'card'+c.dataset.id,open:()=>showCardInfo(+c.dataset.id,c)};
+   const c=t.closest('#hand .card');if(c)return {key:'card'+c.dataset.id,slow:1,open:()=>showCardInfo(+c.dataset.id,c)};
+   if(t.closest('#deck')&&deckBadges().length)return {key:'deck',slow:1,open:showDeckInfo};
    const st=t.closest('.seat .tag.stat,.seat .outic');if(st){const seat=st.closest('.seat'),i=+seat.dataset.seat;return {key:'seat'+i,open:()=>showSeatInfo(i,seat)}}
    if(t.closest('#mystat'))return {key:'seat0',open:()=>showSeatInfo(0,$('mystat'))};
    const b=t.closest('.tst');if(b)return {key:'tst'+b.dataset.k,open:()=>{const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',[x],b)}};
@@ -772,7 +793,8 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
    if(hov&&openKey(hov)){$('notices').innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))}
    hov=k;const x=e.clientX,y=e.clientY;
    // reabre a partir do elemento atual sob o mouse: o render() pode ter trocado o ícone nesse intervalo
-   if(h)hovT=setTimeout(()=>{if(hov!==k||openKey(k))return;const el=document.elementFromPoint(x,y),h2=el&&hoverTarget(el);if(h2&&h2.key===k)h2.open()},300);
+   // cartas da mão e monte: espera mais (HOVER_SLOW), para a janela não abrir só de passar o mouse
+   if(h)hovT=setTimeout(()=>{if(hov!==k||openKey(k))return;const el=document.elementFromPoint(x,y),h2=el&&hoverTarget(el);if(h2&&h2.key===k)h2.open()},h.slow?HOVER_SLOW:300);
  });}
 /* neve 2D: flocos individuais com posição, tamanho, velocidade e balanço sorteados */
 {const box=document.querySelector('.w-snow'),R1=(a,b)=>a+Math.random()*(b-a);
