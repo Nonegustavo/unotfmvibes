@@ -445,9 +445,12 @@ function takeDraw(pi){
     }
     if(!opts.length)for(let i=0;i<3;i++){const c=popDeck();if(c)opts.push(c)}
     if(!opts.length){endTurn();return}
+    const wasCalled=p.called;
+    // com a Bigorna, também vai para a mão uma das opções que sobraram (ao acaso)
     const finish=pick=>{
-      opts.filter(c=>c!==pick).forEach(c=>S.deck.unshift(c));
-      give(pi,pick);afterDraw(pi,pick,1);
+      const rest=opts.filter(c=>c!==pick),extra=curseOn('anvil',pi)&&rest.length?rand(rest):null;
+      rest.filter(c=>c!==extra).forEach(c=>S.deck.unshift(c));
+      give(pi,pick);if(extra)give(pi,extra);afterDraw(pi,pick,extra?2:1,wasCalled);
     };
     if(p.bot){
       const safe=opts.filter(c=>c.type!=='bomb');const good=safe.filter(c=>canPlay(p,c));
@@ -463,10 +466,11 @@ function takeDraw(pi){
     const idx=S.deck.map((c,i)=>i).reverse().find(i=>S.deck[i].type!=='bomb'&&canPlay(p,S.deck[i]));
     if(idx!=null){const [c]=S.deck.splice(idx,1);S.deck.push(c);fx('🍀','Sorte!','var(--cg)','stamp')}
   }
+  const wasCalled=p.called;
   drawn=drawOne(pi);if(drawn)count=1;
   if(curseOn('anvil',pi)&&drawOne(pi))count++;
   icemiceHook(pi);
-  afterDraw(pi,drawn,count);
+  afterDraw(pi,drawn,count,wasCalled);
 }
 // +99: quem precisa comprar as cartas dele é eliminado na hora, depois de uma enxurrada de cartas voando do monte até ele.
 // As cartas não são compradas de verdade. Só escapa quem não compraria por causa da Nevasca ou do Gelo
@@ -482,7 +486,8 @@ function drawn99(pi,then){
     then();
   },N*step+450);
 }
-function afterDraw(pi,drawn,count){
+// wasCalled: se o jogador já tinha pedido UNO antes de comprar (a Compra rápida mantém o pedido)
+function afterDraw(pi,drawn,count,wasCalled){
   const p=S.players[pi];
   log(`${who(pi)} comprou ${count} carta${count===1?'':'s'}.`);
   if(overloaded(pi)){if(markOut(pi))return;endTurn();return}
@@ -494,6 +499,8 @@ function afterDraw(pi,drawn,count){
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
     S.forcedPlay=true;toast('Compra rápida!');
+    // quem estava de UNO e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
+    if(wasCalled&&p.hand.length-1<=target())p.called=true;
     S.fastSrc=$('deck').getBoundingClientRect();S.newIds=S.newIds.filter(id=>id!==drawn.id);if(S.botDraw[pi]){S.botDraw[pi]--;if(!S.botDraw[pi])delete S.botDraw[pi]}
     if(p.bot)botPlay(drawn);else humanPlay(drawn);return}
   if(!p.bot&&!p.hand.some(c=>canPlay(p,c))){
