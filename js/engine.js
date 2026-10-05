@@ -233,9 +233,10 @@ function portalSequence(pi){
           const R1=Math.hypot(Math.max(nx,innerWidth-nx),Math.max(ny,innerHeight-ny))+10;
           ov.style.setProperty('--px',nx+'px');ov.style.setProperty('--py',ny+'px');
           const close=ov.animate([{clipPath:`circle(${R1}px at ${nx}px ${ny}px)`},{clipPath:`circle(0px at ${nx}px ${ny}px)`}],{duration:520*sp,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
-          close.onfinish=()=>{ov.remove();toast(S.side==='b'?'🌀 Outro lado':'🌀 Lado normal','#8a4fd8');finish()};
+          close.onfinish=()=>{ov.remove();toast(S.side==='b'?'🌀 Outro lado':'🌀 Lado normal','#8a4fd8');finish()};if(S.turbo)close.finish();
         },260*sp);
       };
+      if(S.turbo)open.finish(); // turbo: a cortina não espera o tempo real
     },900*sp);
   },480*sp);
 }
@@ -392,7 +393,7 @@ function endTurn(){
   startTurn();
 }
 function startTurn(){
-  S.tok++;
+  S.tok++;if(TB.on)TB.turns++;
   const cp=cur();
   // Batata: o contador mostra a vez atual com ela (1/5 na primeira, 5/5 na última)
   if(!cp.out&&cp.hand.some(c=>c.type==='batata'))cp.batata=(cp.batata||0)+1;
@@ -518,6 +519,48 @@ function afterDraw(pi,drawn,count,wasCalled){
   }
   S.tok++;render();
   if(p.bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();
+}
+/* ---------- Terminar e descobrir vencedor (turbo) ----------
+   Depois que você é eliminado, joga o resto da partida sem esperas, sons nem efeitos 3D: os timers pendentes vão
+   para a fila virtual (TB, em data.js) e turboRun() os executa na ordem, em blocos curtos para a tela não travar.
+   Ao terminar, o que sobrou da fila volta para o navegador (a tela de fim aparece no tempo normal).
+   Partida longa demais (TURBO_MAX vezes): vence quem tiver menos pontos na mão */
+const TURBO_MAX=2000;
+function turboStart(){
+  if(!S||S.phase==='over'||!S.players[0].out||TB.on)return;
+  const now=realNow();
+  TB.on=true;TB.now=now;TB.turns=0;TB.idle=0;
+  for(const [id,t] of TB.live){nativeClear(t.h);TB.q.set(id,{fn:t.fn,a:t.a,due:now+Math.max(0,t.due-now),id})}
+  TB.live.clear();
+  TB.saved={muted:MUTED,fx3d:CFG.fx3d};MUTED=true;CFG.fx3d=false;FX3D.reset();
+  $('turboOv').hidden=false;render();S.turbo=true;
+  nativeTimeout(turboRun,30);
+}
+function turboRun(){
+  const lim=realNow()+40;let next=null;
+  while(TB.on){
+    if(!S||S.phase==='over'){turboStop();return}
+    if(TB.turns>=TURBO_MAX){turboStop();S.timeWin=true;log('Partida longa demais: vence quem tem menos pontos na mão.');endRound(pointsLeader());return}
+    next=null;for(const x of TB.q.values())if(!next||x.due<next.due||(x.due===next.due&&x.id<next.id))next=x;
+    if(!next||realNow()>lim)break;
+    TB.q.delete(next.id);TB.now=Math.max(TB.now,next.due);
+    try{next.fn(...next.a)}catch(e){turboStop();throw e}
+  }
+  // fila vazia: espera algo do navegador (animação do Portal etc.); parado por mais de 5 s, desiste do turbo
+  if(next)TB.idle=0;else if(!TB.idle)TB.idle=realNow();else if(realNow()-TB.idle>5000){turboStop();return}
+  if(TB.on)nativeTimeout(turboRun,next?0:30);
+}
+function turboStop(){
+  if(!TB.on)return;
+  const now=realNow();TB.on=false;
+  for(const [id,x] of TB.q){const ms=Math.min(Math.max(0,x.due-TB.now),5000);TB.live.set(id,{fn:x.fn,a:x.a,due:now+ms,h:nativeTimeout(()=>{TB.live.delete(id);x.fn(...x.a)},ms)})}
+  TB.q.clear();
+  // marcas de tempo guardadas no tempo virtual voltam a zero
+  MUTED=TB.saved.muted;CFG.fx3d=TB.saved.fx3d;lastDrawSnd=0;MK.until=0;
+  if(S){S.turbo=false;S.fxUntil=0;S.progScroll=0}
+  // restos visuais criados durante o cálculo
+  $('fx').innerHTML='';$('toast').classList.remove('show');document.querySelectorAll('.stamp,.showc,.peekc,.minidie,.think,.puff,.rulefly,.flyclone,.banc,.burst,.ghost,.pcover,.pring,.raincard,.raindrop,.rainsplash,.dropcard').forEach(e=>e.remove());
+  $('turboOv').hidden=true;render();
 }
 function endRound(pi){
   S.phase='over';clearFlash();closeOverlays();if(limboT){clearInterval(limboT);limboT=null}if(timeT){clearInterval(timeT);timeT=null}if(addT){clearInterval(addT);addT=null}

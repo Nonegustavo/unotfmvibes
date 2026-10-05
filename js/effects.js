@@ -326,7 +326,7 @@ function sfxGlyph(g){
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }
 function fx(glyph,cap,color,kind,dur,mute){
-  hold(dur?dur+200:950);if(!mute)sfxGlyph(glyph);
+  hold(dur?dur+200:950);if(S&&S.turbo)return;if(!mute)sfxGlyph(glyph);
   $('fx').innerHTML=`<div class="fxin" style="--fxc:${color}${dur?`;animation-duration:${dur}ms`:''}"><div class="fxg k-${kind}" style="color:${color}">${glyph}</div>${cap?`<div class="fxcap">${cap}</div>`:''}</div>`;
 }
 function burst(color){
@@ -339,6 +339,7 @@ function targetRect(pi){
   const el=document.querySelector(`[data-seat="${pi}"]`);return el?el.getBoundingClientRect():null;
 }
 function stampOn(pi,glyph,color){
+  if(S&&S.turbo)return;
   const r=targetRect(pi);if(!r)return;
   const d=document.createElement('div');d.className='stamp';d.textContent=glyph;d.style.setProperty('--fxc',color);
   const h=pi===0?Math.min(r.height,110):r.height,w=pi===0?h:r.width;

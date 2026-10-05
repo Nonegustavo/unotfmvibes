@@ -6,6 +6,19 @@ const HOVER=matchMedia('(hover:hover) and (pointer:fine)').matches;
 const pc=(m,c)=>HOVER?c:m;
 // jogo acelerado: quando você foi eliminado (só assiste) ou com a opção "Velocidade do jogo: Acelerada"
 const fastMode=()=>!!(S&&S.spectate)||CFG.fast===true;
+/* Turbo ("Terminar e descobrir vencedor"): todo setTimeout passa por aqui. Fora do turbo vai para o timer do navegador
+   e fica registrado em TB.live; no turbo entra numa fila de tempo virtual (TB.q) que turboRun() (engine.js) roda
+   sem esperar, na ordem em que os timers venceriam. Date.now() acompanha o tempo virtual */
+const TB={on:false,now:0,seq:0,turns:0,q:new Map(),live:new Map()};
+const nativeTimeout=setTimeout.bind(window),nativeClear=clearTimeout.bind(window),realNow=Date.now.bind(Date);
+window.setTimeout=(fn,ms,...a)=>{
+  const id=++TB.seq;ms=Math.max(0,+ms||0);
+  if(TB.on)TB.q.set(id,{fn,a,due:TB.now+ms,id});
+  else TB.live.set(id,{fn,a,due:realNow()+ms,h:nativeTimeout(()=>{TB.live.delete(id);fn(...a)},ms)});
+  return id;
+};
+window.clearTimeout=id=>{const t=TB.live.get(id);if(t){nativeClear(t.h);TB.live.delete(id)}TB.q.delete(id)};
+Date.now=()=>TB.on?TB.now:realNow();
 const COLORS=['r','y','g','b'];
 const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Cinza'};
 const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'var(--cgray)'};
@@ -208,9 +221,12 @@ const CARRY={};
 const fmtTime=ms=>{const t=Math.ceil(ms/1000);return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`};
 function timeUp(){
   if(timeT){clearInterval(timeT);timeT=null}
+  S.timeWin=true;fx('⏰','Tempo esgotado!','var(--cr)','slam');endRound(pointsLeader());
+}
+// quem está no jogo com menos pontos na mão (empate: menos cartas)
+function pointsLeader(){
   const pts=i=>S.players[i].hand.reduce((a,c)=>a+cardPoints(c),0);
-  const w=alive().reduce((a,b)=>pts(b)<pts(a)||(pts(b)===pts(a)&&S.players[b].hand.length<S.players[a].hand.length)?b:a);
-  S.timeWin=true;fx('⏰','Tempo esgotado!','var(--cr)','slam');endRound(w);
+  return alive().reduce((a,b)=>pts(b)<pts(a)||(pts(b)===pts(a)&&S.players[b].hand.length<S.players[a].hand.length)?b:a);
 }
 const target=()=>R.dos?2:1;
 const word=()=>R.dos?'DOS':'UNO';
@@ -272,6 +288,7 @@ const who=pi=>pi===0?'Você':S.players[pi].name;
 function log(msg){S.log.unshift(msg);S.log=S.log.slice(0,2);if(S.histCur)S.histCur.notes.push(msg)}
 const snap=c=>({type:c.type,color:c.color,value:c.value,chosen:c.chosen,orig:c.orig,rot:0});
 function toast(msg,bg){
+  if(S&&S.turbo)return;
   const t=$('toast');t.textContent=msg;t.style.background=bg||'';t.style.color=bg?'#fff':'';
   t.classList.remove('show');void t.offsetWidth;t.classList.add('show');
 }

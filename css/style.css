@@ -513,6 +513,9 @@ button.card:disabled,.deckbtn.off{cursor:default}
   :root.compact body{grid-template-rows:1fr auto auto minmax(0,calc(380*var(--u))) auto auto}
   :root.compact body>.top{align-self:start}
 }
+/* Terminar e descobrir vencedor: aviso por cima de tudo enquanto o resto da partida é calculado */
+.turbo{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:1rem;text-align:center;font-weight:600;font-size:1.15rem;background:color-mix(in srgb,var(--bg) 78%,transparent)}
+.turbo[hidden]{display:none}
 body>.top{grid-row:1}body>.rail{grid-row:2}body>.rulestrip{grid-row:3}body>.table{grid-row:4}body>.handwrap{grid-row:5}body>.actions{grid-row:6}
 
 /* chuva, trovão e carta da regra */

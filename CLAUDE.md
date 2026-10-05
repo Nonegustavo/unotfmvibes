@@ -63,6 +63,9 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Misteriosa e Clonagem giram e se transformam. Coringas giram ao ser pintados.
   - Os adversários mostram a decisão num balão perto da cadeira (`botThink`).
 - **Portal:** são dois lados independentes. `SIDE_KEYS` e `PLAYER_KEYS` definem o que é separado por lado, e o sentido do jogo é compartilhado. O outro lado tem cores rosa, laranja, ciano e roxo, borda e símbolos pretos e coringas brancos. A mesa não muda de cor. Azul e Verde só vale no lado normal.
+- **Terminar e descobrir vencedor (turbo):** depois que você é eliminado, o botão principal joga o resto da partida na hora (`turboStart`/`turboRun`/`turboStop` no `engine.js`).
+  - Todo `setTimeout` passa pelo invólucro no topo do `data.js` (`TB`). No turbo, os timers vão para uma fila de tempo virtual e `Date.now()` segue esse tempo. Não use `setTimeout` para esperar algo do tempo real (animação, evento) sem pensar no turbo: o Portal, por exemplo, chama `finish()` nas animações quando `S.turbo`.
+  - Com `S.turbo`, `render()`, `fx()`, `stampOn()` e `toast()` não desenham nada. Depois de `TURBO_MAX` vezes, vence quem tem menos pontos na mão (`pointsLeader()`).
 - **Eliminação por erro** (ser pego sem UNO, blefe desafiado, desafio errado) **só acontece com a Morte súbita**. Fora dela:
   - Pego sem UNO compra 2.
   - O desafio vale só para o **último** +4/+99. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.

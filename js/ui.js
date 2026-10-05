@@ -398,6 +398,8 @@ function moveMarker(from,to){
 }
 function render(){
   if(!S)return;
+  // turbo (Terminar e descobrir vencedor): não desenha; só descarta os pedidos de animação de cada jogada
+  if(S.turbo){S.pendingInfo=null;S.seatFlip=null;S.morph=false;S.animPlay=null;S.wxNow=false;S.handFrom=null;S.newIds=[];S.botDraw={};return}
   const me=S.players[0];
   const railScroll=$('rail').scrollLeft;
   renderRail();$('rail').scrollLeft=railScroll;renderRuleStrip();
@@ -510,6 +512,10 @@ function render(){
   else if(S.pending>0&&S.turn===0)main.textContent=(S.weather==='blizzard'||curseOn('ice',0))?`Perder a vez (+${S.pending})`:`Comprar ${S.pending}`;
   else main.textContent=S.weather==='blizzard'&&S.turn===0?'Passar':'Comprar';
   main.disabled=!turn;
+  // eliminado assistindo: o botão principal termina a partida na hora
+  const watching=me.out&&S.phase!=='over';
+  if(watching){main.textContent='Terminar e descobrir vencedor';main.disabled=TB.on}
+  $('unoBtn').hidden=watching;
   const unoOk=S.weather!=='fog'&&!me.called&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0));
   $('unoBtn').textContent=word()+'!';
   $('unoBtn').disabled=!unoOk;
@@ -734,7 +740,7 @@ document.addEventListener('pointerdown',e=>{if(e.target.closest('.seat')&&!e.tar
  ['pointerup','pointercancel','pointerleave'].forEach(ev=>deck.addEventListener(ev,cancel));
  deck.addEventListener('contextmenu',e=>e.preventDefault());
  deck.onclick=()=>{if(fired){fired=false;return}if(myTurn()&&S.phase==='play')takeDraw(0)};}
-$('drawBtn').onclick=humanMain;
+$('drawBtn').onclick=e=>S&&S.players[0].out&&S.phase!=='over'?turboStart():humanMain(e);
 $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
 $('chalBtn').onclick=()=>{if(myTurn()&&S.chal)doChallenge(0)};
