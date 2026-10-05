@@ -145,13 +145,13 @@ function cardBadges(p,c,turn){
   if(turn&&canPlay(p,c)){
     if(S.phase==='combo')b.push(R.stack&&c.type==='num'&&c.value===S.comboValue?'📚':'🔢');
     else if(S.pending>0)b.push(R.nou&&c.type==='rev'&&!isDraw(c)?'↩️':'🛡️');
-    // também depois de comprar (fase 'drawn'), quando dá para jogar qualquer carta jogável
+    // também depois de comprar (fase 'drawn'), quando dá para jogar qualquer carta jogável (o Sol também cobra +1)
     else if((S.phase==='play'||S.phase==='drawn')&&!baseMatch(c)){
       const t=topCard();
       if(R.bg&&S.color!=='k'&&sameCol(c.color,S.color)){}
       else if(R.hell&&c.type!=='num'&&t.type!=='num')b.push('🔥');
       else if(R.neighbor&&c.type==='num'&&t.type==='num'&&Math.abs(c.value-t.value)===1)b.push('↕️');
-      else if(S.weather==='sun'&&S.phase==='play')b.push('☀️+1');
+      else if(S.weather==='sun')b.push('☀️+1');
     }
   }else if(!turn&&canJump(0,c))b.push('✂️');
   if(c.type==='batata')b.push(`🥔 ${p.batata||0}/5`);
@@ -425,7 +425,7 @@ function render(){
   sortHand(me.hand).forEach((c,idx)=>{
     let el=existing.get(c.id);if(!el)el=makeCard(c);existing.delete(c.id);
     let cls=`card c-${c.color}`;
-    if(turn)cls+=canPlay(me,c)?(S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(c)?' ok sunny':' ok'):' no';
+    if(turn)cls+=canPlay(me,c)?(S.weather==='sun'&&(S.phase==='play'||S.phase==='drawn')&&S.pending===0&&!matchTop(c)?' ok sunny':' ok'):' no';
     else if(canJump(0,c))cls+=' jump';
     if(c.id===S.drawnId)cls+=' fresh';
     if(c.lock)cls+=' locked';

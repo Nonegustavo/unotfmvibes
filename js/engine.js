@@ -243,7 +243,7 @@ function playCard(pi,card,chosen){
   if(inCombo&&R.sequence&&card.value!==S.comboValue&&!S.seqDir)S.seqDir=card.value-S.comboValue;
   const black=R.black&&identical(card,topCard());
   const prev=topCard();const colBefore=S.color;S.colBefore=colBefore;
-  const sunPen=!S.forcedPlay&&!confused(pi)&&S.weather==='sun'&&S.phase==='play'&&S.pending===0&&!matchTop(card);S.forcedPlay=false;
+  const sunPen=!S.forcedPlay&&!confused(pi)&&S.weather==='sun'&&(S.phase==='play'||S.phase==='drawn')&&S.pending===0&&!matchTop(card);S.forcedPlay=false;
   const hadColor=p.hand.some(c=>c.id!==card.id&&c.color!=='w'&&sameCol(c.color,colBefore));
   const peaceOn=S.peace>0,wasColorful=colorful({hand:p.hand.includes(card)?p.hand:[...p.hand,card]});
   if(!peaceOn&&(card.type==='clone'||card.type==='random'))morphCard(card,prev);
