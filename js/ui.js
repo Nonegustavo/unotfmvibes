@@ -402,12 +402,16 @@ function moveMarker(from,to){
 function render(){
   if(!S)return;
   // turbo (Terminar e descobrir vencedor): não desenha; só descarta os pedidos de animação de cada jogada
-  if(S.turbo){S.pendingInfo=null;S.seatFlip=null;S.morph=false;S.animPlay=null;S.wxNow=false;S.handFrom=null;S.newIds=[];S.botDraw={};return}
+  if(S.turbo){S.pendingInfo=null;S.seatFlip=null;S.seatFollow=false;S.morph=false;S.animPlay=null;S.wxNow=false;S.handFrom=null;S.newIds=[];S.botDraw={};return}
   const me=S.players[0];
   const railScroll=$('rail').scrollLeft;
   renderRail();$('rail').scrollLeft=railScroll;renderRuleStrip();
   if(S.pendingInfo){const k=S.pendingInfo;S.pendingInfo=null;setTimeout(()=>showRuleInfo(k),120)}
-  if(S.seatFlip){const old=S.seatFlip;S.seatFlip=null;if(!RM)document.querySelectorAll('#seatrow .seat').forEach(e=>{const o=old[e.dataset.name];if(!o)return;const n=e.getBoundingClientRect();const dx=o.left-n.left;if(Math.abs(dx)>2)e.animate([{transform:`translateX(${dx}px)`},{transform:'none'}],{duration:600,easing:'cubic-bezier(.3,.8,.3,1)'})})}
+  if(S.seatFlip){const old=S.seatFlip;S.seatFlip=null;
+    // Dança das Cadeiras: se quem está com a vez mudou de lugar, o cursor vai junto com a cadeira (sem dar a volta pela borda)
+    const follow=S.seatFollow&&MK.turn!==null&&MK.turn!==S.turn&&S.phase!=='over';S.seatFollow=false;
+    if(follow){++MK.ver;MK.until=0;placeMarker(S.turn,false);MK.turn=S.turn;scrollToSeat(S.turn)}
+    if(!RM)document.querySelectorAll('#seatrow .seat').forEach(e=>{const o=old[e.dataset.name];if(!o)return;const n=e.getBoundingClientRect();const dx=o.left-n.left;if(Math.abs(dx)>2){const a=[{transform:`translateX(${dx}px)`},{transform:'none'}],t={duration:600,easing:'cubic-bezier(.3,.8,.3,1)'};e.animate(a,t);if(follow&&e.dataset.seat==S.turn)$('marker').animate(a,t)}})}
   const hw=$('handwrap');
   hw.style.setProperty('--sweep',S.dir===1?'right':'left');
   if(S.phase==='over'){if(MK.turn!==null){edgeMarker('right',true);MK.turn=null}}

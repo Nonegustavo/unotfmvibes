@@ -722,7 +722,7 @@ function applySpecial(pi,card){
       const put=(a,b)=>b.forEach((x,i)=>a[i]=x);put(S.players,mv(S.players));
       if(S.other)put(S.other.players,mv(S.other.players));
       if(S.mem)['lacks','lastCol'].forEach(k=>{const m=S.mem[k],o={...m};idx.forEach((i,k2)=>{if(m[from[k2]]!==undefined)o[i]=m[from[k2]];else delete o[i]});S.mem[k]=o});
-      if(pi!==0&&S.turn===pi)S.turn=idx[from.indexOf(pi)];
+      if(pi!==0&&S.turn===pi){S.turn=idx[from.indexOf(pi)];S.seatFollow=S.turn!==pi}
       fx('🪑','Os adversários trocaram de lugar',col,'slam');log('Dança: os adversários trocaram de lugar.');
       // espera um pouco com a vez ainda no lugar novo, para ficar claro quem se mexeu, antes de passar a vez
       if(canCombo(p,card)&&(R.stack||R.sequence))return 'done';
