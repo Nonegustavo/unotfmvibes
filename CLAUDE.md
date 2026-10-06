@@ -71,6 +71,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - O desafio vale só para o **último** +4/+99. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.
 - **+99:** quem precisa comprar as cartas dele (inclusive no desafio) é eliminado na hora (`drawn99`), sem comprar de verdade: só uma enxurrada de cartas voa do monte até ele antes. Só escapa quem não comprou por causa da Nevasca ou do Gelo.
 - **Sentido do jogo:** filas de chevrons no topo da mesa (sentido em que a vez passa pelos adversários) e embaixo (oposto), movidas por `chevLoop()`. Ao inverter, `chevFlip()` vira na hora e acelera.
+  As setas (`#chevs`) e os ícones de regra (`#rulestrip`) ficam fora da `.table`, na mesma linha da grade, com `z-index` 25 (acima das partículas 3D, 24). Efeitos que voam sobre a página usam 26 a 28, os avisos 29 e as janelas 30.
 - **Maldição do espinho:** qualquer compra (`drawOne`) marca o jogador (`thornHit`, `p.thorned`) sem dar a carta, e ele é eliminado no fim do efeito (`massCheck`, `checkLimits` ou `endTurn`). A Morte súbita só elimina quem precisa comprar pelo monte ou erra.
 - **Confusão:** a jogada aleatória pode ser qualquer carta (`canPlay(p,c,true)`), mas tranca, Final Limpo, Semáforo e compras acumuladas continuam valendo.
 - **Tempestade:** quando a cor ativa muda, um adversário aleatório de quem mudou compra 1 (raio do Trovão). O selo ⛈️ aparece, na sua vez, nas cartas jogáveis que mudam a cor. O raio que cai em você mira nas cartas compradas (`thunderDraw`).
