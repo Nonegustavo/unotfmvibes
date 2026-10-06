@@ -1,12 +1,13 @@
 /* unotfm solo: inteligência dos adversários (inclui o nível Mestre) */
 /* ---------- bots ---------- */
-function scheduleBot(){
+// quick: compra seguida (Compra Implacável), sem o tempo de pensar de uma jogada
+function scheduleBot(quick){
   const g=S.gen,tok=S.tok;
   setTimeout(()=>{
     if(g!==S.gen||tok!==S.tok||S.phase==='over'||!cur().bot||S.busy)return;
     if(cur().out){endTurn();return}
     botAct();
-  },fastMode()?Math.max(350+Math.random()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+Math.random()*700,(S.fxUntil||0)-Date.now()+400));
+  },quick?(fastMode()?120:300):fastMode()?Math.max(350+Math.random()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+Math.random()*700,(S.fxUntil||0)-Date.now()+400));
 }
 function colorCounts(hand){const o={r:0,y:0,g:0,b:0};hand.forEach(c=>{if(c.color!=='w')o[c.color]++});return o}
 /* ---------- Mestre: memória e decisões ---------- */

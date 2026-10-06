@@ -505,7 +505,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   const fast=(R.fastdraw||ab(pi,'papaille'))&&drawn&&drawn.type!=='bomb'&&p.hand.includes(drawn);
   if(!fast&&(!drawn||R.insatisfaction)){endTurn();return}
   if(!fast&&R.satisfaction&&!p.hand.some(c=>canPlay(p,c))&&S.deck.length+S.discard.length>1){
-    S.phase='play';S.drawnId=drawn.id;S.tok++;render();if(p.bot)scheduleBot();return;
+    S.phase='play';S.drawnId=drawn.id;S.tok++;render();if(p.bot)scheduleBot(true);return;
   }
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
