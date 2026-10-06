@@ -370,8 +370,11 @@ function placeMarker(idx,anim){
   m.style.width=(seat.offsetWidth+8)+'px';m.style.height=(seat.offsetHeight+8)+'px';m.style.opacity=1;
 }
 function edgeMarker(side,anim){
-  const m=$('marker'),w=m.offsetWidth||80;
+  const m=$('marker'),seat=document.querySelector('#seatrow .seat');
   m.classList.toggle('noanim',!anim||RM);
+  // já fica do tamanho de uma cadeira, para não crescer ao entrar (partida que começa na sua vez)
+  if(seat){m.style.width=(seat.offsetWidth+8)+'px';m.style.height=(seat.offsetHeight+8)+'px';m.style.top=(seat.offsetTop-4)+'px'}
+  const w=m.offsetWidth||80;
   m.style.left=(side==='right'?$('seatrow').scrollWidth+14:-w-14)+'px';m.style.opacity=0;
 }
 function scrollToSeat(idx){
