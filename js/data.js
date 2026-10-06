@@ -91,7 +91,7 @@ const SP={
   death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem dizer UNO, ter o blefe de um +4 desafiado ou desafiar um +4 quando a jogada era legal.',deck:['r','b']},
   share:{n:'Carta da Partilha',g:'🤲',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
   simon:{n:'Carta da Memorização',g:'🧠',d:'Ao jogar esta carta, repita as cores escolhidas por outras cartas desta. Se errar, compre 1 carta. Se acertar, escolha a próxima cor.',deck:['w','w','w','w','w','w','w','w']},
-  chair:{n:'Carta da Dança das Cadeiras',g:'🪑',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente.',deck:C4},
+  chair:{n:'Carta da Dança das Cadeiras',g:'🪑',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente. Se um adversário jogar, ele também muda de lugar e a vez segue a partir do lugar novo dele.',deck:C4},
   view:{n:'Carta da Clarividência',g:'👁️',d:'Ao jogar esta carta, todos mostram uma de suas cartas.',deck:C8},
   treasure:{n:'Carta da Busca',g:'🧭',d:'Ao jogar esta carta 3 vezes, receba a Carta do Tesouro, que faz você vencer o jogo.',deck:C8},
   chest:{n:'Carta do Tesouro',g:'💰',hide:1,rule:'treasure',deck:[]},

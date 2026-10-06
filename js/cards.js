@@ -714,10 +714,15 @@ function applySpecial(pi,card){
         botTypeSimon(pi,seq,ok,()=>{if(ok)pickCol();else fin(resolveSimon(pi,card,false))});
         return 'defer'}
     case 'chair':{
-      const idx=alive().filter(i=>i!==0&&i!==pi);
+      // adversário que joga também troca de lugar e leva a vez junto (a próxima vez é a do vizinho no lugar novo)
+      const idx=alive().filter(i=>i!==0);
       if(R.team||idx.length<2){fx('🪑','Ninguém trocou de lugar',col,'stamp');return 'done'}
       S.seatFlip=Object.fromEntries([...document.querySelectorAll('#seatrow .seat')].map(e=>[e.dataset.name,e.getBoundingClientRect()]));
-      const objs=shuffle(idx.map(i=>S.players[i]));idx.forEach((i,k)=>S.players[i]=objs[k]);
+      const from=shuffle([...idx]),mv=(a,ix)=>{const o=[...a];idx.forEach((i,k)=>o[i]=a[from[k]]);return o};
+      const put=(a,b)=>b.forEach((x,i)=>a[i]=x);put(S.players,mv(S.players));
+      if(S.other)put(S.other.players,mv(S.other.players));
+      if(S.mem)['lacks','lastCol'].forEach(k=>{const m=S.mem[k],o={...m};idx.forEach((i,k2)=>{if(m[from[k2]]!==undefined)o[i]=m[from[k2]];else delete o[i]});S.mem[k]=o});
+      if(S.turn===pi)S.turn=idx[from.indexOf(pi)];
       fx('🪑','Os adversários trocaram de lugar',col,'slam');log('Dança: os adversários trocaram de lugar.');return 'done'}
     case 'view':
       opp.forEach(i=>{const q=S.players[i];if(q.hand.length&&i!==0)peek(i,rand(q.hand))});
