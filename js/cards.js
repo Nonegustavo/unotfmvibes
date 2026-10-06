@@ -722,8 +722,13 @@ function applySpecial(pi,card){
       const put=(a,b)=>b.forEach((x,i)=>a[i]=x);put(S.players,mv(S.players));
       if(S.other)put(S.other.players,mv(S.other.players));
       if(S.mem)['lacks','lastCol'].forEach(k=>{const m=S.mem[k],o={...m};idx.forEach((i,k2)=>{if(m[from[k2]]!==undefined)o[i]=m[from[k2]];else delete o[i]});S.mem[k]=o});
-      if(S.turn===pi)S.turn=idx[from.indexOf(pi)];
-      fx('🪑','Os adversários trocaram de lugar',col,'slam');log('Dança: os adversários trocaram de lugar.');return 'done'}
+      if(pi!==0&&S.turn===pi)S.turn=idx[from.indexOf(pi)];
+      fx('🪑','Os adversários trocaram de lugar',col,'slam');log('Dança: os adversários trocaram de lugar.');
+      // espera um pouco com a vez ainda no lugar novo, para ficar claro quem se mexeu, antes de passar a vez
+      if(canCombo(p,card)&&(R.stack||R.sequence))return 'done';
+      const g=S.gen;S.busy=true;render();
+      setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()},fastMode()?500:1300);
+      return 'defer'}
     case 'view':
       opp.forEach(i=>{const q=S.players[i];if(q.hand.length&&i!==0)peek(i,rand(q.hand))});
       fx('👁️','Todos mostram uma carta',col,'stamp');log('Clarividência: todos mostraram uma carta.');return 'done';
