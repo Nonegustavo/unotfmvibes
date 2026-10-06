@@ -161,7 +161,7 @@ const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
 const MODE_DESC={classic:'UNO tradicional, sem nenhuma regra especial.',mix:'Antes de distribuir as cartas, cada jogador escolhe uma regra para colocar na partida.',custom:'Você escolhe todas as regras da partida na lista abaixo.'};
 const TIPS=[
   pc('Toque','Clique')+' nas cartas jogadas para ver o histórico de jogadas.',
-  pc('Toque em','Pare o cursor sobre')+' um ícone de regra na mesa para ver o que ela faz.',
+  pc('Toque em','Pare o cursor sobre')+' um ícone de regra acima dos adversários para ver o que ela faz.',
   'Aperte "UNO!" quando for jogar sua penúltima carta. Se não fizer e um adversário perceber, você compra 2 cartas.',
   'Um adversário esqueceu de dizer UNO? '+pc('Toque','Clique')+' em "Pegar!" para forçá-lo a comprar 2 cartas.',
   'Blefar com +4 é arriscado: se jogar um +4 mesmo tendo outra carta da cor para jogar e for desafiado, você é que comprará as cartas.',
