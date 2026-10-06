@@ -245,7 +245,7 @@ function tableStatus(){
   if(S.death)L.push({short:'☠️',ic:'☠️',name:'Morte súbita',txt:'quem precisar comprar ou cometer um erro é eliminado',warn:1});
   if(S.traffic)L.push({short:`🚦${S.traffic==='odd'?'ímpar':'par'}`,ic:'🚦',name:'Semáforo',txt:`proibido vencer com carta ${S.traffic==='odd'?'ímpar':'par'}`});
   if(R.overload)L.push({short:`🏋️${limit()}`,ic:'🏋️',name:'Sobrecarga',txt:`quem passar de ${limit()} cartas na mão é eliminado`});
-  if(S.simon&&S.simon.length)L.push({short:`🧠${S.simon.length}`,ic:'🧠',name:'Memorização',txt:`a sequência a repetir tem ${S.simon.length} cor${S.simon.length===1?'':'es'}`});
+  if(S.simon&&S.simon.length)L.push({short:`🧠${S.simon.length}`,ic:'🧠',name:'Memória',txt:`a sequência a repetir tem ${S.simon.length} cor${S.simon.length===1?'':'es'}`});
   if(TOUR){const nm=TOUR.mode==='tournament'?'Torneio':'Torneio de Sobrevivência',head={ic:tourIc(),name:`${nm}, rodada ${TOUR.round}`,txt:TOUR.mode==='tournament'?`o primeiro a ${tourGoal()} pontos vence`:`quem chega a ${tourGoal()} pontos sai. Vence quem sobrar`};
     L.push({...head,short:`${tourIc()}${TOUR.round}ª`,rows:[head,...tourRanking()]})}
   return L;
@@ -549,7 +549,7 @@ function openColors(cb,preview){
 }
 function openSimon(n,cb){
   const taps=[];
-  $('simonSub').textContent=`Repita as ${n} cores escolhidas nas Cartas da Memorização, na ordem.`;
+  $('simonSub').textContent=`Repita as ${n} cores escolhidas nas Cartas da Memória, na ordem.`;
   let failed=false,closed=false;
   const dots=()=>{$('simonDots').innerHTML=Array.from({length:n},(_,i)=>{
     if(i<taps.length){const ok=sameCol(taps[i],S.simon[i]);return `<i class="${ok?'on':'bad'}" style="${ok?`background:${CVAR[taps[i]]}`:''}">${ok?'':'✕'}</i>`}

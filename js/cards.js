@@ -111,9 +111,9 @@ function diceEffect(pi,t,n){
 }
 function resolveSimon(pi,card,ok,col){
   S.lastTop=null;
-  if(ok){S.color=col;card.chosen=col;S.simon.push(col);burst(CVAR[col]);fx('🧠',S.simon.length>1?`Acertou! Sequência de ${S.simon.length}`:`Primeira cor: ${CNAME[col]}`,CVAR[col],'stamp');log(`${who(pi)} acertou a memorização (${S.simon.length}).`);return 'done'}
+  if(ok){S.color=col;card.chosen=col;S.simon.push(col);burst(CVAR[col]);fx('🧠',S.simon.length>1?`Acertou! Sequência de ${S.simon.length}`:`Primeira cor: ${CNAME[col]}`,CVAR[col],'stamp');log(`${who(pi)} acertou a sequência da Memória (${S.simon.length}).`);return 'done'}
   drawN(pi,1);const c=rand(COLORS);S.color=c;card.chosen=c;
-  fx('🧠','Errou a sequência! +1','var(--cr)','slam');log(`${who(pi)} errou a memorização.`);return massCheck();
+  fx('🧠','Errou a sequência! +1','var(--cr)','slam');log(`${who(pi)} errou a sequência da Memória.`);return massCheck();
 }
 function stealWild(pi,t){
   if(t==null||t<0)return 'done';
