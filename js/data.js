@@ -255,7 +255,8 @@ const sameCol=(a,b)=>a===b||(R.bg&&((a==='b'&&b==='g')||(a==='g'&&b==='b')));
 // Mão Colorida: segura todas as cores ou um curinga
 const colorful=p=>p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col));
 const holds=(pi,t)=>S.players[pi].hand.some(c=>c.type===t);
-function drawAmt(pi,n){let k=n;if(holds(pi,'half'))k=Math.ceil(k/2);if(curseOn('anvil',pi))k+=1;return k}
+// chamada só quando a compra vai acontecer: com a Carta do Rei, uma compra de mais de 1 carta cai pela metade e avisa na mesa
+function drawAmt(pi,n){let k=n;if(holds(pi,'half')){k=Math.ceil(k/2);if(n>1&&k<n)kingHalf()}if(curseOn('anvil',pi))k+=1;return k}
 const confused=pi=>!!(S.players[pi].confuse||curseOn('poison',pi));
 const ab=(pi,k)=>pi!=null&&pi>=0&&!!R[k]&&S.players[pi]&&S.players[pi].name.toLowerCase()===k;
 const curseOn=(k,pi)=>curseIs(k)&&!ab(pi,'elisah');

@@ -252,6 +252,7 @@ const SND={
   rev:()=>{tone(300,.22,{to:900,vol:.16});tone(900,.22,{to:300,vol:.12,at:.2});noise(.4,{f:800,fTo:3000,vol:.08})},
   plus:()=>{tone(200,.12,{type:'sawtooth',vol:.14});tone(300,.18,{type:'sawtooth',vol:.14,at:.12});noise(.15,{f:400,vol:.1,at:.12,filter:'lowpass'})},
   wild:()=>arp([523,659,784,988],.05,{type:'triangle',vol:.14,d:.25}),
+  king:()=>{arp([523,659,784,1046],.08,{type:'square',vol:.06,d:.3});tone(1318,.5,{type:'triangle',vol:.09,at:.34})},
   sun:()=>arp([523,659,784,1046,1318],.07,{type:'triangle',vol:.13,d:.4}),
   fog:()=>{tone(180,1.1,{vol:.14,detune:-8});tone(182,1.1,{vol:.12,detune:9});tone(270,1,{vol:.06,at:.1})},
   storm:()=>{noise(1.2,{f:300,filter:'lowpass',vol:.35});noise(.25,{f:4000,filter:'highpass',vol:.18});tone(55,1,{type:'sawtooth',vol:.08,to:40})},
@@ -347,6 +348,8 @@ function stampOn(pi,glyph,color){
   d.style.fontSize=(h*.62)+'px';if(pi===0)d.style.borderRadius='50%';
   document.body.appendChild(d);d.addEventListener('animationend',()=>d.remove());
 }
+/* Carta do Rei: aviso na mesa quando ela reduz uma compra de mais de 1 carta */
+function kingHalf(){if(S&&S.turbo)return;sfx('king');const t=$('kingNote');t.classList.remove('show');void t.offsetWidth;t.classList.add('show')}
 /* Chuva: uma carta cai do céu até o jogador, junto com gotas. to: lugar exato da carta (a nova carta da sua mão) */
 function rainDrop(pi,ms,cb,to){
   const r=to||targetRect(pi);if(RM||!r){cb();return}

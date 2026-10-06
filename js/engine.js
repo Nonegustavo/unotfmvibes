@@ -382,10 +382,10 @@ function endTurn(){
   S.extra=false;S.skip=false;
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
   if(S.pending>0&&comboMode()==='none'&&!R.nou){
-    const v=S.turn,n=drawAmt(v,S.pending);S.chal=null;
+    const v=S.turn;S.chal=null;
     if(noDraw(v)||curseOn('ice',v)||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
-    drawN(v,n);stampOn(v,'⊘','var(--cr)');hold(900);
+    const n=drawAmt(v,S.pending);drawN(v,n);stampOn(v,'⊘','var(--cr)');hold(900);
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
     S.pending=0;S.pendingType=null;
     if(overloaded(v)&&markOut(v))return;
@@ -560,7 +560,7 @@ function turboStop(){
   MUTED=TB.saved.muted;CFG.fx3d=TB.saved.fx3d;lastDrawSnd=0;MK.until=0;
   if(S){S.turbo=false;S.fxUntil=0;S.progScroll=0}
   // restos visuais criados durante o cálculo
-  $('fx').innerHTML='';$('toast').classList.remove('show');document.querySelectorAll('.stamp,.showc,.peekc,.minidie,.think,.puff,.rulefly,.flyclone,.banc,.burst,.ghost,.pcover,.pring,.raincard,.raindrop,.rainsplash,.dropcard').forEach(e=>e.remove());
+  $('fx').innerHTML='';$('toast').classList.remove('show');$('kingNote').classList.remove('show');document.querySelectorAll('.stamp,.showc,.peekc,.minidie,.think,.puff,.rulefly,.flyclone,.banc,.burst,.ghost,.pcover,.pring,.raincard,.raindrop,.rainsplash,.dropcard').forEach(e=>e.remove());
   $('turboOv').hidden=true;render();
 }
 function endRound(pi){
