@@ -101,7 +101,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - Carta do Paradoxo.
 - Regras Sem limite e Modo rigoroso. Também não existe mais limite geral de cartas na mão (só a Sobrecarga limita).
 - Regras de bots específicos (Drekkemaus, Charlotte etc.). O código ainda existe, mas inativo (`BOTRULES`, `ab()`).
-- Botão "Regras" no topo. As regras são vistas tocando nos ícones abaixo dos jogadores.
+- Botão "Regras" no topo. As regras são vistas tocando nos ícones da faixa no topo da mesa, logo abaixo das setas (`#rulestrip`, na mesma linha da grade da mesa e na camada das setas).
 
 ## Ideias ainda não feitas
 Xadrez Maluco, Imitação, Jogada Secreta, Quente e Frio. A Emoção e o Meep dependem do Transformice e não entram.
