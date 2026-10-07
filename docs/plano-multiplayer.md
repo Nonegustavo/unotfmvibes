@@ -2,8 +2,8 @@
 
 Aprovado em 07/10/2026 (versão 2). Versão 2.1: acrescentada a seção 6, segurança no online.
 
-Andamento: a sineta já foi feita, e a prova de conceito da rede local (seção 4.1) está publicada esperando os testes nos
-celulares.
+Andamento: a sineta já foi feita, e a prova de conceito da rede local (seção 4.1) foi testada em 07/10/2026 entre dois
+Androids, com bons resultados. O iPhone não foi testado.
 
 Objetivo final: partidas online com salas privadas, fila pública e ranking, login e progresso salvo, e o jogo
 publicado também na Play Store e na App Store. O solo offline continua existindo.
@@ -334,6 +334,24 @@ liberar. Mas isso varia por navegador e versão, e só o teste confirma.
 **Se falhar no iPhone sem internet, há duas saídas:**
 - exigir internet só para apresentar os aparelhos (código curto de sala). A partida continua direto pela Wi-Fi;
 - usar um computador como servidor (a ideia da versão 1).
+
+**Resultado (07/10/2026):** dois Androids 10 com o app instalado, Chrome 154 (anfitrião) e Chrome 148 (convidado),
+pedindo a câmera antes do convite e sem servidor STUN.
+
+| Teste | Resultado |
+|---|---|
+| Conexão com internet | ✅ conectou 0,1 s depois de ler a resposta |
+| Conexão sem internet (roteador sem internet) | ✅ funcionou igual |
+| Caminho da conexão | Direto pela Wi-Fi, endereço local dos dois lados (IPv4 privado e, em outra rodada, IPv6) |
+| Leitura do QR code | 1,3 a 2,2 s com o leitor do sistema; QR codes de 123 a 190 caracteres (versões 6 a 8) |
+| Ping | 7 a 46 ms fora dos bloqueios de tela (17 a 31 ms em média) |
+| Rajada de 500 mensagens | 500/500, em ordem, em 0,09 a 0,27 s |
+| Tela bloqueada do convidado por ~17 s e por ~1,5 min | A conexão não caiu; as respostas só esperam a tela voltar |
+| Manter a tela acesa | Funciona, e volta sozinho ao desbloquear |
+
+- **Observação:** o relatório mostra "Internet: sim" mesmo sem internet, porque o navegador só informa se há uma rede, não se ela chega à internet.
+- **Conclusão:** no Android, o caminho do plano (WebRTC com QR code e o anfitrião rodando a partida) está confirmado, inclusive offline.
+- **Falta:** o iPhone. Fica para quando houver um à mão. Se falhar, valem as duas saídas acima.
 
 ### 4.2 Como funciona para o jogador
 
