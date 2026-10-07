@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/smoke.mjs"
+    "test": "node tests/smoke.mjs",
+    "test:lan": "node tests/lan-teste.mjs",
+    "test:lan-camera": "node tests/lan-camera.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

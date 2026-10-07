@@ -30,6 +30,9 @@ js/ui.js                jogador humano, render(), janelas (cor, rastrear, regras
 manifest.webmanifest    manifesto do PWA
 sw.js                   service worker (offline)
 icons/                  ícones do app
+lan-teste.html          prova de conceito da rede local (link em Configurações → Experimental), com
+css/lan-teste.css,      js/lan-teste.js e as bibliotecas de QR code em js/vendor/ (qrcode-generator e jsQR)
+docs/plano-multiplayer.md  plano aprovado do multiplayer (fases 0, 1 e 1.5, hospedagem, lojas)
 ```
 
 Os arquivos JS são **scripts clássicos carregados em ordem** e compartilham o escopo global (não há módulos nem IIFE).
@@ -39,6 +42,7 @@ Os arquivos JS são **scripts clássicos carregados em ordem** e compartilham o 
 
 ### PWA / service worker
 - HTML, CSS e JS usam rede primeiro e caem no cache quando offline. Por isso as atualizações chegam sozinhas.
+- Cada página fica guardada no próprio endereço (o jogo em `./index.html`, o teste em `lan-teste.html`); offline, uma página desconhecida abre o jogo.
 - Ao **criar ou renomear arquivos**, adicione-os à lista `CORE` do `sw.js`.
 - Ao **trocar ícones**, aumente a versão em `const CACHE='unotfm-vN'`.
 
@@ -49,6 +53,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 ```
 - Abra `http://localhost:8000` (no app do Claude, a configuração `unotfm` em `.claude/launch.json` faz isso).
 - Teste automático: `npm test` (3 partidas) ou `npm test -- 10`; `--ver` abre o navegador visível (usa o Chrome/Edge instalado); `--vel=5` encurta as esperas do jogo em 5x para rodar mais rápido; `--regras=mess,weather` joga no modo Personalizado só com essas regras. O script `tests/smoke.mjs` sobe o próprio servidor, joga clicando em cartas `.card.ok`, Comprar, UNO e nas janelas de escolha, e falha se houver `pageerror` ou travamento (captura em `tests/travou-N.png`). Na primeira vez: `npm install` e `npx playwright install chromium`.
+- Teste de rede local: `npm run test:lan` (anfitrião e dois convidados no Chromium, pelos códigos em texto; `--sem-camera` testa os endereços escondidos em nomes `.local`) e `npm run test:lan-camera` (lê os QR codes por uma câmera falsa).
 - Confira se não há `pageerror` e se a partida não trava. Uma boa verificação de travamento é ver se status, mão e cadeiras ficam mais de 15 s sem mudar.
 - Os efeitos 3D precisam de WebGL. No headless, use `--use-gl=swiftshader` e sirva o `three.min.js` localmente se o CDN não estiver acessível.
 - Para mudanças visuais, tire capturas da área afetada (viewport 390×800, celular).
