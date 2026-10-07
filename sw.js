@@ -1,8 +1,10 @@
 /* unotfm solo - service worker */
 const CACHE='unotfm-v2';
-const CORE=['./','./index.html','./css/style.css','./js/data.js','./js/effects.js','./js/engine.js','./js/cards.js','./js/bots.js','./js/ui.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-192.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon-64.png',
+const CORE=['./','./index.html','./css/style.css','./js/data.js','./js/arte.js','./js/effects.js','./js/engine.js','./js/cards.js','./js/bots.js','./js/ui.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-192.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon-64.png',
   // teste de rede local (prova de conceito): precisa funcionar sem internet
-  './lan-teste.html','./css/lan-teste.css','./js/lan-teste.js','./js/vendor/qrcode.js','./js/vendor/jsQR.js'];
+  './lan-teste.html','./css/lan-teste.css','./js/lan-teste.js','./js/vendor/qrcode.js','./js/vendor/jsQR.js',
+  // mostruário de cartas
+  './mostruario.html','./css/mostruario.css','./js/mostruario.js'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()));
 });

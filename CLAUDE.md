@@ -19,6 +19,8 @@ index.html              marcação da página (sem CSS/JS embutido)
 css/style.css           todos os estilos
 js/data.js              cores, regras (RULES), cartas especiais (SP), maldições (CURSES), climas (WEATHER),
                         dificuldades (DIFF), dicas (TIPS), configuração salva (CFG) e rulesForMode()
+js/arte.js              desenho das cartas: símbolos (SIMBOLOS, sim), face (faceHTML), verso (versoHTML) e camadas
+                        do baralho (ARTE, aplicarArte)
 js/effects.js           camada 3D com three.js (FX3D) e sons sintetizados com Web Audio (SND, sfx)
 js/engine.js            baralho, canPlay, distribuição (newGame/dealAndStart), Portal (dois lados),
                         playCard, fim de turno, compras, eliminação
@@ -32,6 +34,7 @@ sw.js                   service worker (offline)
 icons/                  ícones do app
 lan-teste.html          prova de conceito da rede local (link em Configurações → Experimental), com
 css/lan-teste.css,      js/lan-teste.js e as bibliotecas de QR code em js/vendor/ (qrcode-generator e jsQR)
+mostruario.html         mostruário de cartas (Configurações → Experimental), com css/mostruario.css e js/mostruario.js
 docs/plano-multiplayer.md  plano aprovado do multiplayer (fases 0, 1 e 1.5, hospedagem, lojas)
 ```
 
@@ -53,6 +56,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 ```
 - Abra `http://localhost:8000` (no app do Claude, a configuração `unotfm` em `.claude/launch.json` faz isso).
 - Teste automático: `npm test` (3 partidas) ou `npm test -- 10`; `--ver` abre o navegador visível (usa o Chrome/Edge instalado); `--vel=5` encurta as esperas do jogo em 5x para rodar mais rápido; `--regras=mess,weather` joga no modo Personalizado só com essas regras. O script `tests/smoke.mjs` sobe o próprio servidor, joga clicando em cartas `.card.ok`, Comprar, UNO e nas janelas de escolha, e falha se houver `pageerror` ou travamento (captura em `tests/travou-N.png`). Na primeira vez: `npm install` e `npx playwright install chromium`.
+- Mostruário: `npm run test:mostruario` (envia desenhos de teste, confere avisos e se as imagens continuam depois de recarregar; capturas em `tests/mostruario-*.png`).
 - Teste de rede local: `npm run test:lan` (anfitrião e dois convidados no Chromium, pelos códigos em texto; `--sem-camera` testa os endereços escondidos em nomes `.local`) e `npm run test:lan-camera` (lê os QR codes por uma câmera falsa).
 - Confira se não há `pageerror` e se a partida não trava. Uma boa verificação de travamento é ver se status, mão e cadeiras ficam mais de 15 s sem mudar.
 - Os efeitos 3D precisam de WebGL. No headless, use `--use-gl=swiftshader` e sirva o `three.min.js` localmente se o CDN não estiver acessível.
@@ -60,6 +64,11 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 
 ## Conceitos importantes do código
 
+- **Desenho das cartas** (`js/arte.js`): os símbolos são do Gustavo e iguais em todos os baralhos; o baralho (cores, textura, moldura, verso) pode mudar.
+  - Cada símbolo tem uma chave (`'7'`, `'skip'`, `'trade'`…) e um nome de arquivo em português (`7.png`, `bloqueio.png`, `troca.png`; veja `SIMBOLOS`). Toda face de carta sai do `faceHTML`, que usa `sim(chave, reserva)`: o desenho, se houver, ou o símbolo de hoje (texto ou emoji).
+  - Os desenhos são PNG de uma cor só usados como molde (`mask-image`) e pintados com a cor do texto da carta, então funcionam em qualquer baralho e no outro lado do Portal. O coringa desenhado é preenchido com as 4 cores; os combos juntam dois símbolos.
+  - As camadas do baralho são variáveis do CSS (`--carta-camadas`, `--carta-mistura`, `--verso`, `--carta-borda`, `--sim-cor`, `--carta-raio`…) aplicadas pelo `aplicarArte()`; as cores valem só no lado normal. Sem nada definido, o visual é o de sempre (conferido pixel a pixel).
+  - No jogo ainda não há desenhos; por enquanto eles só aparecem no mostruário, que guarda as imagens no aparelho (IndexedDB).
 - **Sineta 🛎️ no lugar de "UNO"** (marca da Mattel; o DOS também é). O botão `#unoBtn` mostra 🛎️, o som `bell` são dois dings com tom e intervalo sorteados, e a regra `dos` se chama "Duas!". Não use as palavras UNO nem DOS nos textos do jogo.
 
 - **Estado:** `S` guarda a partida atual e `R` as regras ativas do lado atual. `CFG` é a configuração salva. `rulesForMode()` monta `R` a partir do modo.

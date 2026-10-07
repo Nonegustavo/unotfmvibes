@@ -80,9 +80,9 @@
 .roul .fxg{min-width:1.2em;text-align:center}
 .seat .nm{margin-bottom:3px}
 .fan{position:relative;height:2.125rem;margin:-2px auto 0;width:100%}
-.fan i{position:absolute;top:2px;left:50%;width:0.9375rem;height:1.375rem;margin-left:-0.4688rem;border-radius:3px;border:1.5px solid #fff;background:repeating-linear-gradient(135deg,#3b2f6b 0 3px,#46397d 3px 0.375rem);box-shadow:0 1px 2px rgba(0,0,0,.25);
+.fan i{position:absolute;top:2px;left:50%;width:0.9375rem;height:1.375rem;margin-left:-0.4688rem;border-radius:3px;border:1.5px solid #fff;background:var(--verso-mini,repeating-linear-gradient(135deg,#3b2f6b 0 3px,#46397d 3px 0.375rem));box-shadow:0 1px 2px rgba(0,0,0,.25);
   transform-origin:50% 230%;transform:rotate(calc((var(--k) - (var(--n) - 1) / 2) * min(9deg, 46deg / var(--n))))}
-.side-b .fan i{background:repeating-linear-gradient(135deg,#1a0f2e 0 3px,#4a2a7a 3px 0.375rem);border-color:#0b0712}
+.side-b .fan i{background:var(--verso-mini,repeating-linear-gradient(135deg,#1a0f2e 0 3px,#4a2a7a 3px 0.375rem));border-color:#0b0712}
 .fan .mist{position:absolute;left:50%;top:0.5rem;width:1.875rem;height:1.125rem;margin-left:-0.9375rem;border-radius:50%;background:radial-gradient(ellipse,rgba(235,232,245,.9) 0,rgba(235,232,245,.55) 50%,rgba(235,232,245,0) 75%);filter:blur(1px);pointer-events:none;z-index:1}
 .fan.fog i{filter:saturate(.7) brightness(1.05)}
 .fan .cnt{position:absolute;left:50%;top:1.125rem;transform:none;translate:-50% -50%;z-index:2;font-size:2rem;font-weight:900;line-height:1;color:#fff;text-align:center;white-space:nowrap;
@@ -139,7 +139,7 @@
 .side-b .c-w .face{text-shadow:none}
 .side-b .wheel,.side-b .mw{border-color:#15101f}
 .side-b .wxf{border-color:rgba(0,0,0,.7)}
-.side-b .back{--cc:#1a0f2e;background:repeating-linear-gradient(135deg,#1a0f2e 0 0.4375rem,#4a2a7a 0.4375rem 0.875rem);border-color:#0b0712;box-shadow:0 3px 0 rgba(0,0,0,.5),0 0 0.875rem rgba(138,79,216,.55)}
+.side-b .back{--cc:#1a0f2e;background:var(--verso,repeating-linear-gradient(135deg,#1a0f2e 0 0.4375rem,#4a2a7a 0.4375rem 0.875rem));border-color:#0b0712;box-shadow:0 3px 0 rgba(0,0,0,.5),0 0 0.875rem rgba(138,79,216,.55)}
 .side-b .back::before{border-color:rgba(22,179,194,.7)}
 .side-b .back .face{background:#16b3c2;color:#140c22;text-shadow:none}
 .side-a{--cr:#e0433a;--cy:#f0b21f;--cg:#2c9a57;--cb:#2b6bd6}
@@ -164,7 +164,7 @@
 .think .ti.rl{background:var(--bg);color:var(--ink);font-size:.8rem}
 .think .ti.cd{width:1rem;height:1.5rem;border-radius:0.25rem;border:1.5px solid #fff;background:var(--cc)}
 .think .ti.cd b{font-size:.55rem;text-shadow:0 1px 0 rgba(0,0,0,.3)}
-.think .ti.back{background:repeating-linear-gradient(135deg,#3b2f6b 0 3px,#46397d 3px 0.375rem)}
+.think .ti.back{background:var(--verso-mini,repeating-linear-gradient(135deg,#3b2f6b 0 3px,#46397d 3px 0.375rem))}
 .think .ti.hl{transform:scale(1.2);box-shadow:0 0 0 2px var(--accent)}
 .think .ti.pick{transform:scale(1.25);box-shadow:0 0 0 2px var(--cg),0 0 0.5rem var(--cg)}
 .think .ti.bad{background:var(--cr)!important;box-shadow:0 0 0 2px var(--cr)}
@@ -406,9 +406,22 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .toast.king.show{animation-duration:1.9s}
 @keyframes toast{0%{opacity:0;transform:translate(-50%,-0.5rem) scale(.85)}12%{opacity:1;transform:translate(-50%,0) scale(1.05)}20%{transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0}}
 
-/* cards */
-.card{width:var(--cw);aspect-ratio:2/3;border-radius:calc(var(--cw)*.14);background:var(--cc);border:max(1.5px,calc(var(--cw)*.04)) solid #fff;box-sizing:border-box;position:relative;color:#fff;font-weight:700;display:grid;place-items:center;padding:0;flex:0 0 auto;box-shadow:0 3px 0 rgba(0,0,0,.22);transition:transform .18s,opacity .18s,box-shadow .18s}
-.card::before{content:"";position:absolute;inset:calc(var(--cw)*.05);border-radius:calc(var(--cw)*.09);border:max(1px,calc(var(--cw)*.026)) solid rgba(255,255,255,.33);pointer-events:none}
+/* cards: as camadas do baralho vêm de variáveis (js/arte.js); sem nada definido, é o baralho de hoje.
+   --carta-camadas: moldura e textura (imagens); --carta-mistura: como a textura se mistura com a cor da carta */
+.card{width:var(--cw);aspect-ratio:2/3;border-radius:calc(var(--cw)*var(--carta-raio,.14));background-color:var(--cc);background-image:var(--carta-camadas,none);background-size:var(--carta-tamanhos,cover);background-position:center;background-blend-mode:var(--carta-mistura,normal);border:max(1.5px,calc(var(--cw)*.04)) solid var(--carta-borda,#fff);box-sizing:border-box;position:relative;color:var(--sim-cor,#fff);font-weight:700;display:grid;place-items:center;padding:0;flex:0 0 auto;box-shadow:0 3px 0 rgba(0,0,0,.22);transition:transform .18s,opacity .18s,box-shadow .18s}
+.card::before{content:"";position:absolute;inset:calc(var(--cw)*.05);border-radius:calc(var(--cw)*.09);border:max(1px,calc(var(--cw)*.026)) solid var(--carta-filete,rgba(255,255,255,.33));pointer-events:none}
+/* símbolo desenhado: o PNG é um molde (só o formato conta) pintado com a cor do texto da carta; a sombra fica na face */
+.sim{display:block;width:1em;height:1em;background:currentColor;-webkit-mask:var(--img) center/contain no-repeat;mask:var(--img) center/contain no-repeat}
+.card .face.arte,.card .d4s.arte,.card .wheel>.arte{text-shadow:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.3))}
+.side-b .card .face.arte{filter:drop-shadow(0 1px 0 rgba(255,255,255,.35))}
+/* coringa desenhado: o molde preenchido com as 4 cores; o +4 fica por cima */
+.wheel.arte,.mw.arte{border:none;border-radius:0;-webkit-mask:var(--img) center/contain no-repeat;mask:var(--img) center/contain no-repeat}
+.d4c{position:relative;width:58%;aspect-ratio:1;display:grid;place-items:center}
+.d4c .wheel{position:absolute;inset:0;width:100%}
+.d4s{position:relative;font-size:calc(var(--cw)*.26)}
+/* combo com desenho: os dois símbolos lado a lado */
+.combo{display:inline-flex;align-items:center;gap:.04em}
+.combo .sim{display:inline-block}
 .card .face{font-size:calc(var(--cw)*.44);line-height:1;text-shadow:0 2px 0 rgba(0,0,0,.3)}
 .card .face.sym{font-size:calc(var(--cw)*.4)}
 .card .face.sp.sm{font-size:calc(var(--cw)*.27);letter-spacing:-.02em}
@@ -426,8 +439,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .c-k{--cc:var(--cgray)}.c-r{--cc:var(--cr)}.c-y{--cc:var(--cy)}.c-g{--cc:var(--cg)}.c-b{--cc:var(--cb)}.c-w{--cc:var(--ck)}
 .wheel{width:58%;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--cr) 0 25%,var(--cy) 0 50%,var(--cg) 0 75%,var(--cb) 0);display:grid;place-items:center;border:max(1px,calc(var(--cw)*.026)) solid #fff}
 .wheel span{font-size:calc(var(--cw)*.26);text-shadow:0 1px 0 rgba(0,0,0,.5)}
-.back{--cc:#3b2f6b;background:repeating-linear-gradient(135deg,#3b2f6b 0 0.4375rem,#46397d 0.4375rem 0.875rem)}
-.back .face{font-size:calc(var(--cw)*.2);background:#fff;color:#3b2f6b;padding:3px 0.375rem;border-radius:0.375rem;text-shadow:none;transform:rotate(-12deg)}
+.back{--cc:#3b2f6b;background:var(--verso,repeating-linear-gradient(135deg,#3b2f6b 0 0.4375rem,#46397d 0.4375rem 0.875rem))}
+.back .face{font-size:calc(var(--cw)*.2);background:#fff;color:#3b2f6b;padding:3px 0.375rem;border-radius:0.375rem;text-shadow:none;transform:rotate(-12deg);opacity:var(--verso-rotulo,1)}
 button.card:disabled,.deckbtn.off{cursor:default}
 .deckbtn.can:hover{transform:translateY(-3px)}
 .deckbtn.reveal{opacity:.95}

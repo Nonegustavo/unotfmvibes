@@ -100,7 +100,7 @@ function flyFrom(el,from,o={}){
 }
 function ghost(from,to,delay){
   if(RM||!from||!to)return;
-  const g=document.createElement('div');g.className='card back ghost';g.innerHTML='<span class="face">unotfm</span>';
+  const g=document.createElement('div');g.className='card back ghost';g.innerHTML=versoHTML();
   const cw=$('deck').getBoundingClientRect().width,ch=cw*1.5;
   g.style.left=(from.left+from.width/2-cw/2)+'px';g.style.top=(from.top+from.height/2-ch/2)+'px';g.style.width=cw+'px';g.style.setProperty('--cw',cw+'px');
   document.body.appendChild(g);
@@ -110,14 +110,6 @@ function ghost(from,to,delay){
 }
 
 /* ---------- rendering ---------- */
-function faceHTML(c){
-  if(c.type==='num')return `<span class="cn">${c.value}</span><span class="face">${c.value}</span><span class="cn br">${c.value}</span>`;
-  if(SP[c.type]){const g=SP[c.type].g,sm=SP[c.type].small?' sm':'';return `${WEATHER[c.type]?'<span class="wxf"></span>':''}<span class="cn${sm}">${g}</span><span class="face sym sp${sm}">${g}</span><span class="cn br${sm}">${g}</span>`}
-  const sym={skip:'⊘',rev:'⇄',d2:'+2'}[c.type];
-  if(sym)return `<span class="cn">${sym}</span><span class="face sym">${sym}</span><span class="cn br">${sym}</span>`;
-  if(c.type==='wild')return `<span class="cn"><i class="mw"></i></span><span class="wheel"></span><span class="cn br"><i class="mw"></i></span>`;
-  return `<span class="cn">+4</span><span class="wheel"><span>+4</span></span><span class="cn br">+4</span>`;
-}
 function makeCard(c){
   const b=document.createElement('button');b.dataset.id=c.id;b.innerHTML=faceHTML(c);b.setAttribute('aria-label',cardName(c));return b;
 }
@@ -436,7 +428,7 @@ function render(){
   const deck=$('deck');const dtop=S.deck[S.deck.length-1];
   const mine=myTurn()&&S.phase==='play';
   if(R.revelation&&dtop){deck.className=`card deckbtn reveal c-${dtop.color}`;deck.innerHTML=faceHTML(dtop)}
-  else{deck.className='card back deckbtn';deck.innerHTML='<span class="face">unotfm</span>'}
+  else{deck.className='card back deckbtn';deck.innerHTML=versoHTML()}
   // sem "disabled": o monte precisa receber o toque longo e o mouse para mostrar os selos (a compra confere a vez)
   deck.classList.toggle('can',mine);deck.classList.toggle('off',!mine);deck.setAttribute('aria-disabled',String(!mine));
   {const ic=deckBadges().map(x=>x.ic);

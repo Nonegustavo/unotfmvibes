@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="mostruario">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mostruário de cartas · unotfm</title>
+<meta name="description" content="Todas as cartas do unotfm, com espaço para experimentar desenhos de símbolos e de baralho.">
+<meta name="theme-color" content="#6a47cf">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/mostruario.css">
+</head>
+<body>
+<header class="m-topo">
+  <div class="m-linha"><a class="m-voltar" href="./">← Voltar ao jogo</a><button class="m-link" id="btnAjuda">Como desenhar</button></div>
+  <h1>Mostruário de cartas</h1>
+  <p class="m-sub">Escolha seus desenhos e veja na hora em todas as cartas. As imagens ficam só neste aparelho.</p>
+</header>
+
+<div class="m-corpo">
+  <!-- suas imagens: no celular vem primeiro, depois as cartas e então o painel do baralho e dos símbolos -->
+  <section class="m-bloco m-envio" id="zona">
+    <button class="m-btn m-principal" id="btnEnviar">📤 Escolher imagens</button>
+    <input type="file" id="arquivos" accept="image/*" multiple hidden>
+    <p class="m-dica">Pode escolher várias de uma vez. O nome do arquivo diz onde cada imagem entra (<b>bloqueio.png</b>, <b>7.png</b>, <b>verso.png</b>…). Para uma carta só, use "Escolher" na lista de símbolos, mais abaixo. No computador, dá para arrastar os arquivos para a página.</p>
+    <ul class="m-soltos" id="soltos"></ul>
+  </section>
+
+  <aside class="m-painel" id="painel">
+
+    <details class="m-bloco" open>
+      <summary>Baralho</summary>
+      <div class="m-camadas" id="camadas"></div>
+      <label class="m-campo">Como a textura se mistura com a cor
+        <select id="mistura">
+          <option value="multiply">Multiplicar (escurece a cor)</option>
+          <option value="overlay">Sobrepor (clareia e escurece)</option>
+          <option value="soft-light">Luz suave (mais discreto)</option>
+          <option value="luminosity">Só o claro e escuro da textura</option>
+          <option value="normal">Imagem como está (cobre a cor)</option>
+        </select>
+      </label>
+      <div class="m-cores" id="cores"></div>
+      <label class="m-campo">Arredondamento dos cantos <input type="range" id="raio" min="0" max="0.3" step="0.01"></label>
+      <label class="m-check"><input type="checkbox" id="filete"> Filete fino por dentro da borda</label>
+      <button class="m-btn" id="btnCoresJogo">Voltar às cores e formas do jogo</button>
+    </details>
+
+    <details class="m-bloco" open>
+      <summary>Símbolos <span class="m-cont" id="contSimbolos"></span></summary>
+      <p class="m-dica" style="margin-top:0">Toque num grupo para ver os símbolos e escolher o desenho de cada um.</p>
+      <div id="simbolos"></div>
+      <button class="m-btn" id="btnCopiarNomes">Copiar a lista de nomes dos arquivos</button>
+    </details>
+
+    <section class="m-bloco">
+      <button class="m-btn m-perigo" id="btnApagar">Apagar todas as minhas imagens</button>
+    </section>
+  </aside>
+
+  <!-- cartas -->
+  <main class="m-mostra">
+    <div class="m-filtros">
+      <label>Tamanho
+        <select id="tamanho">
+          <option value="44">44 px · histórico</option>
+          <option value="60" selected>60 px · mão no celular</option>
+          <option value="80">80 px</option>
+          <option value="104">104 px · tela grande</option>
+          <option value="160">160 px · ampliada</option>
+        </select>
+      </label>
+      <label>Lado
+        <select id="lado">
+          <option value="ambos">Os dois lados</option>
+          <option value="a">Lado normal</option>
+          <option value="b">Outro lado do Portal</option>
+        </select>
+      </label>
+      <label>Cartas
+        <select id="grupo">
+          <option value="tudo">Todas</option>
+          <option value="num">Números</option>
+          <option value="acao">Ações e coringas</option>
+          <option value="esp">Cartas especiais</option>
+          <option value="clima">Climas</option>
+          <option value="verso">Verso</option>
+        </select>
+      </label>
+      <label class="m-check"><input type="checkbox" id="todasCores"> Especiais em todas as cores</label>
+    </div>
+    <div id="galeria"></div>
+  </main>
+</div>
+
+<!-- carta em vários tamanhos -->
+<div class="m-ov" id="detalhe" hidden>
+  <div class="m-folha">
+    <h2 id="detTitulo"></h2>
+    <div class="m-det" id="detCartas"></div>
+    <button class="m-btn m-principal" id="detFechar">Fechar</button>
+  </div>
+</div>
+
+<!-- dicas de desenho -->
+<div class="m-ov" id="ajuda" hidden>
+  <div class="m-folha">
+    <h2>Como desenhar</h2>
+    <h3>Símbolos</h3>
+    <ul>
+      <li>Tela quadrada, de preferência <b>1024 × 1024</b>.</li>
+      <li>Desenhe em <b>uma cor só</b> (preto, por exemplo) sobre <b>fundo transparente</b>. Preto sobre branco também serve: o branco some sozinho.</li>
+      <li>O jogo usa só o <b>formato</b> do desenho e pinta com a cor de cada carta. Cores e sombras do desenho não aparecem.</li>
+      <li>Deixe uns <b>10% de margem</b> em volta.</li>
+      <li>Traços com pelo menos uns <b>6% da tela</b> (uns 60 px numa tela de 1024). No canto da carta o símbolo fica com uns 11 px no celular.</li>
+      <li>Para testar: diminua o zoom até o desenho ficar do tamanho de uma unha. Se ainda der para reconhecer, está bom.</li>
+      <li>O <b>coringa</b> é preenchido com as 4 cores do baralho.</li>
+    </ul>
+    <h3>Baralho</h3>
+    <ul>
+      <li><b>textura.png</b>: o fundo das cartas. Pinte em <b>tons de cinza</b>: o jogo aplica cada cor por cima, então uma pintura serve para todas as cores e para o outro lado do Portal.</li>
+      <li><b>moldura.png</b>: fica por cima do fundo. Use transparência no meio. Pode ser colorida.</li>
+      <li><b>verso.png</b>: as costas das cartas. Livre e colorido. Proporção 2 × 3 (por exemplo 600 × 900).</li>
+    </ul>
+    <button class="m-btn m-principal" id="ajudaFechar">Entendi</button>
+  </div>
+</div>
+
+<div class="m-aviso" id="aviso" role="status" hidden></div>
+
+<script src="js/data.js"></script>
+<script src="js/arte.js"></script>
+<script src="js/mostruario.js"></script>
+</body>
+</html>
