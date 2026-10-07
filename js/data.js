@@ -45,7 +45,7 @@ const RULES=[
   {g:'Baralho e mão',k:'maxi',n:'Maxi',d:'Todos começam com 9 cartas (ignora a quantidade de cartas iniciais escolhida).'},
   {g:'Baralho e mão',k:'twohands',n:'Duas Mãos',d:'Você tem duas mãos de cartas para jogar. Termine uma primeiro para poder usar a outra e ganhar o jogo!'},
   {g:'Baralho e mão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
-  {g:'Baralho e mão',k:'dos',n:'DOS!',d:'Ao invés de declarar UNO, você precisa declarar DOS quando tiver duas cartas na mão.'},
+  {g:'Baralho e mão',k:'dos',n:'Duas!',d:'Você precisa tocar a sineta quando tiver duas cartas na mão, e não quando tiver uma.'},
   {g:'Baralho e mão',k:'shiny',n:'Mão Colorida',d:'Se um jogador segurar todas as cores ou um curinga, este ícone aparecerá.'},
   {g:'Jogadas',k:'stack',n:'Empilhar',d:'Você pode jogar várias cartas do mesmo número de uma só vez.'},
   {g:'Jogadas',k:'sequence',n:'Sequência',d:'Você pode jogar várias cartas da mesma cor, desde que formem uma sequência numérica.'},
@@ -62,7 +62,7 @@ const RULES=[
   {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
   {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
   {g:'Pressão',k:'limbo',n:'Limbo',d:'Quem ultrapassar o limite de cartas na mão será eliminado. O limite começa em 12 e reduz em 1 a cada minuto.'},
-  {g:'Pressão',k:'hard',n:'Modo rigoroso',d:'Clicar em carta errada faz comprar 1 e passar a vez. Não falar UNO faz comprar 4 cartas.'},
+  {g:'Pressão',k:'hard',n:'Modo rigoroso',d:'Clicar em carta errada faz comprar 1 e passar a vez. Não tocar a sineta faz comprar 4 cartas.'},
 ];
 const C4=['r','b','y','g'],C8=[...C4,...C4];
 const SP={
@@ -88,7 +88,7 @@ const SP={
   dice:{n:'Carta do Dado',g:'🎲',d:'Ao jogar esta carta, force o próximo jogador a rolar o dado, sofrer uma consequência e perder a vez.',deck:C4},
   oddeven:{n:'Carta do Semáforo',g:'🚦',d:'Ao jogar esta carta, será proibido vencer com cartas pares ou ímpares (escolhido aleatoriamente). Ao jogar isso de novo, mude.',deck:C8},
   half:{n:'Carta do Rei',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
-  death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem dizer UNO, ter o blefe de um +4 desafiado ou desafiar um +4 quando a jogada era legal.',deck:['r','b']},
+  death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem tocar a sineta, ter o blefe de um +4 desafiado ou desafiar um +4 quando a jogada era legal.',deck:['r','b']},
   share:{n:'Carta da Partilha',g:'🤲',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
   simon:{n:'Carta da Memória',g:'🧠',d:'Ao jogar esta carta, repita as cores escolhidas por outras cartas desta. Se errar, compre 1 carta. Se acertar, escolha a próxima cor.',deck:['w','w','w','w','w','w','w','w']},
   chair:{n:'Carta da Dança das Cadeiras',g:'🪑',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente. Se um adversário jogar, ele também muda de lugar e a vez segue a partir do lugar novo dele.',deck:C8},
@@ -129,7 +129,7 @@ RULES.push(
 const BOTRULES=['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise'];
 const WEATHER={
   sun:{g:'☀️',n:'Ensolarado',t:'Pode jogar fora da cor, mas compra 1',c:'#e8a317'},
-  fog:{g:'☁️',n:'Neblina',t:'Cartas dos adversários ocultas, sem UNO',c:'#8a86a0'},
+  fog:{g:'☁️',n:'Neblina',t:'Cartas dos adversários ocultas, sem sineta',c:'#8a86a0'},
   storm:{g:'⛈️',n:'Tempestade',t:'Quando um jogador mudar de cor, um adversário aleatório compra 1 carta',c:'#4b4f8f'},
   blizzard:{g:'❄️',n:'Nevasca',t:'Ninguém compra. Acaba se todos passarem a vez.',c:'#5aa9d6'},
 };
@@ -159,12 +159,12 @@ CONFLICT_PAIRS.push(['nou','dfnone']); // Contra-ataque não combina com a defes
 RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k],['noaction',r.k]));
 const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
-const MODE_DESC={classic:'UNO tradicional, sem nenhuma regra especial.',mix:'Antes de distribuir as cartas, cada jogador escolhe uma regra para colocar na partida.',custom:'Você escolhe todas as regras da partida na lista abaixo.'};
+const MODE_DESC={classic:'Jogo tradicional, sem nenhuma regra especial.',mix:'Antes de distribuir as cartas, cada jogador escolhe uma regra para colocar na partida.',custom:'Você escolhe todas as regras da partida na lista abaixo.'};
 const TIPS=[
   pc('Toque','Clique')+' nas cartas jogadas para ver o histórico de jogadas.',
   pc('Toque em','Pare o cursor sobre')+' um ícone de regra acima dos adversários para ver o que ela faz.',
-  'Aperte "UNO!" quando for jogar sua penúltima carta. Se não fizer e um adversário perceber, você compra 2 cartas.',
-  'Um adversário esqueceu de dizer UNO? '+pc('Toque','Clique')+' em "Pegar!" para forçá-lo a comprar 2 cartas.',
+  'Toque a sineta 🛎️ quando for jogar sua penúltima carta. Se não tocar e um adversário perceber, você compra 2 cartas.',
+  'Um adversário esqueceu de tocar a sineta? '+pc('Toque','Clique')+' em "Pegar!" para forçá-lo a comprar 2 cartas.',
   'Blefar com +4 é arriscado: se jogar um +4 mesmo tendo outra carta da cor para jogar e for desafiado, você é que comprará as cartas.',
   'Recebeu um +4 suspeito? Desafie! Se foi blefe, quem jogou é que comprará as cartas. Mas se não foi, você compra 2 cartas a mais.',
   'O ranking do fim da partida é por pontos: guarde números baixos e livre-se dos curingas (50) e ações (20) quando alguém estiver perto de vencer.',
@@ -231,7 +231,6 @@ function pointsLeader(){
   return alive().reduce((a,b)=>pts(b)<pts(a)||(pts(b)===pts(a)&&S.players[b].hand.length<S.players[a].hand.length)?b:a);
 }
 const target=()=>R.dos?2:1;
-const word=()=>R.dos?'DOS':'UNO';
 const partner=i=>R.team?(i+S.players.length/2)%S.players.length:-1;
 const teamOf=i=>i%(S.players.length/2);
 

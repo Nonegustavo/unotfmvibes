@@ -24,7 +24,7 @@ function give(pi,c){
   if(pi===0)S.newIds.push(c.id);else S.botDraw[pi]=(S.botDraw[pi]||0)+1;
 }
 function drawOne(pi){if(S.weather==='blizzard'&&S.phase!=='deal')return null;if(thornHit(pi))return null;const c=popDeck();if(c)give(pi,c);return c}
-// Maldição do espinho: qualquer compra (dado, chuva, desafio, sol, pego sem UNO…) marca o jogador, que não recebe a carta
+// Maldição do espinho: qualquer compra (dado, chuva, desafio, sol, pego sem tocar a sineta…) marca o jogador, que não recebe a carta
 // e é eliminado no fim do efeito (massCheck/checkLimits/endTurn), sem interromper o efeito no meio
 function thornHit(pi){
   const p=S.players[pi];
@@ -324,7 +324,7 @@ function playCard(pi,card,chosen){
 function afterOneCard(pi){
   const p=S.players[pi];
   if(S.weather==='fog')return;
-  if(p.bot&&!p.called){p.called=ab(pi,'elise')||Math.random()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){sfx('uno');log(`${p.name}: ${word()}!`);toast(`${p.name}: ${word()}!`,'var(--cr)')}}
+  if(p.bot&&!p.called){p.called=ab(pi,'elise')||Math.random()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){sfx('bell');log(`${p.name} tocou a sineta.`);toast(`🛎️ ${p.name} tocou a sineta!`,'var(--cr)')}}
   if(!p.called)scheduleCatch(pi);
 }
 function scheduleCatch(pi){
@@ -342,16 +342,16 @@ function penalize(pi,by){
   if(S.weather==='fog'||p.out)return;
   sfx('caught');p.called=false;
   if(S.death&&!immune(pi)){
-    log(`${who(by)} pegou ${pi===0?'você':p.name} sem dizer ${word()} na morte súbita: eliminado!`);
-    fx('🚨',`${pi===0?'Você foi pego':p.name+' foi pego'} sem dizer ${word()}!`,'var(--cr)','slam');stampOn(pi,'🚨','var(--cr)');
-    if(markOut(pi,`foi pego sem dizer ${word()} na morte súbita`))return;
+    log(`${who(by)} pegou ${pi===0?'você':p.name} sem tocar a sineta na morte súbita: eliminado!`);
+    fx('🚨',`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!`,'var(--cr)','slam');stampOn(pi,'🚨','var(--cr)');
+    if(markOut(pi,'foi pego sem tocar a sineta na morte súbita'))return;
     if(pi===S.turn){endTurn();return}
     render();return;
   }
   const n=S.weather==='blizzard'?0:drawAmt(pi,2);
   if(n){drawN(pi,n);icemiceHook(pi)}
-  log(`${who(by)} pegou ${pi===0?'você':p.name} sem ${word()}${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
-  toast(`${pi===0?'Você foi pego':p.name+' foi pego'} sem ${word()}!${n?` +${n}`:''}`,'var(--cy)');
+  log(`${who(by)} pegou ${pi===0?'você':p.name} sem tocar a sineta${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
+  toast(`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!${n?` +${n}`:''}`,'var(--cy)');
   if(overloaded(pi)){if(markOut(pi))return;if(pi===S.turn){endTurn();return}}
   render();
 }
@@ -504,7 +504,7 @@ function drawn99(pi,then){
     then();
   },N*step+450);
 }
-// wasCalled: se o jogador já tinha pedido UNO antes de comprar (a Compra Rápida mantém o pedido)
+// wasCalled: se o jogador já tinha tocado a sineta antes de comprar (a Compra Rápida mantém o pedido)
 function afterDraw(pi,drawn,count,wasCalled){
   const p=S.players[pi];
   log(`${who(pi)} comprou ${count} carta${count===1?'':'s'}.`);
@@ -517,7 +517,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
     S.forcedPlay=true;toast('Compra Rápida!');
-    // quem estava de UNO e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
+    // quem já tinha tocado a sineta e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
     if(wasCalled&&p.hand.length-1<=target())p.called=true;
     S.fastSrc=$('deck').getBoundingClientRect();S.newIds=S.newIds.filter(id=>id!==drawn.id);if(S.botDraw[pi]){S.botDraw[pi]--;if(!S.botDraw[pi])delete S.botDraw[pi]}
     if(p.bot)botPlay(drawn);else humanPlay(drawn);return}

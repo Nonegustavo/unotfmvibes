@@ -40,7 +40,7 @@ function humanMain(){
 }
 function humanUno(){
   const me=S&&S.players[0];if(!me||me.called||S.phase==='over')return;
-  if(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0)){me.called=true;sfx('uno');log(`Você: ${word()}!`);toast(`${word()}!`,'var(--cr)');render()}
+  if(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0)){me.called=true;sfx('bell');log('Você tocou a sineta.');toast('🛎️ Você tocou a sineta!','var(--cr)');render()}
 }
 function humanCatch(i){const p=S.players[i];if(p.hand.length===target()&&!p.called&&S.phase!=='over')penalize(i,0)}
 function mulligan(){
@@ -343,7 +343,7 @@ function renderRail(){
     const lim=limit(),thr=Math.max(3,Math.round(lim*.25)),rem=lim-n;
     const near=!p.out&&!hidden&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
     const v=p.out?n:cntShown(i,n,hidden);
-    const badge=hidden?'?':said?`${word()}!`:near?`${v}/${lim}`:String(v);
+    const badge=hidden?'?':said?'🛎️':near?`${v}/${lim}`:String(v);
     const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
     parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&colorful(p)?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
@@ -525,7 +525,6 @@ function render(){
   if(watching){main.textContent='Terminar e descobrir vencedor';main.disabled=TB.on}
   $('unoBtn').hidden=watching;
   const unoOk=S.weather!=='fog'&&!me.called&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0));
-  $('unoBtn').textContent=word()+'!';
   $('unoBtn').disabled=!unoOk;
   $('unoBtn').classList.toggle('lit',unoOk&&me.hand.length===target());
   $('mullBtn').hidden=!(S.mull&&S.phase!=='over');
@@ -662,7 +661,7 @@ function openActive(){
     html+=`<div class="act act-i"><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b>${added[r.k]?`<em class="new" style="font-style:normal">adicionada por ${added[r.k]}</em>`:''}<span>${r.d}</span></div></div>`;
   });
   if(S.removed.length){html+=`<div class="act-group">Removidas nesta partida</div>`;S.removed.forEach(x=>{html+=`<div class="act"><b>${RNAME[x.k]}</b><em class="new gone" style="font-style:normal">banida por ${x.by}</em></div>`})}
-  if(!on.length)html+='<p class="sub" style="margin-top:10px">Nenhuma regra da casa ativa: UNO clássico.</p>';
+  if(!on.length)html+='<p class="sub" style="margin-top:10px">Nenhuma regra da casa ativa: jogo clássico.</p>';
   $('activeSub').textContent=S.added.length?`${on.length} regra${on.length===1?'':'s'} da casa ativa${on.length===1?'':'s'}, ${S.added.length} adicionada${S.added.length===1?'':'s'} durante a partida.`:`${on.length} regra${on.length===1?'':'s'} da casa ativa${on.length===1?'':'s'}.`;
   $('activeList').innerHTML=html;
   $('activeOv').classList.add('show');$('closeActive').focus();

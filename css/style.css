@@ -89,7 +89,7 @@
   text-shadow:0 0 2px #1d1435,1px 1px 0 #1d1435,-1px -1px 0 #1d1435,1px -1px 0 #1d1435,-1px 1px 0 #1d1435,0 2px 3px rgba(0,0,0,.4)}
 .fan .cnt.low{color:#ffd24d}
 .fan .cnt.nr{color:#ff5a52}
-.fan .cnt.said{top:1.5rem;color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);padding:2px 0.5rem;border-radius:999px;font-size:.78rem;text-shadow:none;animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
+.fan .cnt.said{top:1.5rem;color:#fff;background:#fff;box-shadow:0 0 0 2px var(--cr),0 0 0.625rem var(--cr);padding:1px 0.5rem;border-radius:999px;font-size:1.05rem;text-shadow:none;animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
 @keyframes cntPop{0%{scale:.4}70%{scale:1.2}100%{scale:1}}
 @keyframes cntPulse{50%{scale:1.08}}
 .tag,.catch{z-index:4}
@@ -111,7 +111,7 @@
 .rail.many .fan{height:1.875rem}
 .rail.many .fan i{width:0.75rem;height:1.125rem;margin-left:-0.375rem}
 .rail.many .fan .cnt{top:1rem;font-size:1.6rem}
-.rail.many .fan .cnt.said{top:1.25rem;font-size:.7rem}
+.rail.many .fan .cnt.said{top:1.25rem;font-size:.9rem}
 .rail.many .tag.stat{font-size:.62rem;padding:0 0.25rem}
 .pring{position:fixed;z-index:9;pointer-events:none}
 .pring i{position:absolute;inset:0;border-radius:50%;border:3px solid #8a4fd8;box-shadow:0 0 0.75rem #8a4fd8,inset 0 0 0.75rem rgba(22,179,194,.6);opacity:0;animation:pring .9s ease-out forwards}
@@ -236,7 +236,7 @@
 .seat .ct.c3{color:#e07a10;font-weight:700}
 .seat .ct.c2{color:#e0433a;font-weight:700;font-size:.85rem}
 .seat .ct.c1{color:#fff;background:var(--cr);font-weight:700;border-radius:999px;padding:0 0.375rem;display:inline-block;font-size:.85rem;animation:pop .35s}
-.seat .ct.said{color:#fff;background:linear-gradient(90deg,var(--cr),#ff8a3d);font-weight:800;border-radius:999px;padding:0 0.5rem;display:inline-block;font-size:.9rem;letter-spacing:.03em;animation:pop .35s,saidPulse 1s ease-in-out infinite .35s}
+.seat .ct.said{color:#fff;background:#fff;box-shadow:0 0 0 2px var(--cr),0 0 0.625rem var(--cr);font-weight:800;border-radius:999px;padding:0 0.5rem;display:inline-block;font-size:.9rem;letter-spacing:.03em;animation:pop .35s,saidPulse 1s ease-in-out infinite .35s}
 @keyframes saidPulse{50%{transform:scale(1.08)}}
 .seat.near{border-color:rgba(224,67,58,calc(.35 + .65*var(--lv)));box-shadow:0 0 calc(0.25rem + 0.875rem*var(--lv)) rgba(224,67,58,calc(.2 + .6*var(--lv)))}
 .seat.near .ct{color:var(--cr);font-weight:700}
@@ -450,7 +450,7 @@ button.card:disabled,.deckbtn.off{cursor:default}
 .actions{display:flex;gap:0.625rem;padding:0.375rem 0.875rem 0.75rem}
 .btn{flex:1;border:none;border-radius:1rem;padding:0.8125rem 0.625rem;font-weight:600;font-size:1rem;background:var(--panel);border:2px solid var(--line)}
 .btn.main{background:var(--accent);color:var(--accent-ink);border-color:transparent}
-.btn.uno{flex:0 0 5.75rem;background:var(--cr);color:#fff;border-color:transparent;font-weight:700}
+.btn.uno{flex:0 0 5.75rem;background:var(--cr);color:#fff;border-color:transparent;font-weight:700;font-size:1.6rem;line-height:1}
 .btn.mull{flex:0 0 auto}
 .btn:disabled{opacity:.4;cursor:default}
 .btn.uno.lit{animation:pulse 1s infinite}
@@ -510,7 +510,7 @@ button.card:disabled,.deckbtn.off{cursor:default}
   .fan{height:2.75rem}
   .fan i{width:1.1875rem;height:1.75rem;margin-left:-0.5938rem}
   .fan .cnt{top:1.4375rem;font-size:2.5rem}
-  .fan .cnt.said{top:1.875rem;font-size:.9rem}
+  .fan .cnt.said{top:1.875rem;font-size:1.2rem}
   .tag{font-size:.78rem}
   .tag.stat{font-size:.8rem}
   .marker{border-radius:1.1875rem}

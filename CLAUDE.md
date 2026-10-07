@@ -55,6 +55,8 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 
 ## Conceitos importantes do código
 
+- **Sineta 🛎️ no lugar de "UNO"** (marca da Mattel; o DOS também é). O botão `#unoBtn` mostra 🛎️, o som `bell` são dois dings com tom e intervalo sorteados, e a regra `dos` se chama "Duas!". Não use as palavras UNO nem DOS nos textos do jogo.
+
 - **Estado:** `S` guarda a partida atual e `R` as regras ativas do lado atual. `CFG` é a configuração salva. `rulesForMode()` monta `R` a partir do modo.
 - **Modos:** Clássico (sem regras), Mix de Regras (chave `poker`: cada jogador escolhe uma regra **antes** da distribuição) e Personalizado. Clássico e Mix usam sempre 3 adversários e 7 cartas.
 - **Dificuldades:** Fácil, Normal, Difícil e **Mestre** (oculto). O Mestre é desbloqueado tocando 7 vezes seguidas em "Difícil", fica salvo em `unotfm-solo-master` e não mostra nenhuma indicação antes disso. Ele usa memória (`S.mem`: cores que faltam a cada jogador, última cor jogada, cartas já saídas) sem nunca ver mãos ocultas.
@@ -66,8 +68,8 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **Terminar e descobrir vencedor (turbo):** depois que você é eliminado, o botão principal joga o resto da partida na hora (`turboStart`/`turboRun`/`turboStop` no `engine.js`).
   - Todo `setTimeout` passa pelo invólucro no topo do `data.js` (`TB`). No turbo, os timers vão para uma fila de tempo virtual e `Date.now()` segue esse tempo. Não use `setTimeout` para esperar algo do tempo real (animação, evento) sem pensar no turbo: o Portal, por exemplo, chama `finish()` nas animações quando `S.turbo`.
   - Com `S.turbo`, `render()`, `fx()`, `stampOn()` e `toast()` não desenham nada. Depois de `TURBO_MAX` vezes, vence quem tem menos pontos na mão (`pointsLeader()`).
-- **Eliminação por erro** (ser pego sem UNO, blefe desafiado, desafio errado) **só acontece com a Morte súbita**. Fora dela:
-  - Pego sem UNO compra 2.
+- **Eliminação por erro** (ser pego sem tocar a sineta, blefe desafiado, desafio errado) **só acontece com a Morte súbita**. Fora dela:
+  - Pego sem tocar a sineta compra 2.
   - O desafio vale só para o **último** +4/+99. Se foi blefe, o blefador compra as cartas da carta dele e o desafiante compra o restante acumulado.
 - **+99:** quem precisa comprar as cartas dele (inclusive no desafio) é eliminado na hora (`drawn99`), sem comprar de verdade: só uma enxurrada de cartas voa do monte até ele antes. Só escapa quem não comprou por causa da Nevasca ou do Gelo.
 - **Sentido do jogo:** filas de chevrons no topo da mesa (sentido em que a vez passa pelos adversários) e embaixo (oposto), movidas por `chevLoop()`. Ao inverter, `chevFlip()` vira na hora e acelera.

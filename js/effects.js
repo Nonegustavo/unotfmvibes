@@ -242,11 +242,22 @@ function noise(d,o={}){
   src.connect(flt);flt.connect(g);g.connect(MASTER);src.start(t);src.stop(t+d+.05);
 }
 const arp=(notes,step,o={})=>notes.forEach((n,i)=>tone(n,o.d||.18,{...o,at:(o.at||0)+i*step}));
+// um toque de sineta: parciais inarmônicas (som de metal) com decaimento longo e um clique curto do martelo
+function ding(f,at,k=1){
+  [[1,.13,1.1],[2.32,.05,.55],[4.25,.025,.3],[6.63,.012,.18]].forEach(([r,vol,d])=>tone(f*r,d,{at,vol:vol*k}));
+  noise(.012,{at,f:f*3,q:2,vol:.05*k,filter:'bandpass'});
+}
 const SND={
   play:()=>{noise(.06,{f:2500,vol:.12});tone(520,.08,{type:'triangle',to:720,vol:.14})},
   draw:()=>{noise(.1,{f:3000,fTo:1200,vol:.1,filter:'highpass'})},
   turn:()=>arp([660,880],.09,{type:'sine',vol:.16,d:.22}),
-  uno:()=>arp([523,659,784,1046],.06,{type:'square',vol:.08,d:.14}),
+  // sineta de balcão: dois dings, como quem chama. Tom, intervalo e força variam a cada toque para não cansar
+  bell:()=>{
+    const v=(a,b)=>a+Math.random()*(b-a);
+    const f=[1568,1661,1760,1865,1976][Math.floor(Math.random()*5)]*v(.985,1.015);
+    const f2=f*[1,1,.94,1.06,.89][Math.floor(Math.random()*5)],gap=v(.14,.21),vol=v(.85,1.1);
+    ding(f,0,vol);ding(f2,gap,vol*v(.75,.95));
+  },
   caught:()=>{tone(320,.35,{type:'sawtooth',to:140,vol:.14})},
   skip:()=>{tone(240,.09,{type:'square',vol:.12});tone(180,.14,{type:'square',vol:.12,at:.11})},
   rev:()=>{tone(300,.22,{to:900,vol:.16});tone(900,.22,{to:300,vol:.12,at:.2});noise(.4,{f:800,fTo:3000,vol:.08})},
