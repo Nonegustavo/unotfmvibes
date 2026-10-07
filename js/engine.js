@@ -305,7 +305,14 @@ function playCard(pi,card,chosen){
   }
   if(curseOn('shoe',pi)&&orig!=='num'&&card.type!=='num'){drawN(pi,1);log(`${who(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}
   if(card.type==='num'&&S.players[pi].name==='Charlotte'&&on){const k={r:'red',b:'blue',y:'yellow',g:'green'}[card.color];if(k&&R[k]){const r=charlotteFx(pi,card.color);if(r==='win')return r}}
-  if(card.type==='chest'){fx('💰',`${who(pi)} abriu o tesouro!`,'var(--cy)','slam');endRound(pi);return 'win'}
+  if(card.type==='chest'){
+    // Tesouro: descarta todas as cartas que sobraram, uma de cada vez, e só então vence
+    fx('💰',`${who(pi)} abriu o tesouro!`,'var(--cy)','slam');
+    const rest=[...p.hand];if(!rest.length){endRound(pi);return 'win'}
+    rest.forEach((c,k)=>discardCard(pi,c,k));log(`${who(pi)} descartou ${rest.length} carta${rest.length===1?'':'s'} com o tesouro.`);
+    const g=S.gen;S.busy=true;render();
+    setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;endRound(pi)},(fastMode()?300:700)+rest.length*70);
+    return 'win'}
   if(on&&SP[card.type]){const r=applySpecial(pi,card);if(r!=='done')return r}
   if(canCombo(p,card)&&(R.stack||R.sequence)){
     S.phase='combo';S.comboValue=card.value;S.drawnId=null;

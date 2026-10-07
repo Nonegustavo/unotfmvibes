@@ -381,6 +381,14 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @keyframes stampSeat{0%{transform:scale(1.8) rotate(-20deg);opacity:0}25%{transform:none;opacity:1}75%{opacity:1}100%{opacity:0}}
 .handwrap{position:relative;z-index:5;transition:background .4s}
 .handwrap.yourturn{background:linear-gradient(to top,color-mix(in srgb,var(--accent) 24%,transparent),transparent 90%)}
+/* Mão Colorida: faixas das quatro cores passando na diagonal, bem fracas, no fundo da cadeira ou da sua área de jogo.
+   O deslocamento de 11.3137rem (8rem x raiz de 2) é exatamente um ciclo das faixas, então a animação emenda sem pulo */
+:root{--shinyA:16%}
+.seat.shiny,.handwrap.shiny{--shinyG:repeating-linear-gradient(135deg,color-mix(in srgb,var(--cr) var(--shinyA),transparent) 0,color-mix(in srgb,var(--cy) var(--shinyA),transparent) 2rem,color-mix(in srgb,var(--cg) var(--shinyA),transparent) 4rem,color-mix(in srgb,var(--cb) var(--shinyA),transparent) 6rem,color-mix(in srgb,var(--cr) var(--shinyA),transparent) 8rem);animation:shinyFlow 7s linear infinite}
+.seat.shiny{background-image:var(--shinyG)}
+.handwrap.shiny{--shinyA:11%;background-image:var(--shinyG)}
+.handwrap.shiny.yourturn{background-image:linear-gradient(to top,color-mix(in srgb,var(--accent) 24%,transparent),transparent 90%),var(--shinyG)}
+@keyframes shinyFlow{to{background-position:11.3137rem 0}}
 .handwrap.arrive::before{content:"";position:absolute;left:0;right:0;top:0;height:0.25rem;border-radius:0.25rem;background:var(--accent);box-shadow:0 0 0.875rem var(--accent);transform-origin:var(--sweep,right);animation:sweep .5s .25s ease-out backwards,fade 1.4s .75s forwards}
 @keyframes sweep{from{transform:scaleX(0)}}
 @keyframes fade{to{opacity:0}}
@@ -467,6 +475,12 @@ button.card:disabled,.deckbtn.off{cursor:default}
 .rule span{font-size:.84rem;color:var(--muted)}
 .rule.off{opacity:.45;cursor:default}
 .rule em{font-style:normal;font-size:.75rem;color:var(--muted);display:block;margin-top:2px}
+.rmore{display:block;margin-top:0.25rem;padding:0.125rem 0;border:none;background:none;color:var(--accent);font-size:.8rem;font-weight:600}
+/* listas do Dado, da Maldição e dos climas (uma possibilidade por linha) */
+.rlist{display:block;margin-top:0.375rem}
+.rlist .rl{display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;font-size:.84rem;line-height:1.3;text-align:left;color:inherit}
+.rlist .rl>i{flex:none;width:1.25rem;display:grid;place-items:center;font-style:normal;line-height:1}
+.rlist .rl>span{font-size:inherit;color:inherit}
 .colors{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.625rem}
 .colors button{border:none;border-radius:1.125rem;height:5.25rem;color:#fff;font-weight:700;font-size:1.05rem;box-shadow:0 3px 0 rgba(0,0,0,.25)}
 .picks{display:flex;gap:0.875rem;justify-content:center;padding:0.875rem 0 0.375rem;overflow:hidden}

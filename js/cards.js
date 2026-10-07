@@ -70,9 +70,10 @@ function diceSVG(n,sz='calc(var(--cw)*1.3)'){
 // cap: só a legenda (o dado já está na tela, em 3D ou pequeno perto do adversário).
 // O resultado fica um tempo na tela antes de o efeito acontecer, e a legenda continua durante o efeito
 const DICE_WAIT=3000;
+const DICE_TXT=['Pega 1 carta do jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Mostra um 4 ou compra 4','Distribui até 5 cartas','Compra até ficar com 6'];
 function rollDice(pi,t,then,n0,cap){
   const n=n0||1+Math.floor(Math.random()*6);
-  const txt=['Pega 1 carta do jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Mostra um 4 ou compra 4','Distribui até 5 cartas','Compra até ficar com 6'][n-1]+' e perde a vez';
+  const txt=DICE_TXT[n-1]+' e perde a vez';
   const wait=fastMode()?700:DICE_WAIT,show=wait+1000;
   if(cap){$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${show}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${t===0?'Você':who(t)}: ${txt}</div></div>`;hold(show)}
   else{fx(diceSVG(n),`${t===0?'Você':who(t)}: ${txt}`,'var(--accent)','slam',show);sfx('dice')}log(`Dado de ${who(t)}: ${n} (${txt.toLowerCase()}).`);
@@ -453,12 +454,23 @@ function ruleIcon(k){
   return e?e[1].g:'📜';
 }
 const ruleDesc=k=>(RULES.find(r=>r.k===k)||{}).d||'';
+// possibilidades do Dado, da Maldição e das Cartas de Clima: uma por linha, com ícone (durante o jogo aparecem sempre;
+// no menu de regras, só ao tocar em "Ver ...")
+const RULE_MORE={dice:'consequências',curse:'maldições',weather:'climas'};
+function ruleItems(k){
+  const dot=t=>t.replace(/\.$/,'');
+  if(k==='dice')return DICE_TXT.map((t,i)=>({ic:diceSVG(i+1,'1.15rem'),txt:t}));
+  if(k==='curse')return Object.values(CURSES).map(c=>({ic:c.g,txt:`<b>${c.nm}:</b> ${dot(c.t)}`}));
+  if(k==='weather')return Object.values(WEATHER).map(w=>({ic:w.g,txt:`<b>${w.n}:</b> ${dot(w.t)}`}));
+  return null;
+}
+const ruleListHtml=k=>{const L=ruleItems(k);return L?`<span class="rlist">${L.map(x=>`<span class="rl"><i>${x.ic}</i><span>${x.txt}</span></span>`).join('')}</span>`:''};
 function notice(k,by,opts={}){
   const box=$('notices');
   const ex=box.querySelector(`[data-k="${k}"]`);if(ex)ex.remove();
   const el=document.createElement('div');el.className='notice'+(opts.gone?' gone':'');el.dataset.k=k;el.setAttribute('role','status');
   const ic=ruleIcon(k),bot=BOTRULES.includes(k);
-  el.innerHTML=`<div class="ni" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]}"`:''}>${ic}</div><div class="nt">${opts.title||(opts.gone?'Regra removida: ':'Nova regra: ')+RNAME[k]}</div><div class="nb">${by||''}</div><div class="nd">${ruleDesc(k)}</div>`;
+  el.innerHTML=`<div class="ni" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]}"`:''}>${ic}</div><div class="nt">${opts.title||(opts.gone?'Regra removida: ':'Nova regra: ')+RNAME[k]}</div><div class="nb">${by||''}</div><div class="nd">${ruleDesc(k)}${ruleListHtml(k)}</div>`;
   el.onclick=()=>{el.remove();document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))};
   if(opts.anchor){box.innerHTML='';const r=opts.anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);el.classList.add('pointed');
     requestAnimationFrame(()=>{const a=$('rulestrip').querySelector(`[data-k="${k}"]`)||opts.anchor;const rr=a.getBoundingClientRect(),br=el.getBoundingClientRect();box.style.top=(rr.bottom+12)+'px';el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
@@ -484,7 +496,7 @@ function renderRuleStrip(){
 function freshen(el){el.classList.add('fresh');setTimeout(()=>el.classList.remove('fresh'),6000)}
 function openPoker(){
   const list=S.added.map(a=>{const bot=BOTRULES.includes(a.k),ic=ruleIcon(a.k);
-    return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(a.k[0].toUpperCase()+a.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${a.by==='você'?'sua':'de '+a.by}</em></div><p>${ruleDesc(a.k)}</p></div></div>`}).join('');
+    return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(a.k[0].toUpperCase()+a.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${a.by==='você'?'sua':'de '+a.by}</em></div><p>${ruleDesc(a.k)}${ruleListHtml(a.k)}</p></div></div>`}).join('');
   $('pokerList').innerHTML=list||'<p class="sub">Nenhuma regra disponível para escolher.</p>';
   S.busy=true;S.freshRules=[];render();
   $('pokerOv').classList.add('show');$('pokerGo').focus();
@@ -533,7 +545,7 @@ function openRuleChoice(opts,cb,title='Carta da Regra',sub='Escolha uma regra pa
   $('swaps').classList.remove('row');$('swapTitle').textContent=title;$('swapSub').textContent=sub;
   const desc=k=>(RULES.find(r=>r.k===k)||{}).d||'';
   const icon=ruleIcon;
-  $('swaps').innerHTML=opts.map(k=>`<button data-k="${k}" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="display:flex;align-items:center;gap:10px"><span class="av" style="background:var(--accent);font-size:1.05rem">${icon(k)}</span>${RNAME[k]}</span><small style="margin:0;font-weight:400">${desc(k)}</small></button>`).join('');
+  $('swaps').innerHTML=opts.map(k=>`<button data-k="${k}" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="display:flex;align-items:center;gap:10px"><span class="av" style="background:var(--accent);font-size:1.05rem">${icon(k)}</span>${RNAME[k]}</span><small style="margin:0;font-weight:400">${desc(k)}${ruleListHtml(k)}</small></button>`).join('');
   $('swapOv').classList.add('show');
   const done=k=>{closeOverlays();cb(k)};
   S.autoResolve=()=>done(opts[0]);

@@ -346,7 +346,7 @@ function renderRail(){
     const badge=hidden?'?':said?`${word()}!`:near?`${v}/${lim}`:String(v);
     const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
-    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
+    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&S.weather!=='fog'&&colorful(p)?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
       <div class="nm">${p.name}</div>
@@ -421,6 +421,7 @@ function render(){
   }else if(S.turn!==0&&Date.now()>MK.until)placeMarker(S.turn,true);
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
   hw.classList.toggle('webbed',!!S.players[0].webbed&&S.phase!=='over');
+  hw.classList.toggle('shiny',!!R.shiny&&!S.players[0].out&&S.phase!=='over'&&colorful(S.players[0]));
   {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);
    const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️');
    const ms=$('mystat');ms.hidden=!st.length;ms.textContent=st.map(x=>x.short).join(' ');}
@@ -612,15 +613,23 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
     const block=(CONFLICT[r.k]||[]).filter(x=>CFG[x]);
     let why=block.length?`Incompatível com ${block.map(x=>RNAME[x]).join(', ')}`:'';
     if(r.k==='team'&&CFG.bots%2===0)why='Precisa de 1, 3 ou 5 adversários';
-    html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${why?`<em>${why}</em>`:''}</div></label>`;
+    html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${RULE_MORE[r.k]?`<button type="button" class="rmore" data-more="${r.k}" aria-expanded="${MORE.has(r.k)}">${MORE.has(r.k)?'Ocultar':'Ver'} ${RULE_MORE[r.k]}</button>${MORE.has(r.k)?ruleListHtml(r.k):''}`:''}${why?`<em>${why}</em>`:''}</div></label>`;
   });
   $('ruleList').innerHTML=html;
   $('ruleList').onchange=e=>{const k=e.target.dataset.k;if(!k)return;CFG[k]=e.target.checked;buildSettings()};
+  // "Ver ..." abre e fecha a lista sem marcar a regra; tocar na lista também não marca
+  $('ruleList').onclick=e=>{
+    const b=e.target.closest('.rmore');
+    if(b){e.preventDefault();const k=b.dataset.more,on=!MORE.has(k);on?MORE.add(k):MORE.delete(k);
+      b.setAttribute('aria-expanded',on);b.textContent=`${on?'Ocultar':'Ver'} ${RULE_MORE[k]}`;
+      const l=b.nextElementSibling;if(l&&l.classList.contains('rlist'))l.remove();if(on)b.insertAdjacentHTML('afterend',ruleListHtml(k));return}
+    if(e.target.closest('.rlist'))e.preventDefault()};
   const cats=[['all','Todas'],['on','Ativadas'],...[...new Set(RULES.map(r=>r.g))].map(x=>[x,x])];
   $('ruleCats').innerHTML=cats.map(([v,l])=>`<button type="button" class="rcat" data-v="${v}" aria-pressed="${RF.cat===v}">${l}</button>`).join('');
   $('ruleCats').onclick=e=>{const b=e.target.closest('.rcat');if(!b)return;RF.cat=b.dataset.v;buildSettings()};
   filterRules();
 }
+const MORE=new Set(); // listas abertas no menu de regras
 /* filtro das regras da casa: categoria, ativadas e busca pelo nome (volta para "Todas" ao abrir) */
 const RF={cat:'all',q:''};
 const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -719,9 +728,17 @@ function showCardInfo(id,el){
   const desc=c.type==='num'?'':cardDesc(c);
   if(!desc&&!rows.length)return false;
   const name=c.type==='num'?`${c.value} ${CNAME[c.color]||''}`.trim():label(c);
-  infoPopup('card'+id,`<div class="si-head"><b>${name}</b></div>${desc?`<p class="ci-desc">${desc}</p>`:''}`,rows,el,true,true);
+  infoPopup('card'+id,`<div class="si-head"><b>${name}</b></div>${desc?`<p class="ci-desc">${desc}${ruleListHtml(c.type)}</p>`:''}`,rows,el,true,true);
   buzz(15);
   return true;
+}
+// carta da mesa: nome e descrição (numéricas não abrem, como na mão); coringa pintado mostra a cor escolhida
+const topInfoOk=()=>{const c=S&&S.phase!=='over'&&topCard();return !!c&&c.type!=='num'};
+function showTopInfo(){
+  if(!topInfoOk())return false;const c=topCard();
+  const col=c.color==='w'&&c.chosen&&CNAME[c.chosen]?`<p class="ci-desc">Cor escolhida: <b>${CNAME[c.chosen]}</b></p>`:'';
+  infoPopup('top',`<div class="si-head"><b>${label(c)}</b></div><p class="ci-desc">${cardDesc(c)}${ruleListHtml(c.type)}</p>${col}`,[],$('discard'),true,true);
+  buzz(15);return true;
 }
 // vibração leve (pode ser desligada nas Configurações; o iPhone não vibra pelo navegador)
 function buzz(ms){if(CFG.vibrate!==false&&navigator.vibrate)try{navigator.vibrate(ms)}catch(e){}}
@@ -752,7 +769,14 @@ $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
 $('chalBtn').onclick=()=>{if(myTurn()&&S.chal)doChallenge(0)};
 $('openSettings').onclick=openSettings;
-$('discard').addEventListener('click',openHistory);
+// mesa: tocar abre o histórico; segurar 0,5 s mostra a descrição da carta do topo (e não abre o histórico)
+{let lp=null,fired=false;const dis=$('discard'),cancel=()=>{if(lp){clearTimeout(lp.t);lp=null}};
+ dis.addEventListener('pointerdown',e=>{fired=false;cancel();if(!topInfoOk())return;
+   lp={x:e.clientX,y:e.clientY,t:setTimeout(()=>{lp=null;fired=showTopInfo()},HOLD_MS)}});
+ dis.addEventListener('pointermove',e=>{if(lp&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10)cancel()});
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>dis.addEventListener(ev,cancel));
+ dis.addEventListener('contextmenu',e=>e.preventDefault());
+ dis.addEventListener('click',()=>{if(fired){fired=false;return}openHistory()});}
 $('mystat').addEventListener('click',e=>{e.stopPropagation();showSeatInfo(0,$('mystat'))});
 $('thorns').innerHTML=thornsSVG();requestAnimationFrame(chevLoop);
 $('meta').addEventListener('click',e=>{const b=e.target.closest('.tst');if(!b)return;e.stopPropagation();const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',x.rows||[x],b)});
@@ -840,6 +864,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
    const ri=t.closest('#rulestrip .ri');if(ri)return {key:'rule:'+ri.dataset.k,fast:1,open:()=>openRuleIcon(ri)};
    const c=t.closest('#hand .card');if(c)return {key:'card'+c.dataset.id,slow:1,open:()=>showCardInfo(+c.dataset.id,c)};
    if(t.closest('#deck')&&deckBadges().length)return {key:'deck',slow:1,open:showDeckInfo};
+   if(t.closest('#discard')&&topInfoOk())return {key:'top',slow:1,open:showTopInfo};
    const st=t.closest('.seat .tag.stat,.seat .outic');if(st){const seat=st.closest('.seat'),i=+seat.dataset.seat;return {key:'seat'+i,open:()=>showSeatInfo(i,seat)}}
    if(t.closest('#mystat'))return {key:'seat0',open:()=>showSeatInfo(0,$('mystat'))};
    const b=t.closest('.tst');if(b)return {key:'tst'+b.dataset.k,open:()=>{const x=tableStatus()[+b.dataset.k];if(x)infoPopup('tst'+b.dataset.k,'',x.rows||[x],b)}};

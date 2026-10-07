@@ -58,7 +58,7 @@ const RULES=[
   {g:'Compras',k:'nou',n:'Contra-ataque',d:'Você pode jogar cartas Inverter para devolver compras de carta.'},
   {g:'Compras',k:'satisfaction',n:'Compra Implacável',d:'Compre cartas até poder jogar uma.'},
   {g:'Compras',k:'insatisfaction',n:'Compra e Passa',d:'Comprar carta fará você passar a vez automaticamente.'},
-  {g:'Compras',k:'fastdraw',n:'Compra Rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem com a mesa (exceto a Carta Bomba e compras de penalidade).'},
+  {g:'Compras',k:'fastdraw',n:'Compra Rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem (exceto penalidades).'},
   {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
   {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
   {g:'Pressão',k:'limbo',n:'Limbo',d:'Quem ultrapassar o limite de cartas na mão será eliminado. O limite começa em 12 e reduz em 1 a cada minuto.'},
