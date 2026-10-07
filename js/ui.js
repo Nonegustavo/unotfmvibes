@@ -669,7 +669,7 @@ function openHistory(){
 }
 function openSettings(){
   updateInstallUI();
-  $('tipBox').innerHTML=`<b>💡 Dica</b>${rand(TIPS)}`;
+  $('tipBox').innerHTML=`<b>💡 Dica</b>${randVis(TIPS)}`;
   RF.cat='all';RF.q='';$('ruleSearch').value='';
   buildSettings();$('closeSettings').style.display=(S&&S.phase!=='over')||!$('home').hidden?'':'none';
   $('endOv').classList.remove('show');$('settingsOv').classList.add('show');

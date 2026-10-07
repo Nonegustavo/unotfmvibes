@@ -15,7 +15,7 @@ function give(pi,c){
   const p=S.players[pi];
   if(Date.now()-lastDrawSnd>70){lastDrawSnd=Date.now();sfx('draw')}
   if(c.type==='bomb'){
-    S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,c);
+    S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,c);
     S.boom=pi;FX3D.explode(targetRect(pi));fx('💣',`${who(pi)} comprou a bomba!`,'#0d0a14','slam');stampOn(pi,'💥','var(--cr)');
     return;
   }
@@ -113,6 +113,7 @@ function canCombo(p,card){
 function newGame(){
   $('home').hidden=true;
   const gen=S?S.gen+1:1;
+  semear(novaSemente());
   clearFlash();closeOverlays();
   const tourMode=R.tournament?'tournament':R.survivor?'survivor':null;
   if(!tourMode)TOUR=null;
@@ -132,7 +133,7 @@ function newGame(){
   names.forEach(n=>players.push({name:n,bot:true,hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,log:[],busy:false,
-     newIds:[],botDraw:{},animPlay:null,mull:R.mulligan,autoResolve:null,lastTop:null};
+     newIds:[],botDraw:{},animPlay:null,mull:R.mulligan,autoResolve:null,lastTop:null,semente:RNG.semente};
   applyBg();S.added=[];S.removed=[];S.freshRules=[];S.ruleOrder=[];S.stripHold=false;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
   S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
@@ -164,8 +165,8 @@ function dealAndStart(){
   players.forEach((p,i)=>{const cs=CARRY[p.name];if(cs&&cs.length){cs.forEach(c=>give(i,mk(c.color,c.type,c.value)));delete CARRY[p.name];log(`${who(i)} recebeu ${cs.length} carta${cs.length>1?'s':''} do paradoxo.`)}});
   let first;
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
-  S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,mk('w','bomb'));S.hist=[{by:null,card:snap(first),notes:['Primeira carta da mesa.']}];S.histCur=null;
-  S.turn=Math.floor(Math.random()*players.length);
+  S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,mk('w','bomb'));S.hist=[{by:null,card:snap(first),notes:['Primeira carta da mesa.']}];S.histCur=null;
+  S.turn=Math.floor(rng()*players.length);
   log(`Primeira carta: ${cardName(first)}. ${who(S.turn)} ${S.turn===0?'começa':'começa'}.`);
   if(R.addrules){const g=S.gen;addT=setInterval(()=>{if(!S||S.gen!==g||S.phase==='over'||S.busy)return;const o=ruleOptions(1);if(o.length){addRule(null,o[0]);render()}},75000)}
   if(spOn('portal'))buildSideB(startOf);
@@ -188,7 +189,7 @@ function buildSideB(startOf){
   if(R.twohands)S.players.forEach((p,i)=>{for(let r=0;r<startOf(i);r++){const c=popDeck();if(c&&c.type!=='bomb')p.hand2.push(c)}});
   let first;S.discard=[];
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
-  S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,mk('w','bomb'));
+  S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,mk('w','bomb'));
   Object.assign(S,{pending:0,pendingType:null,chal:null,comboValue:null,seqDir:null,weather:null,peace:0,curse:null,death:false,traffic:null,simon:[],passes:0,numOnly:0,boom:null,
     mem:{lacks:{},lastCol:{},played:{}},added:[...(saved.added||[])],removed:[]});
   S.other=captureSide();
@@ -324,7 +325,7 @@ function playCard(pi,card,chosen){
 function afterOneCard(pi){
   const p=S.players[pi];
   if(S.weather==='fog')return;
-  if(p.bot&&!p.called){p.called=ab(pi,'elise')||Math.random()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){sfx('bell');log(`${p.name} tocou a sineta.`);toast(`🛎️ ${p.name} tocou a sineta!`,'var(--cr)')}}
+  if(p.bot&&!p.called){p.called=ab(pi,'elise')||rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){sfx('bell');log(`${p.name} tocou a sineta.`);toast(`🛎️ ${p.name} tocou a sineta!`,'var(--cr)')}}
   if(!p.called)scheduleCatch(pi);
 }
 function scheduleCatch(pi){
@@ -334,8 +335,8 @@ function scheduleCatch(pi){
     const p=S.players[pi];
     if(S.weather==='fog'||p.out||p.hand.length!==target()||p.called)return;
     const catchers=alive().filter(i=>i!==pi&&S.players[i].bot&&i!==partner(pi));
-    if(catchers.length&&Math.random()<d.catchP)penalize(pi,rand(catchers));
-  },d.catchMs+Math.random()*500);
+    if(catchers.length&&rng()<d.catchP)penalize(pi,rand(catchers));
+  },d.catchMs+rng()*500);
 }
 function penalize(pi,by){
   const p=S.players[pi];

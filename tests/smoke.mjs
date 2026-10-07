@@ -4,6 +4,9 @@
 //      npm test -- 3 --ver (abre o navegador visível)
 //      npm test -- 10 --vel=5 (encurta as esperas do jogo em 5x; o padrão é 1, a velocidade normal)
 //      npm test -- 5 --regras=mess,weather (modo Personalizado só com essas regras; chaves de RULES em js/data.js)
+//      npm test -- --semente=123 (sorteios do jogo e escolhas do teste a partir dessa semente; a partida N usa 123+N-1)
+// Cada partida mostra a semente dela. Repetir a semente repete a distribuição e os primeiros lances, mas o jogo corre
+// em tempo real, então a partida pode se separar depois (para repetir exatamente, use o teste das cartas: npm run test:cartas).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,6 +19,7 @@ const GAMES = Number(args.find(a => /^\d+$/.test(a)) || 3);
 const HEADED = args.includes('--ver');
 const SPEED = Math.max(1, Number((args.find(a => a.startsWith('--vel=')) || '').slice(6)) || 1);
 const RULES_ARG = (args.find(a => a.startsWith('--regras=')) || '').slice(9);
+const SEED_ARG = (args.find(a => a.startsWith('--semente=')) || '').slice(10);
 const STALL_MS = 15000;
 const GAME_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -55,6 +59,13 @@ if (RULES_ARG) await page.addInitScript(keys => {
   try { localStorage.setItem('unotfm-solo-cfg', JSON.stringify({ mode: 'custom', poker: false, ...Object.fromEntries(keys.split(',').map(k => [k.trim(), true])) })); } catch (e) {}
 }, RULES_ARG);
 
+// Semente fixa: o jogo usa window.SEMENTE (data.js) e as escolhas do teste usam um sorteio próprio com a mesma semente
+if (SEED_ARG) await page.addInitScript(n => {
+  window.SEMENTE = n;
+  let x = n >>> 0;
+  window.__escolha = () => { x = (x + 0x6d2b79f5) | 0; let t = Math.imul(x ^ (x >>> 15), 1 | x); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}, Number(SEED_ARG));
+
 await page.goto(URL_BASE);
 
 // Um passo do "jogador": resolve janelas abertas ou joga/compra.
@@ -62,7 +73,7 @@ async function step() {
   return page.evaluate(() => {
     const shown = id => document.getElementById(id)?.classList.contains('show');
     const click = el => { if (el) { el.click(); return true; } return false; };
-    const pick = list => list[Math.floor(Math.random() * list.length)];
+    const pick = list => list[Math.floor((window.__escolha || Math.random)() * list.length)];
     if (shown('endOv')) return 'fim';
     if (!document.getElementById('home').hidden && !shown('settingsOv')) return click(document.getElementById('homePlay')) && 'tela inicial';
     if (shown('settingsOv')) return click(document.getElementById('startBtn')) && 'iniciar';
@@ -87,9 +98,10 @@ const snapshot = () => page.evaluate(() => ['status', 'hand', 'seatrow', 'discar
 let played = 0, stalls = 0;
 for (let g = 1; g <= GAMES; g++) {
   const start = Date.now();
-  let last = await snapshot(), lastChange = Date.now(), result = '';
+  let last = await snapshot(), lastChange = Date.now(), result = '', seed = null;
   while (true) {
     const r = await step();
+    if (seed == null) seed = await page.evaluate(() => S && S.semente);
     if (r === 'fim' && Date.now() - start > 1000) {
       result = await page.evaluate(() => document.getElementById('endTitle').textContent);
       await page.click('#againBtn');
@@ -109,7 +121,7 @@ for (let g = 1; g <= GAMES; g++) {
     if (Date.now() - start > GAME_TIMEOUT_MS) { result = 'tempo esgotado'; stalls++; await page.reload(); break; }
   }
   played++;
-  console.log(`Partida ${g}/${GAMES}: ${result} (${Math.round((Date.now() - start) / 1000)}s)`);
+  console.log(`Partida ${g}/${GAMES}: ${result} (${Math.round((Date.now() - start) / 1000)}s, semente ${seed})`);
 }
 
 const webgl = await page.evaluate(() => typeof THREE !== 'undefined');

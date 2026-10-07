@@ -7,7 +7,7 @@ function scheduleBot(quick){
     if(g!==S.gen||tok!==S.tok||S.phase==='over'||!cur().bot||S.busy)return;
     if(cur().out){endTurn();return}
     botAct();
-  },quick?(fastMode()?120:300):fastMode()?Math.max(350+Math.random()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+Math.random()*700,(S.fxUntil||0)-Date.now()+400));
+  },quick?(fastMode()?120:300):fastMode()?Math.max(350+rng()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+rng()*700,(S.fxUntil||0)-Date.now()+400));
 }
 function colorCounts(hand){const o={r:0,y:0,g:0,b:0};hand.forEach(c=>{if(c.color!=='w')o[c.color]++});return o}
 /* ---------- Mestre: memória e decisões ---------- */
@@ -36,7 +36,7 @@ function masterColor(hand,pi){
     th.forEach(i=>{if(lacksCol(i,c))s+=4;if(S.mem.lastCol[i]===c)s-=4});
     if(nx!==partner(pi)&&S.mem.lastCol[nx]===c)s-=2;
     if(own===0)s-=4;
-    s+=Math.random()*.3;
+    s+=rng()*.3;
     if(s>bs){bs=s;best=c}
   }
   return best||rand(COLORS);
@@ -72,7 +72,7 @@ function bestColor(hand){
   return rand(COLORS.filter(c=>cc[c]===m));
 }
 function botChoose(p,opts){
-  if(S.pending===0&&!R.nochallenge&&(S.death||Math.random()<{easy:.4,normal:.7,hard:.85,master:.97}[R.diff])){
+  if(S.pending===0&&!R.nochallenge&&(S.death||rng()<{easy:.4,normal:.7,hard:.85,master:.97}[R.diff])){
     const hasCol=p.hand.some(x=>x.color!=='w'&&sameCol(x.color,S.color));
     if(hasCol){const safe=opts.filter(c=>!(c.type==='d4'||c.type==='d99'));if(safe.length)opts=safe}
   }
@@ -121,7 +121,7 @@ function botChoose(p,opts){
      if(S.weather==='blizzard'&&isDraw(c))s-=10;
      if(S.color==='k'&&c.color==='w'&&p.hand.length>3)s-=8;}
     if(R.diff==='master')s+=masterBonus(p,c,nn);
-    s+=Math.random()*(R.diff==='normal'?10:R.diff==='master'?.5:2);
+    s+=rng()*(R.diff==='normal'?10:R.diff==='master'?.5:2);
     if(s>bs){bs=s;best=c}
   }
   return best;
@@ -140,7 +140,7 @@ function botAct(){
   if(S.pending>0&&S.chal&&S.chal.by!==pi&&!opts.length){
     const ah=seenLen(pi,S.chal.by);let pr=R.diff==='master'?masterChallenge(S.chal):{easy:.15,normal:ah>=5?.35:.22,hard:ah>=5?.5:ah>=3?.3:.15}[R.diff];if(S.death&&R.diff!=='master')pr*=ah>=6?.8:.35;
     if(S.pending>=99)pr=1; // comprar o +99 elimina: desafiar é a única chance
-    if(Math.random()<pr){doChallenge(pi);return}
+    if(rng()<pr){doChallenge(pi);return}
   }
   if(!opts.length){takeDraw(pi);return}
   if(S.phase==='combo'&&confused(pi)){endTurn();return}

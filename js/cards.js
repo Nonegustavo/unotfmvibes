@@ -72,7 +72,7 @@ function diceSVG(n,sz='calc(var(--cw)*1.3)'){
 const DICE_WAIT=3000;
 const DICE_TXT=['Pega 1 carta do jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Mostra um 4 ou compra 4','Distribui até 5 cartas','Compra até ficar com 6'];
 function rollDice(pi,t,then,n0,cap){
-  const n=n0||1+Math.floor(Math.random()*6);
+  const n=n0||1+Math.floor(rng()*6);
   const txt=DICE_TXT[n-1]+' e perde a vez';
   const wait=fastMode()?700:DICE_WAIT,show=wait+1000;
   if(cap){$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${show}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${t===0?'Você':who(t)}: ${txt}</div></div>`;hold(show)}
@@ -165,11 +165,11 @@ function transmute(pi,col){
   if(!picks.length){fx('🎩','Ninguém tinha carta de ação',col,'stamp');log('Mágica: ninguém tinha carta de ação.');return 'done'}
   const g=S.gen,sp=fastMode()?.4:1;S.busy=true;clearFlash();hold(99999);
   picks.forEach(x=>{const c=x.c;x.before={...c};
-    c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(Math.random()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
+    c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(rng()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
   let t=0;picks.forEach(x=>{t=Math.max(t,x.i===0?morphMine(x.c,x.before,x.after,sp):showCards(x.i,[x.before],'morph',sp,[x.after]))});
   // todas as cartas se transformam juntas, no "puf" do único som (PUF ms depois de ele começar)
   setTimeout(()=>{if(g===S.gen&&S.phase!=='over')sfx('transmute')},RM?0:(SHOW_IN+SHOW_HOLD)*sp);
-  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('🎩',rand(MAGIC),col,'stamp',1800*sp,true)},RM?0:(SHOW_IN+SHOW_HOLD)*sp+PUF);
+  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')fx('🎩',randVis(MAGIC),col,'stamp',1800*sp,true)},RM?0:(SHOW_IN+SHOW_HOLD)*sp+PUF);
   log(`Mágica: ${picks.map(x=>`${label(x.before)} de ${who(x.i)} virou ${x.after.value}`).join(', ')}.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
@@ -413,7 +413,7 @@ function addRule(pi,k,quiet,done){
   const cards=[];
   Object.entries(SP).forEach(([t,v])=>{if((v.rule||t)===k)v.deck.forEach(c=>cards.push(mk(c,t)))});
   if(k==='bomb')cards.push(mk('w','bomb'));
-  cards.forEach(c=>S.deck.splice(Math.floor(Math.random()*(S.deck.length+1)),0,c));
+  cards.forEach(c=>S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,c));
   const extra=cards.length?` (+${cards.length} carta${cards.length>1?'s':''} no monte)`:'';
   if(quiet){const deckR=$('deck').getBoundingClientRect(),dr=discardRect();for(let j=0;j<Math.min(cards.length,6);j++)ghost(dr,deckR,j*90)}
   else ruleReveal(k,cards,done);
@@ -558,7 +558,7 @@ function charlotteFx(pi,c){
     p.hand=p.hand.filter(y=>y!==x);S.players[t].hand.push(x);S.players[t].called=false;if(t===0){S.newIds.push(x.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);
     fx('💗',`Amor? Charlotte doou uma carta para ${t===0?'você':who(t)}`,'var(--cr)','stamp');return selfCheck(pi)}
   if(c==='b'){S.numOnly=2;fx('🕊️','Paz? No próximo turno, só cartas numéricas','var(--cb)','stamp');return 'done'}
-  if(c==='y'){const t=rand(others),n=1+Math.floor(Math.random()*3);drawN(t,n);fx('😠',`Ira? ${t===0?'Você compra':who(t)+' compra'} ${n}`,'var(--cy)','slam');return massCheck()}
+  if(c==='y'){const t=rand(others),n=1+Math.floor(rng()*3);drawN(t,n);fx('😠',`Ira? ${t===0?'Você compra':who(t)+' compra'} ${n}`,'var(--cy)','slam');return massCheck()}
   if(c==='g'){const m=Math.min(...others.map(i=>S.players[i].hand.length));let k=0;
     while(p.hand.length>m&&p.hand.length>1)discardCard(pi,rand(p.hand),k++);while(p.hand.length<m&&drawOne(pi)){}
     fx('⚖️',`Igualdade? Charlotte fica com ${p.hand.length} cartas`,'var(--cg)','stamp');return selfCheck(pi)}
@@ -587,6 +587,7 @@ function thinkItems(kind,list){
   return [];
 }
 function botThink(pi,kind,list,pickIdx,done){
+  const steps0=4+rng()*3;
   const seat=document.querySelector(`[data-seat="${pi}"]`);
   const g=S.gen;const sp=fastMode()?.4:1;
   if(!seat||RM){setTimeout(()=>{if(g===S.gen)done()},300*sp);return}
@@ -594,7 +595,7 @@ function botThink(pi,kind,list,pickIdx,done){
   const el=document.createElement('div');el.className='think';el.innerHTML=`<span class="tdots">💭</span>${thinkItems(kind,list).join('')}`;
   document.body.appendChild(el);
   const w=el.offsetWidth;el.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+6)+'px';
-  const items=[...el.querySelectorAll('.ti')];let k=0,steps=Math.max(3,Math.round((4+Math.random()*3)*sp));
+  const items=[...el.querySelectorAll('.ti')];let k=0,steps=Math.max(3,Math.round(steps0*sp));
   const tick=()=>{
     if(g!==S.gen){el.remove();return}
     items.forEach(x=>x.classList.remove('hl'));
@@ -605,10 +606,10 @@ function botThink(pi,kind,list,pickIdx,done){
   setTimeout(tick,250*sp);
 }
 function botTypeSimon(pi,seq,ok,done){
+  const failAt=ok?-1:Math.floor(rng()*seq.length);
   const seat=document.querySelector(`[data-seat="${pi}"]`);const g=S.gen;const sp=fastMode()?.4:1;
   if(!seat||RM){setTimeout(()=>{if(g===S.gen)done()},300*sp);return}
   const r=seat.getBoundingClientRect();
-  const failAt=ok?-1:Math.floor(Math.random()*seq.length);
   const el=document.createElement('div');el.className='think';el.innerHTML=`<span class="tdots">🧠</span>${seq.map(()=>'<span class="ti sq"></span>').join('')}`;
   document.body.appendChild(el);const w=el.offsetWidth;el.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+6)+'px';
   const items=[...el.querySelectorAll('.ti')];let i=0;
@@ -652,7 +653,7 @@ function applySpecial(pi,card){
       // 2 jogadores sorteados (pode ser quem jogou), cada um compra de 1 a 5; um por vez, as cartas aparecem de repente
       const vs=shuffle(alive().filter(i=>!ab(i,'drekkemaus'))).slice(0,2);
       log(`Trovão atingiu ${vs.map(who).join(' e ')}.`);
-      return sequenceFx(vs,(i,next,sp)=>{const n=1+Math.floor(Math.random()*5);
+      return sequenceFx(vs,(i,next,sp)=>{const n=1+Math.floor(rng()*5);
         thunderDraw(i,n);render();setTimeout(next,950*sp)})}
     case 'equality':{
       alive().forEach(i=>{const q=S.players[i];let k=0;while(q.hand.length>3)discardCard(i,rand(q.hand),k++);while(q.hand.length<3&&drawOne(i)){}});
@@ -696,7 +697,7 @@ function applySpecial(pi,card){
       return 'defer'}
     case 'dice':{
       const t=nextIdx(pi,1),g=S.gen;S.busy=true;clearFlash();
-      const n=1+Math.floor(Math.random()*6);
+      const n=1+Math.floor(rng()*6);
       // adversário rola: dado pequeno perto da cadeira dele; você rola: dado grande (3D ou 2D)
       const mini=t!==0?miniDie(t,n,fastMode()?450:1200):null;
       const d3=!mini&&FX3D.available()&&FX3D.rollDie(n,(DICE_WAIT+800)/1000);
@@ -718,7 +719,7 @@ function applySpecial(pi,card){
       fx('🤲',`${who(pi)} partilhou ${copies.length} cópia${copies.length===1?'':'s'}`,col,'slam');log(`${who(pi)} deu ${copies.length} cópias das suas cartas.`);return massCheck()}
     case 'simon':
       if(pi===0)return 'ask';{
-        const seq=[...S.simon];const ok=!seq.length||Math.random()<Math.pow({easy:.6,normal:.85,hard:.95,master:.98}[R.diff],seq.length);
+        const seq=[...S.simon];const ok=!seq.length||rng()<Math.pow({easy:.6,normal:.85,hard:.95,master:.98}[R.diff],seq.length);
         const col=bestColor(p.hand);S.busy=true;clearFlash();
         const fin=r=>{S.busy=false;if(r==='win'||S.phase==='over')return;render();endTurn()};
         const pickCol=()=>{const cols=COLORS.filter(c=>!(R.bg&&c==='g'));S.busy=true;botThink(pi,'color',cols,Math.max(0,cols.findIndex(c=>sameCol(c,col))),()=>fin(resolveSimon(pi,card,true,col)))};
@@ -878,11 +879,11 @@ function scheduleJumps(){
   alive().forEach(i=>{
     if(i===S.turn||!S.players[i].bot)return;
     const c=S.players[i].hand.find(x=>identical(x,topCard()));
-    if(!c||Math.random()>p)return;
+    if(!c||rng()>p)return;
     setTimeout(()=>{
       if(g!==S.gen||tok!==S.tok||S.phase!=='play'||S.busy)return;
       if(!S.players[i].hand.includes(c)||!identical(c,topCard()))return;
       doJumpIn(i,c);
-    },(humanTurn?1600:500)+Math.random()*(humanTurn?1000:500));
+    },(humanTurn?1600:500)+rng()*(humanTurn?1000:500));
   });
 }

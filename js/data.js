@@ -19,6 +19,25 @@ window.setTimeout=(fn,ms,...a)=>{
 };
 window.clearTimeout=id=>{const t=TB.live.get(id);if(t){nativeClear(t.h);TB.live.delete(id)}TB.q.delete(id)};
 Date.now=()=>TB.on?TB.now:realNow();
+/* Sorteios: rng() decide tudo o que muda a partida (baralho, quem começa, efeitos, escolhas e tempos dos adversários) e
+   segue uma semente, então a mesma semente repete a mesma sequência. Math.random() fica só para o visual (inclinação
+   das cartas, frases, dado girando, partículas), para que desenhar mais ou menos coisas não mude a partida.
+   A semente é sorteada a cada partida; o teste pode fixá-la em window.SEMENTE (cada partida usa a seguinte) */
+const RNG={semente:0,a:0,b:0,c:0,d:0};
+function semear(semente){
+  let x=semente>>>0;RNG.semente=x;
+  const sm=()=>{x=(x+0x9e3779b9)|0;let z=x;z=Math.imul(z^(z>>>16),0x85ebca6b);z=Math.imul(z^(z>>>13),0xc2b2ae35);return (z^(z>>>16))>>>0};
+  RNG.a=sm();RNG.b=sm();RNG.c=sm();RNG.d=sm();
+  for(let i=0;i<12;i++)rng();
+}
+// sfc32: rápido, com 128 bits de estado
+function rng(){
+  let{a,b,c,d}=RNG;const t=(((a+b)|0)+d)|0;
+  RNG.d=(d+1)|0;RNG.a=b^(b>>>9);RNG.b=(c+(c<<3))|0;c=(c<<21)|(c>>>11);RNG.c=(c+t)|0;
+  return (t>>>0)/4294967296;
+}
+const novaSemente=()=>Number.isInteger(window.SEMENTE)?(window.SEMENTE++)>>>0:(Math.random()*4294967296)>>>0;
+semear((Math.random()*4294967296)>>>0);
 const COLORS=['r','y','g','b'];
 const CNAME={r:'Vermelho',y:'Amarelo',g:'Verde',b:'Azul',k:'Cinza'};
 const CVAR={r:'var(--cr)',y:'var(--cy)',g:'var(--cg)',b:'var(--cb)',k:'var(--cgray)'};
@@ -234,8 +253,10 @@ const target=()=>R.dos?2:1;
 const partner=i=>R.team?(i+S.players.length/2)%S.players.length:-1;
 const teamOf=i=>i%(S.players.length/2);
 
-const rand=a=>a[Math.floor(Math.random()*a.length)];
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const rand=a=>a[Math.floor(rng()*a.length)];
+// sorteio só visual (frases, dicas): não mexe na sequência do rng()
+const randVis=a=>a[Math.floor(Math.random()*a.length)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 const mk=(color,type,value=null)=>({id:uid++,color,type,value,rot:Math.random()*24-12});
 // Carta especial em jogo: pela regra dela ou pela Bagunça (que tem todas, menos o Semáforo, já que não há números)
 const spOn=t=>R.mess?t!=='oddeven':!!R[SP[t].rule||t];

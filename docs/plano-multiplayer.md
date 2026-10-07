@@ -273,6 +273,9 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
     - avança o tempo pelo relógio virtual do turbo;
     - compara o resultado (mãos, mesa, vez e registro) com um resultado guardado.
   - Daqui em diante, toda etapa precisa manter esses resultados idênticos.
+  - **Feito:** `rng()` (sfc32) no `data.js`, `npm test -- --semente=N` e `npm run test:cartas`, com 173 cenários (cada
+    carta jogada por um adversário e por você, cada regra e três partidas inteiras), em uns 15 s. Cada cenário roda duas
+    vezes para confirmar que se repete, e uma mudança proposital numa carta foi detectada.
 
 **Fase 1: separar regras e tela**
 
