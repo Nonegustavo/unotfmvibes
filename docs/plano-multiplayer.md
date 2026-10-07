@@ -281,6 +281,8 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
 
 - **A. Remover código antigo (P)**
   - Sai tudo o que está na lista "Código antigo" do diagnóstico.
+  - **Feito:** saíram cerca de 150 linhas (inclusive a barra do Rápido e o som do Paradoxo), com os 173 cenários do
+    teste das cartas idênticos.
 - **B. Eventos (M)**
   - Os efeitos visuais e sons das regras (incluindo o `thunderDraw` e o `hold`) passam a sair por `emit({...})`, com plateia.
   - Por enquanto, o `emit` executa o efeito na hora.

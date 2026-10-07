@@ -355,9 +355,6 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .status{font-weight:600;font-size:1.02rem;text-align:center;min-height:1.4em;padding:0 0.5rem}
 .log{font-size:.8rem;color:var(--muted);text-align:center;min-height:2.2em;max-width:36ch}
 .log div:first-child{color:var(--ink)}
-.flash{position:absolute;left:1.125rem;right:1.125rem;bottom:0.625rem;height:0.3125rem;border-radius:0.5625rem;background:var(--line);overflow:hidden;display:none}
-.flash.show{display:block}
-.flash b{display:block;height:100%;background:var(--cr);width:100%}
 /* card effects */
 .fx{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:8}
 .fxin{display:flex;flex-direction:column;align-items:center;gap:0.25rem;animation:fxout 1.25s ease-in forwards}

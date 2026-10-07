@@ -30,7 +30,7 @@ function finishHuman(card,col){
   const r=playCard(0,card,col);
   if(r==='win'||r==='defer')return;
   if(r==='ask'){humanAsk(card);return}
-  if(r==='combo'){S.tok++;render();if(R.flash||curseIs('time'))startFlash();return}
+  if(r==='combo'){S.tok++;render();return}
   endTurn();
 }
 function humanMain(){
@@ -49,28 +49,6 @@ function mulligan(){
   S.deck.unshift(...me.hand);shuffle(S.deck);me.hand=[];
   drawN(0,n);S.mull=false;log('Você trocou sua mão.');toast('Mão nova!');
   if(overloaded(0)&&markOut(0))return;render();
-}
-
-/* ---------- flash ---------- */
-function clearFlash(){if(flashT){clearInterval(flashT);flashT=null}$('flash').classList.remove('show')}
-function startFlash(){
-  clearFlash();
-  const dur=curseIs('time')?3000:5000;const end=Date.now()+dur,g=S.gen,tok=S.tok;
-  $('flash').classList.add('show');
-  flashT=setInterval(()=>{
-    const left=end-Date.now();
-    $('flashBar').style.width=Math.max(0,left/dur*100)+'%';
-    const sec=Math.ceil(left/1000);if(left>0&&sec<=3&&sec!==S.lastTick){S.lastTick=sec;sfx('tick')}
-    if(left>0)return;
-    clearFlash();
-    if(g!==S.gen||tok!==S.tok||S.phase==='over'||S.turn!==0)return;
-    toast('Tempo esgotado!','var(--cr)');log('Tempo esgotado!');
-    if(S.busy&&S.autoResolve){S.autoResolve();return}
-    if(S.phase==='combo'||S.phase==='drawn'){endTurn();return}
-    if(S.pending>0){takeDraw(0);return}
-    if(noDraw(0)){if(!markOut(0))endTurn();return}
-    if(!curseIs('ice'))drawN(0,drawAmt(0,1));if(overloaded(0)&&markOut(0))return;endTurn();
-  },60);
 }
 
 /* ---------- animation helpers ---------- */
@@ -150,7 +128,7 @@ function cardBadges(p,c,turn){
   if(R.perfection&&c.type==='num'&&c.value===p.hand.length)b.push('💯');
   if(S.peace>0&&c.type!=='num')b.push('🌼');
   if(turn&&S.weather==='storm'&&canPlay(p,c)&&(c.color==='w'?S.peace<=0:!sameCol(c.color,S.color)))b.push('⛈️');
-  if(curseOn('shoe',0)&&c.type!=='num')b.push('👢');
+  if(curseIs('shoe')&&c.type!=='num')b.push('👢');
   return b;
 }
 function sortHand(h){
@@ -509,7 +487,7 @@ function render(){
   const main=$('drawBtn');
   if(S.phase==='combo'&&S.turn===0)main.textContent='Encerrar jogada';
   else if(S.phase==='drawn'&&S.turn===0)main.textContent='Passar';
-  else if(S.pending>0&&S.turn===0)main.textContent=(S.weather==='blizzard'||curseOn('ice',0))?`Perder a vez (+${S.pending})`:`Comprar ${S.pending}`;
+  else if(S.pending>0&&S.turn===0)main.textContent=(S.weather==='blizzard'||curseIs('ice'))?`Perder a vez (+${S.pending})`:`Comprar ${S.pending}`;
   else main.textContent=S.weather==='blizzard'&&S.turn===0?'Passar':'Comprar';
   main.disabled=!turn;
   // eliminado assistindo: o botão principal termina a partida na hora
@@ -606,7 +584,7 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
     let why=block.length?`Incompatível com ${block.map(x=>RNAME[x]).join(', ')}`:'';
     if(r.k==='team'&&CFG.bots%2===0)why='Precisa de 1, 3 ou 5 adversários';
     if(r.k==='nou'&&CFG.combo==='none')why=NOU_OFF;
-    html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${RULE_MORE[r.k]?`<button type="button" class="rmore" data-more="${r.k}" aria-expanded="${MORE.has(r.k)}">${MORE.has(r.k)?'Ocultar':'Ver'} ${RULE_MORE[r.k]}</button>${MORE.has(r.k)?ruleListHtml(r.k):''}`:''}${why?`<em>${why}</em>`:''}</div></label>`;
+    html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}">${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${RULE_MORE[r.k]?`<button type="button" class="rmore" data-more="${r.k}" aria-expanded="${MORE.has(r.k)}">${MORE.has(r.k)?'Ocultar':'Ver'} ${RULE_MORE[r.k]}</button>${MORE.has(r.k)?ruleListHtml(r.k):''}`:''}${why?`<em>${why}</em>`:''}</div></label>`;
   });
   $('ruleList').innerHTML=html;
   $('ruleList').onchange=e=>{const k=e.target.dataset.k;if(!k)return;CFG[k]=e.target.checked;buildSettings()};
@@ -650,7 +628,7 @@ function openActive(){
   let g='';
   on.forEach(r=>{
     if(r.g!==g){g=r.g;html+=`<div class="act-group">${g}</div>`}
-    html+=`<div class="act act-i"><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b>${added[r.k]?`<em class="new" style="font-style:normal">adicionada por ${added[r.k]}</em>`:''}<span>${r.d}</span></div></div>`;
+    html+=`<div class="act act-i"><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}">${ruleIcon(r.k)}</span><div><b>${r.n}</b>${added[r.k]?`<em class="new" style="font-style:normal">adicionada por ${added[r.k]}</em>`:''}<span>${r.d}</span></div></div>`;
   });
   if(S.removed.length){html+=`<div class="act-group">Removidas nesta partida</div>`;S.removed.forEach(x=>{html+=`<div class="act"><b>${RNAME[x.k]}</b><em class="new gone" style="font-style:normal">banida por ${x.by}</em></div>`})}
   if(!on.length)html+='<p class="sub" style="margin-top:10px">Nenhuma regra da casa ativa: jogo clássico.</p>';
@@ -702,7 +680,7 @@ function badgeInfo(b,c,blocked){
     case '🔢':return r('sequence');
     case '↕️':return blocked?{ic,name:'Vizinho',txt:'números iguais não combinam mais, só um número acima ou abaixo'}:r('neighbor');
     case '🔥':return r('hell');
-    case '☀️+1':return {ic:'☀️',name:'Ensolarado',txt:`está fora da cor. Pode ser jogada, mas você compra ${curseOn('anvil',0)?2:1}`};
+    case '☀️+1':return {ic:'☀️',name:'Ensolarado',txt:`está fora da cor. Pode ser jogada, mas você compra ${curseIs('anvil')?2:1}`};
     case '🥔':return {ic,name:'Batata',txt:`você está com ela há ${S.players[0].batata||0}/5 turnos. No quinto, você é eliminado`};
     case '💯':return r('perfection');
     case '🌼':return {ic,name:'Paz',txt:'cartas de ação não têm efeito enquanto a Paz durar'};

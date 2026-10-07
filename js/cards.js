@@ -25,12 +25,9 @@ function botTarget(pi,skipLack){
 }
 function giftCard(pi,t){
   const p=S.players[pi];if(!p.hand.length||t==null||t<0)return 'done';
-  const times=ab(pi,'jingle')?2:1;
-  for(let k=0;k<times&&p.hand.length;k++){
-    const c=rand(p.hand);p.hand=p.hand.filter(x=>x!==c);
-    S.players[t].hand.push(c);S.players[t].called=false;
-    if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),k*90);
-  }
+  const c=rand(p.hand);p.hand=p.hand.filter(x=>x!==c);
+  S.players[t].hand.push(c);S.players[t].called=false;
+  if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);
   fx('❤️‍🔥',`${who(pi)} doou uma carta para ${t===0?'você':who(t)}`,'var(--cg)','stamp');
   log(`${who(pi)} doou uma carta para ${t===0?'você':who(t)}.`);
   if(massCheck()==='win')return 'win';
@@ -128,7 +125,7 @@ function stealWild(pi,t){
 }
 function banType(pi,c){
   const m=x=>x.type===c.type&&(c.type!=='num'||x.value===c.value);
-  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;clearFlash();hold(99999);
+  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;hold(99999);
   const others=alive().filter(i=>i!==pi).map(i=>({i,cards:S.players[i].hand.filter(m)})).filter(x=>x.cards.length);
   const n=S.players[pi].hand.filter(m).length+others.reduce((a,x)=>a+x.cards.length,0)+S.deck.filter(m).length+S.discard.slice(0,-1).filter(m).length;
   fx('✖️',`${c.type==='num'?`Número ${c.value}`:label(c)} banido do jogo (${n} carta${n===1?'':'s'})`,'var(--cr)','slam');
@@ -163,7 +160,7 @@ const MAGIC=['Tadá!','Essa era a sua carta?','Diante dos seus olhos!','Voilà!'
 function transmute(pi,col){
   const picks=alive().filter(i=>i!==pi).map(i=>{const acts=S.players[i].hand.filter(c=>c.type!=='num');return acts.length?{i,c:rand(acts)}:null}).filter(Boolean);
   if(!picks.length){fx('🎩','Ninguém tinha carta de ação',col,'stamp');log('Mágica: ninguém tinha carta de ação.');return 'done'}
-  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;clearFlash();hold(99999);
+  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;hold(99999);
   picks.forEach(x=>{const c=x.c;x.before={...c};
     c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(rng()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
   let t=0;picks.forEach(x=>{t=Math.max(t,x.i===0?morphMine(x.c,x.before,x.after,sp):showCards(x.i,[x.before],'morph',sp,[x.after]))});
@@ -325,7 +322,7 @@ function revealCard(pi,c){
 }
 function doChallenge(pi){
   const c0=S.chal;if(!c0)return;
-  S.busy=true;clearFlash();const g=S.gen;
+  S.busy=true;const g=S.gen;
   fx('⚔️',`${pi===0?'Você desafiou':who(pi)+' desafiou'} o +${c0.amt} de ${c0.by===0?'você':who(c0.by)}`,'var(--accent)','stamp',1300);
   log(`${who(pi)} desafiou o +${c0.amt} de ${who(c0.by)}.`);
   setTimeout(()=>{
@@ -341,7 +338,7 @@ function doChallenge(pi){
 function challengeResolve(pi){
   const c=S.chal;S.chal=null;if(!c)return;const n=S.pending;S.pending=0;S.pendingType=null;
   const amt=Math.min(n,c.amt||n),rest=n-amt;
-  const frozenBy=S.weather==='blizzard'||curseOn('ice',c.by),frozen=S.weather==='blizzard'||curseOn('ice',pi);
+  const frozenBy=S.weather==='blizzard'||curseIs('ice'),frozen=S.weather==='blizzard'||curseIs('ice');
   if(c.bluff){
     const cont=()=>{
       if(rest>0&&!frozen){
@@ -350,9 +347,9 @@ function challengeResolve(pi){
         log(`${who(pi)} comprou o restante acumulado: ${k2}.`);
         if(overloaded(pi)&&markOut(pi))return;endTurn();return;
       }
-      S.tok++;render();if(cur().bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();
+      S.tok++;render();if(cur().bot)scheduleBot();
     };
-    if(S.death&&!immune(c.by)){
+    if(S.death){
       fx('⚔️',`Blefe! ${c.by===0?'Você foi eliminado':who(c.by)+' foi eliminado'}`,'var(--cg)','slam');stampOn(c.by,'⚔️','var(--cr)');
       log(`${who(pi)} desafiou: ${who(c.by)} blefou com +${amt} na morte súbita e foi eliminado.`);
       if(markOut(c.by,`foi pego blefando com +${amt} na morte súbita`))return;
@@ -368,7 +365,7 @@ function challengeResolve(pi){
     }
     cont();
   }else{
-    if(S.death&&!immune(pi)){
+    if(S.death){
       fx('⚔️',`Jogada legal! ${pi===0?'Você foi eliminado':who(pi)+' foi eliminado'}`,'var(--cr)','slam');log(`${who(pi)} desafiou errado na morte súbita e foi eliminado.`);
       if(markOut(pi,'desafiou errado na morte súbita'))return;endTurn();return;
     }
@@ -421,7 +418,7 @@ function addRule(pi,k,quiet,done){
 }
 // Carta da Regra: ícone grande com o nome, voa até a faixa de regras enquanto as cartas novas caem no monte; depois a janela explicativa
 function ruleReveal(k,cards,done){
-  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;clearFlash();hold(99999);sfx('rule');
+  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;hold(99999);sfx('rule');
   const fin=()=>{if(g!==S.gen)return;$('fx').innerHTML='';S.fxUntil=0;S.busy=false;render();showRuleInfo(k);if(done)done()};
   if(RM){render();fin();return}
   $('fx').innerHTML=`<div class="fxin ruleshow" style="--fxc:var(--accent)"><div class="fxg" id="ruleG" style="color:var(--accent)">${ruleIcon(k)}</div><div class="fxcap" id="ruleCap">${RNAME[k]}</div></div>`;
@@ -442,14 +439,13 @@ function ruleReveal(k,cards,done){
   },1200*sp);
 }
 const RICON={stack:'📚',sequence:'🔢',neighbor:'↕️',hell:'🔥',jumpin:'✂️',perfection:'💯',clean:'🧼',nou:'↩️',satisfaction:'😤',insatisfaction:'👋',
-  fastdraw:'⏩',tracking:'🔎',flash:'🏃',overload:'🏋️',limbo:'🪜',hard:'🎯',dos:'✌️',shiny:'🌈',team:'🤝',black:'🔘',noaction:'🥱',mess:'🎭',
-  revelation:'🔦',mini:'🤏',maxi:'🤌',mulligan:'🆕',camouflage:'😶‍🌫️',bg:'🩵',nochallenge:'🤐',time:'⏰',limitless:'♾️',twohands:'✋',poker:'🃏',addrules:'➕',
-  tournament:'🏆',survivor:'🏅',drekkemaus:'🐉',jingle:'🔔',papaille:'🦋',charlotte:'🕷️',elisah:'🔮',buffy:'🐣',snowy:'⛄',icemice:'🐭',elise:'⚜️',red:'🔴',blue:'🔵',yellow:'🟡',green:'🟢',weather:'🌤️',mix:'⇄⊘',plus99:'+99',dfnormal:'✅',dfrise:'📶',dfsuper:'✳️',dfnone:'❎'};
+  fastdraw:'⏩',tracking:'🔎',overload:'🏋️',dos:'✌️',shiny:'🌈',team:'🤝',black:'🔘',noaction:'🥱',mess:'🎭',
+  revelation:'🔦',mini:'🤏',maxi:'🤌',mulligan:'🆕',camouflage:'😶‍🌫️',bg:'🩵',nochallenge:'🤐',twohands:'✋',poker:'🃏',
+  tournament:'🏆',survivor:'🏅',weather:'🌤️',mix:'⇄⊘',plus99:'+99',dfnormal:'✅',dfrise:'📶',dfsuper:'✳️',dfnone:'❎'};
 // ícones de texto (+99, ⇄⊘) usam fonte menor para caber no círculo
 const txtIcon=ic=>/[+⇄⊘]/.test(ic);
 function ruleIcon(k){
   if(RICON[k])return RICON[k];
-  if(BOTRULES.includes(k))return k[0].toUpperCase();
   const e=Object.entries(SP).find(([t,v])=>(v.rule||t)===k&&!v.hide)||Object.entries(SP).find(([t,v])=>(v.rule||t)===k);
   return e?e[1].g:'📜';
 }
@@ -469,8 +465,8 @@ function notice(k,by,opts={}){
   const box=$('notices');
   const ex=box.querySelector(`[data-k="${k}"]`);if(ex)ex.remove();
   const el=document.createElement('div');el.className='notice'+(opts.gone?' gone':'');el.dataset.k=k;el.setAttribute('role','status');
-  const ic=ruleIcon(k),bot=BOTRULES.includes(k);
-  el.innerHTML=`<div class="ni" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]}"`:''}>${ic}</div><div class="nt">${opts.title||(opts.gone?'Regra removida: ':'Nova regra: ')+RNAME[k]}</div><div class="nb">${by||''}</div><div class="nd">${ruleDesc(k)}${ruleListHtml(k)}</div>`;
+  const ic=ruleIcon(k);
+  el.innerHTML=`<div class="ni">${ic}</div><div class="nt">${opts.title||(opts.gone?'Regra removida: ':'Nova regra: ')+RNAME[k]}</div><div class="nb">${by||''}</div><div class="nd">${ruleDesc(k)}${ruleListHtml(k)}</div>`;
   el.onclick=()=>{el.remove();document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))};
   if(opts.anchor){box.innerHTML='';const r=opts.anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);el.classList.add('pointed');
     requestAnimationFrame(()=>{const a=$('rulestrip').querySelector(`[data-k="${k}"]`)||opts.anchor;const rr=a.getBoundingClientRect(),br=el.getBoundingClientRect();box.style.top=(rr.bottom+12)+'px';el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
@@ -487,16 +483,15 @@ function renderRuleStrip(){
   if(strip.dataset.sig===sig)return;strip.dataset.sig=sig;
   const fresh=S.freshRules||[];S.freshRules=[];
   strip.innerHTML=keys.map(k=>{const ic=ruleIcon(k);const txt=txtIcon(ic);
-    const bot=BOTRULES.includes(k);
-    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''} ${S.stripHold?'pre':''}" data-k="${k}" aria-label="${RNAME[k]}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(k[0].toUpperCase()+k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</button>`}).join('');
+    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''} ${S.stripHold?'pre':''}" data-k="${k}" aria-label="${RNAME[k]}">${ic}</button>`}).join('');
   const f=strip.querySelector('.fresh');if(f){S.progScroll=Date.now();f.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'})}
   strip.querySelectorAll('.fresh').forEach(freshen);
 }
 // destaque de regra nova: some sozinho (e suave) depois de 6 s, mesmo sem tocar no ícone
 function freshen(el){el.classList.add('fresh');setTimeout(()=>el.classList.remove('fresh'),6000)}
 function openPoker(){
-  const list=S.added.map(a=>{const bot=BOTRULES.includes(a.k),ic=ruleIcon(a.k);
-    return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}" ${bot?`style="background:${AVCOL[BOTNAMES.indexOf(a.k[0].toUpperCase()+a.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${a.by==='você'?'sua':'de '+a.by}</em></div><p>${ruleDesc(a.k)}${ruleListHtml(a.k)}</p></div></div>`}).join('');
+  const list=S.added.map(a=>{const ic=ruleIcon(a.k);
+    return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}">${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${a.by==='você'?'sua':'de '+a.by}</em></div><p>${ruleDesc(a.k)}${ruleListHtml(a.k)}</p></div></div>`}).join('');
   $('pokerList').innerHTML=list||'<p class="sub">Nenhuma regra disponível para escolher.</p>';
   S.busy=true;S.freshRules=[];render();
   $('pokerOv').classList.add('show');$('pokerGo').focus();
@@ -552,21 +547,9 @@ function openRuleChoice(opts,cb,title='Carta da Regra',sub='Escolha uma regra pa
   $('swaps').onclick=e=>{const b=e.target.closest('button');if(b)done(b.dataset.k)};
   $('swaps').firstChild&&$('swaps').firstChild.focus();
 }
-function charlotteFx(pi,c){
-  const p=S.players[pi],others=alive().filter(i=>i!==pi);if(!others.length)return 'done';
-  if(c==='r'){const nums=p.hand.filter(x=>x.type==='num');if(!nums.length)return 'done';const x=rand(nums),t=rand(others);
-    p.hand=p.hand.filter(y=>y!==x);S.players[t].hand.push(x);S.players[t].called=false;if(t===0){S.newIds.push(x.id);S.handFrom=targetRect(pi)}else ghost(targetRect(pi),targetRect(t),0);
-    fx('💗',`Amor? Charlotte doou uma carta para ${t===0?'você':who(t)}`,'var(--cr)','stamp');return selfCheck(pi)}
-  if(c==='b'){S.numOnly=2;fx('🕊️','Paz? No próximo turno, só cartas numéricas','var(--cb)','stamp');return 'done'}
-  if(c==='y'){const t=rand(others),n=1+Math.floor(rng()*3);drawN(t,n);fx('😠',`Ira? ${t===0?'Você compra':who(t)+' compra'} ${n}`,'var(--cy)','slam');return massCheck()}
-  if(c==='g'){const m=Math.min(...others.map(i=>S.players[i].hand.length));let k=0;
-    while(p.hand.length>m&&p.hand.length>1)discardCard(pi,rand(p.hand),k++);while(p.hand.length<m&&drawOne(pi)){}
-    fx('⚖️',`Igualdade? Charlotte fica com ${p.hand.length} cartas`,'var(--cg)','stamp');return selfCheck(pi)}
-  return 'done';
-}
 // sequência de efeitos, um jogador por vez; a partida espera e depois segue
 function sequenceFx(list,step){
-  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;clearFlash();hold(99999);
+  const g=S.gen,sp=fastMode()?.4:1;S.busy=true;hold(99999);
   const go=j=>{if(g!==S.gen||S.phase==='over')return;
     if(j>=list.length){S.fxUntil=0;S.busy=false;if(massCheck()==='win')return;render();endTurn();return}
     step(list[j],()=>go(j+1),sp)};
@@ -622,7 +605,7 @@ function botTypeSimon(pi,seq,ok,done){
   setTimeout(step,300*sp);
 }
 function botDefer(pi,kind,list,pickIdx,effect){
-  S.busy=true;clearFlash();
+  S.busy=true;
   botThink(pi,kind,list,pickIdx,()=>{S.busy=false;const r=effect();if(r==='win'||S.phase==='over')return;if(r==='defer')return;render();endTurn()});
   return 'defer';
 }
@@ -633,7 +616,7 @@ function applySpecial(pi,card){
   switch(T){
     case 'trade':if(!opp.length)return 'done';if(pi===0)return 'ask';{const t=botSwapTarget(pi),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{swapHands(pi,t);return 'done'})}
     case 'carousel':rotateHands();return 'done';
-    case 'gift':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o=opponents(pi).filter(i=>!ab(i,'papaille'));if(!o.length)return 'done';const t=R.diff==='easy'?rand(o):fewest(pi,o),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>giftCard(pi,t))}
+    case 'gift':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o=opponents(pi);if(!o.length)return 'done';const t=R.diff==='easy'?rand(o):fewest(pi,o),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>giftCard(pi,t))}
     case 'web':{if(pi===0)return 'ask';const t=botTarget(pi,true);if(t<0)return 'done';const l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{webOn(pi,t);return 'done'})}
     case 'wish':if(!p.hand.length||S.discard.length<2)return 'done';if(pi===0)return 'ask';{
       const opts=wishOptions();const best=opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0];return botDefer(pi,'up',opts,opts.indexOf(best),()=>{wishSwap(pi,best);return 'done'})}
@@ -651,7 +634,7 @@ function applySpecial(pi,card){
       })}
     case 'thunder':{
       // 2 jogadores sorteados (pode ser quem jogou), cada um compra de 1 a 5; um por vez, as cartas aparecem de repente
-      const vs=shuffle(alive().filter(i=>!ab(i,'drekkemaus'))).slice(0,2);
+      const vs=shuffle(alive()).slice(0,2);
       log(`Trovão atingiu ${vs.map(who).join(' e ')}.`);
       return sequenceFx(vs,(i,next,sp)=>{const n=1+Math.floor(rng()*5);
         thunderDraw(i,n);render();setTimeout(next,950*sp)})}
@@ -680,7 +663,7 @@ function applySpecial(pi,card){
     case 'batata':if(pi===0)return 'ask';{const b=botTarget(pi),t=b>=0?b:rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{giveBatata(pi,card,t);return 'done'})}
     case 'curse':{
       const keys=Object.keys(CURSES).filter(c=>!(R.mess&&c==='shoe')),k=rand(keys),g=S.gen,sp=fastMode()?.35:1;
-      S.busy=true;clearFlash();hold(99999);
+      S.busy=true;hold(99999);
       $('fx').innerHTML='<div class="fxin roul" style="--fxc:#6b2fa3"><div class="fxg" id="roulG" style="color:#6b2fa3"></div><div class="fxcap">Sorteando a maldição…</div></div>';
       const steps=[];let t=0;for(let j=0;j<16;j++){t+=(55+j*j*1.4)*sp;steps.push(t)}
       let idx=Math.floor(Math.random()*keys.length);
@@ -696,7 +679,7 @@ function applySpecial(pi,card){
       },steps[steps.length-1]+250*sp);
       return 'defer'}
     case 'dice':{
-      const t=nextIdx(pi,1),g=S.gen;S.busy=true;clearFlash();
+      const t=nextIdx(pi,1),g=S.gen;S.busy=true;
       const n=1+Math.floor(rng()*6);
       // adversário rola: dado pequeno perto da cadeira dele; você rola: dado grande (3D ou 2D)
       const mini=t!==0?miniDie(t,n,fastMode()?450:1200):null;
@@ -720,7 +703,7 @@ function applySpecial(pi,card){
     case 'simon':
       if(pi===0)return 'ask';{
         const seq=[...S.simon];const ok=!seq.length||rng()<Math.pow({easy:.6,normal:.85,hard:.95,master:.98}[R.diff],seq.length);
-        const col=bestColor(p.hand);S.busy=true;clearFlash();
+        const col=bestColor(p.hand);S.busy=true;
         const fin=r=>{S.busy=false;if(r==='win'||S.phase==='over')return;render();endTurn()};
         const pickCol=()=>{const cols=COLORS.filter(c=>!(R.bg&&c==='g'));S.busy=true;botThink(pi,'color',cols,Math.max(0,cols.findIndex(c=>sameCol(c,col))),()=>fin(resolveSimon(pi,card,true,col)))};
         if(!seq.length){pickCol();return 'defer'}
@@ -775,12 +758,6 @@ function applySpecial(pi,card){
       if(!opts.length){fx('📜','Nenhuma regra nova disponível',col,'stamp');return 'done'}
       if(pi===0)return 'ask';
       {const k=rand(opts);return botDefer(pi,'rule',opts,opts.indexOf(k),()=>{addRule(pi,k,false,()=>{render();endTurn()});return 'defer'})}}
-    case 'paradox':{
-      if(!p.hand.length)return 'done';const c=rand(p.hand);p.hand=p.hand.filter(x=>x!==c);
-      (CARRY[p.name]=CARRY[p.name]||[]).push({color:c.color,type:c.type,value:c.value});
-      ghost(targetRect(pi),discardRect(),0);
-      fx('⏳',`${pi===0?'Você mandou':who(pi)+' mandou'} uma carta para a próxima partida`,col,'slam');log(`${who(pi)} enviou uma carta para a próxima partida.`);
-      return selfCheck(pi)}
     case 'sun':case 'fog':case 'storm':case 'blizzard':{
       const w=WEATHER[T];S.weather=T;S.passes=0;if(T==='blizzard'){S.pending=0;S.pendingType=null;S.chal=null}
       fx(w.g,`${w.n}: ${w.t}`,w.c,'slam');log(`O clima mudou para ${w.n.toLowerCase()}.`);
@@ -802,7 +779,7 @@ function humanAskOpen(card){
   const fin=r=>{if(r==='defer')return;S.busy=false;if(r==='win')return;endTurn()};
   const others=alive().filter(i=>i!==0);
   if(T==='trade')openTarget('Trocar de mão com…','Escolha com quem trocar todas as cartas.',others,t=>{swapHands(0,t);fin('done')});
-  else if(T==='gift'&&others.some(i=>!ab(i,'papaille')))openTarget('Doar uma carta para…','Uma carta aleatória da sua mão vai para quem você escolher.',others.filter(i=>!ab(i,'papaille')),t=>fin(giftCard(0,t)));
+  else if(T==='gift')openTarget('Doar uma carta para…','Uma carta aleatória da sua mão vai para quem você escolher.',others,t=>fin(giftCard(0,t)));
   else if(T==='web')openTarget('Prender na teia…','Quem você escolher perde a próxima vez.',others,t=>{webOn(0,t);fin('done')});
   else if(T==='rule'){const o=ruleOptions(3);if(!o.length)fin('done');else openRuleChoice(o,k=>{addRule(0,k,false,()=>fin('done'))})}
   else if(T==='batata')openTarget('Passar a batata para…','Quem ficar 5 turnos com ela é eliminado.',others,t=>{giveBatata(0,card,t);fin('done')});
@@ -857,7 +834,7 @@ function canJump(pi,c){
   return R.jumpin&&S.phase==='play'&&!S.busy&&S.turn!==pi&&!S.players[pi].out&&identical(c,topCard());
 }
 function doJumpIn(pi,card){
-  S.tok++;clearFlash();
+  S.tok++;
   S.turn=pi;S.extra=false;S.skip=false;
   if(pi===0)S.mull=false;
   fx('✂',pi===0?'Você cortou!':`Corte de ${who(pi)}!`,'var(--cy)','stamp');
@@ -866,7 +843,7 @@ function doJumpIn(pi,card){
     const r=playCard(pi,card,null);
     if(r==='win'||r==='defer')return;
     if(r==='ask'){if(S.players[pi].bot){endTurn();return}S.preLanded=card;humanAsk(card);return}
-    if(r==='combo'){S.tok++;render();if(S.players[pi].bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();return}
+    if(r==='combo'){S.tok++;render();if(S.players[pi].bot)scheduleBot();return}
     endTurn();
   };
   if(card.type!=='num'){announce(pi,card,go,fastMode()?250:480);return}

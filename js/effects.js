@@ -314,7 +314,6 @@ const SND={
   box:()=>{tone(300,.08,{to:600,vol:.14});arp([784,988,1175],.07,{type:'triangle',vol:.09,d:.25,at:.1})},
   dizzy:()=>{tone(400,.9,{vol:.08,detune:30});tone(420,.9,{vol:.08,detune:-30})},
   splat:()=>{noise(.25,{f:500,filter:'lowpass',vol:.3});tone(180,.15,{to:90,vol:.12})},
-  paradox:()=>{noise(.5,{f:4000,fTo:300,vol:.1,q:3});tone(800,.5,{to:200,vol:.06})},
   zip:()=>{noise(.12,{f:1500,fTo:5000,vol:.12,q:2})},
   thud:()=>{tone(70,.35,{vol:.3,to:45});noise(.1,{f:200,filter:'lowpass',vol:.2})},
   thaw:()=>arp([784,988,1175,1568],.1,{type:'triangle',vol:.1,d:.4}),
@@ -333,7 +332,7 @@ function sfxGlyph(g){
     ['💰','chest'],['📜','rule'],['⚔️','chal'],['☠️','death'],['✂','jump'],['★','bonus'],['⇆','swoosh'],['🔀','swoosh'],['🎠','swoosh'],['🌪️','swoosh'],['✋','swoosh'],['🥔','pop'],['🌼','peace'],['🕊️','peace'],
     ['⚒️','curse'],['🧊','curse'],['👢','curse'],['🌵','curse'],['⏱️','curse'],['🧪','curse'],['😈','curse'],['⚡','thunder'],['💧','rain'],
     ['❤️‍🔥','gift'],['🕸️','web'],['🪄','wish'],['⚖️','equal'],['🙏','justice'],['🧲','magnet'],['🎩','recycle'],['🍀','luck'],['❓','mystery'],['🧬','clone'],['🚦','beep'],
-    ['🤲','copy'],['🧠','simon'],['🪑','chairs'],['👁️','view'],['🧭','compass'],['🔒','lock'],['🧤','sneak'],['✖️','ban'],['📦','box'],['🍄','dizzy'],['🖌️','splat'],['⏳','paradox'],
+    ['🤲','copy'],['🧠','simon'],['🪑','chairs'],['👁️','view'],['🧭','compass'],['🔒','lock'],['🧤','sneak'],['✖️','ban'],['📦','box'],['🍄','dizzy'],['🖌️','splat'],
     ['⏩','zip'],['🌀','portal'],['🌤️','thaw'],['🚨','siren'],['--cgray','thud'],['wheel','wild'],['+','plus']];
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }

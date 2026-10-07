@@ -28,12 +28,12 @@ function drawOne(pi){if(S.weather==='blizzard'&&S.phase!=='deal')return null;if(
 // e é eliminado no fim do efeito (massCheck/checkLimits/endTurn), sem interromper o efeito no meio
 function thornHit(pi){
   const p=S.players[pi];
-  if(!curseOn('thorn',pi)||immune(pi)||p.out)return false;
+  if(!curseIs('thorn')||p.out)return false;
   if(!p.thorned){p.thorned=true;ghost($('deck').getBoundingClientRect(),targetRect(pi),0);stampOn(pi,'🌵','var(--cg)')}
   return true;
 }
 function drawN(pi,n){let k=0;for(let i=0;i<n;i++)if(drawOne(pi))k++;return k}
-const limit=()=>Math.min(R.overload?10:Infinity,R.limbo?S.limit:Infinity);
+const limit=()=>R.overload?10:Infinity;
 const overloaded=pi=>!S.players[pi].out&&(S.players[pi].hand.length>limit()||S.boom===pi||!!S.players[pi].thorned);
 function checkLimits(){
   for(const i of alive())if(overloaded(i)&&markOut(i))return;
@@ -41,16 +41,12 @@ function checkLimits(){
 }
 function markOut(pi,reason,icon){
   const p=S.players[pi];
-  if(immune(pi)){if(S.boom===pi)S.boom=null;toast('Charlotte não pode ser eliminada!','var(--cg)');return false}
   FX3D.smoke(targetRect(pi));p.out=true;p.outAt=S.outSeq=(S.outSeq||0)+1;sfx('out');
   // torneios: a mão do eliminado vale os pontos das cartas que ele tinha, no mínimo 50
   p.outPts=Math.max(50,[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0));
   if(S.other){const o=S.other.players[pi];S.other.deck.unshift(...returnable([...o.hand,...(o.hand2||[])]));o.hand=[];o.hand2=[]}
   const cards=[...p.hand,...(p.hand2||[])];p.hand=[];p.hand2=[];
-  if(ab(pi,'snowy')&&alive().length){
-    cards.forEach((c,k)=>{const t=rand(alive());S.players[t].hand.push(c);S.players[t].called=false;if(t===0)S.newIds.push(c.id);else if(k<8)ghost(targetRect(pi),targetRect(t),k*60)});
-    S.handFrom=targetRect(pi);log('Snowy distribuiu as cartas dele para os outros.');
-  }else{S.deck.unshift(...returnable(cards));shuffle(S.deck)}
+  S.deck.unshift(...returnable(cards));shuffle(S.deck);
   const why=reason||(S.boom===pi?'explodiu com a bomba':p.thorned?'comprou com a maldição do espinho':`passou de ${limit()} cartas`);p.thorned=false;
   p.outIcon=icon||(S.boom===pi?'💣':/morte súbita/.test(why)?'☠️':/espinho/.test(why)?'🌵':/batata/.test(why)?'🥔':(R.overload&&limit()<=10?'🏋️':String(limit())));
   if(S.boom===pi)S.boom=null;
@@ -76,7 +72,6 @@ function comboOk(c){
 function canPlay(p,c,any){
   if(S.phase==='combo')return comboOk(c);
   if(c.type==='bomb'||c.lock)return false;
-  if(S.numOnly===1&&c.type!=='num')return false;
   if(S.traffic&&p.hand.length===1&&c.type==='num'&&((c.value%2===1)===(S.traffic==='odd')))return false;
   if(R.clean&&p.hand.length===1&&c.type!=='num')return false;
   const t=topCard();
@@ -114,21 +109,17 @@ function newGame(){
   $('home').hidden=true;
   const gen=S?S.gen+1:1;
   semear(novaSemente());
-  clearFlash();closeOverlays();
+  closeOverlays();
   const tourMode=R.tournament?'tournament':R.survivor?'survivor':null;
   if(!tourMode)TOUR=null;
   else if(!TOUR||TOUR.mode!==tourMode||TOUR.done)TOUR={mode:tourMode,pts:{},names:null,out:[],round:0};
   let names;
   if(TOUR&&TOUR.names)names=TOUR.names.filter(n=>!TOUR.out.includes(n));
   else{
-    const forced=BOTRULES.filter(k=>R[k]).map(k=>k[0].toUpperCase()+k.slice(1));
-    if(['red','blue','yellow','green'].some(k=>R[k])&&!forced.includes('Charlotte'))forced.push('Charlotte');
-    const rest=shuffle(BOTNAMES.filter(n=>!forced.includes(n)));
-    names=[...shuffle(forced),...rest].slice(0,R.bots);
+    names=shuffle([...BOTNAMES]).slice(0,R.bots);
     if(TOUR)TOUR.names=names;
   }
   if(TOUR){TOUR.round++;['Você',...names].forEach(n=>TOUR.pts[n]=TOUR.pts[n]||0)}
-  if(addT){clearInterval(addT);addT=null}
   const players=[{name:'Você',bot:false,hand:[],called:false,col:'var(--accent)'}];
   names.forEach(n=>players.push({name:n,bot:true,hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
@@ -137,9 +128,7 @@ function newGame(){
   applyBg();S.added=[];S.removed=[];S.freshRules=[];S.ruleOrder=[];S.stripHold=false;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
   S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
-  if(timeT){clearInterval(timeT);timeT=null}
-  if(limboT){clearInterval(limboT);limboT=null}
-  $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';S.limit=12;
+  $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';
   if(R.poker){
     const o=ruleOptions(3,true);
     // a faixa de regras fica vazia até o fim do Mix (flyRules)
@@ -153,22 +142,14 @@ function newGame(){
 function dealAndStart(){
   const players=S.players;
   S.deck=buildDeck();S.mull=R.mulligan;applyBg();
-  if(R.time){const g=S.gen;S.timeEnd=Date.now()+360000;timeT=setInterval(()=>{if(!S||S.gen!==g||S.phase==='over')return;const el=$('timeLeft');const left=Math.max(0,S.timeEnd-Date.now());if(el)el.textContent=fmtTime(left);if(left<=0)timeUp()},1000)}
-  if(R.limbo){const g=S.gen;limboT=setInterval(()=>{
-    if(!S||S.gen!==g||S.phase==='over')return;
-    if(S.limit>3)S.limit--;toast(`Limite: ${S.limit} cartas`,'var(--cr)');checkLimits();
-  },60000)}
   const startOf=i=>R.mini?4:R.maxi?9:R.start;
   for(let r=0;r<10;r++)for(let i=0;i<players.length;i++)if(r<startOf(i))drawOne(i);
   if(R.twohands)players.forEach((p,i)=>{const keep=p.hand;p.hand=[];for(let r=0;r<startOf(i);r++)drawOne(i);p.hand2=p.hand;p.hand=keep});
-  players.forEach((p,i)=>{if(ab(i,'elisah'))for(let k=0;k<3;k++)give(i,mk(rand(COLORS),'curse'))});
-  players.forEach((p,i)=>{const cs=CARRY[p.name];if(cs&&cs.length){cs.forEach(c=>give(i,mk(c.color,c.type,c.value)));delete CARRY[p.name];log(`${who(i)} recebeu ${cs.length} carta${cs.length>1?'s':''} do paradoxo.`)}});
   let first;
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
   S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,mk('w','bomb'));S.hist=[{by:null,card:snap(first),notes:['Primeira carta da mesa.']}];S.histCur=null;
   S.turn=Math.floor(rng()*players.length);
   log(`Primeira carta: ${cardName(first)}. ${who(S.turn)} ${S.turn===0?'começa':'começa'}.`);
-  if(R.addrules){const g=S.gen;addT=setInterval(()=>{if(!S||S.gen!==g||S.phase==='over'||S.busy)return;const o=ruleOptions(1);if(o.length){addRule(null,o[0]);render()}},75000)}
   if(spOn('portal'))buildSideB(startOf);
   S.lastTop=null;S.newIds=players[0].hand.map(c=>c.id);
   S.ruleOrder=ruleKeys(); // daqui em diante, cada regra nova vai para o fim da faixa
@@ -176,7 +157,7 @@ function dealAndStart(){
 }
 
 /* ---------- portal: two sides ---------- */
-const SIDE_KEYS=['deck','discard','color','pending','pendingType','chal','comboValue','seqDir','weather','peace','curse','death','traffic','simon','passes','numOnly','boom','mem','added','removed'];
+const SIDE_KEYS=['deck','discard','color','pending','pendingType','chal','comboValue','seqDir','weather','peace','curse','death','traffic','simon','passes','boom','mem','added','removed'];
 const PLAYER_KEYS=['hand','hand2','called','luck','webbed','confuse','confuseNext','treasure','batata','escaped'];
 function captureSide(){const o={R};SIDE_KEYS.forEach(k=>o[k]=S[k]);o.players=S.players.map(p=>{const q={};PLAYER_KEYS.forEach(k=>q[k]=p[k]);return q});return o}
 function applySide(o){R=o.R;SIDE_KEYS.forEach(k=>S[k]=o[k]);S.players.forEach((p,i)=>PLAYER_KEYS.forEach(k=>p[k]=o.players[i][k]))}
@@ -190,7 +171,7 @@ function buildSideB(startOf){
   let first;S.discard=[];
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
   S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,mk('w','bomb'));
-  Object.assign(S,{pending:0,pendingType:null,chal:null,comboValue:null,seqDir:null,weather:null,peace:0,curse:null,death:false,traffic:null,simon:[],passes:0,numOnly:0,boom:null,
+  Object.assign(S,{pending:0,pendingType:null,chal:null,comboValue:null,seqDir:null,weather:null,peace:0,curse:null,death:false,traffic:null,simon:[],passes:0,boom:null,
     mem:{lacks:{},lastCol:{},played:{}},added:[...(saved.added||[])],removed:[]});
   S.other=captureSide();
   applySide(saved);
@@ -206,7 +187,7 @@ function switchSide(pi){
 }
 function portalSequence(pi){
   const g=S.gen,sp=fastMode()?.35:1;
-  S.busy=true;clearFlash();render();
+  S.busy=true;render();
   const finish=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()};
   if(RM){switchSide(pi);render();finish();return}
   setTimeout(()=>{
@@ -294,7 +275,7 @@ function playCard(pi,card,chosen){
   if(card.color==='w'&&chosen&&peaceOn){card.chosen=chosen}
   else if(card.color==='w'&&chosen){card.chosen=chosen;burst(CVAR[chosen]);FX3D.sparks(discardRect(),CVAR[chosen]);if(!isDraw(card))fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,CNAME[chosen],CVAR[chosen],'stamp')}
   log(msg+'.');
-  if(sunPen){const k=drawN(pi,curseOn('anvil',pi)?2:1);log(`${who(pi)} jogou fora da cor com sol e comprou ${k}.`)}
+  if(sunPen){const k=drawN(pi,curseIs('anvil')?2:1);log(`${who(pi)} jogou fora da cor com sol e comprou ${k}.`)}
   if(p.hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
   if(p.hand.length===target())afterOneCard(pi);
   if(card.type==='num'&&R.perfection&&card.value===before){S.extra=true;log(`Perfeição! ${who(pi)} joga de novo.`);fx('★','Joga de novo','var(--cg)','stamp')}
@@ -304,8 +285,7 @@ function playCard(pi,card,chosen){
     if(o.length){const v=rand(o);thunderDraw(v,1);
       log(`Tempestade: ${who(pi)} mudou a cor e ${who(v)} ${v===0?'compra':'comprou'} 1.`);if(massCheck()==='win')return 'win'}
   }
-  if(curseOn('shoe',pi)&&orig!=='num'&&card.type!=='num'){drawN(pi,1);log(`${who(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}
-  if(card.type==='num'&&S.players[pi].name==='Charlotte'&&on){const k={r:'red',b:'blue',y:'yellow',g:'green'}[card.color];if(k&&R[k]){const r=charlotteFx(pi,card.color);if(r==='win')return r}}
+  if(curseIs('shoe')&&orig!=='num'&&card.type!=='num'){drawN(pi,1);log(`${who(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}
   if(card.type==='chest'){
     // Tesouro: descarta todas as cartas que sobraram, uma de cada vez, e só então vence
     fx('💰',`${who(pi)} abriu o tesouro!`,'var(--cy)','slam');
@@ -325,7 +305,7 @@ function playCard(pi,card,chosen){
 function afterOneCard(pi){
   const p=S.players[pi];
   if(S.weather==='fog')return;
-  if(p.bot&&!p.called){p.called=ab(pi,'elise')||rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){sfx('bell');log(`${p.name} tocou a sineta.`);toast(`🛎️ ${p.name} tocou a sineta!`,'var(--cr)')}}
+  if(p.bot&&!p.called){p.called=rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){sfx('bell');log(`${p.name} tocou a sineta.`);toast(`🛎️ ${p.name} tocou a sineta!`,'var(--cr)')}}
   if(!p.called)scheduleCatch(pi);
 }
 function scheduleCatch(pi){
@@ -342,7 +322,7 @@ function penalize(pi,by){
   const p=S.players[pi];
   if(S.weather==='fog'||p.out)return;
   sfx('caught');p.called=false;
-  if(S.death&&!immune(pi)){
+  if(S.death){
     log(`${who(by)} pegou ${pi===0?'você':p.name} sem tocar a sineta na morte súbita: eliminado!`);
     fx('🚨',`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!`,'var(--cr)','slam');stampOn(pi,'🚨','var(--cr)');
     if(markOut(pi,'foi pego sem tocar a sineta na morte súbita'))return;
@@ -350,7 +330,7 @@ function penalize(pi,by){
     render();return;
   }
   const n=S.weather==='blizzard'?0:drawAmt(pi,2);
-  if(n){drawN(pi,n);icemiceHook(pi)}
+  if(n)drawN(pi,n);
   log(`${who(by)} pegou ${pi===0?'você':p.name} sem tocar a sineta${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
   toast(`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!${n?` +${n}`:''}`,'var(--cy)');
   if(overloaded(pi)){if(markOut(pi))return;if(pi===S.turn){endTurn();return}}
@@ -375,13 +355,12 @@ function endTurnHook(pi){
   }
   if(S.curse){S.curse.left--;if(S.curse.left<=0){S.curse=null;toast('A maldição acabou!','var(--cg)')}}
   if(S.peace>0)S.peace--;
-  if(S.numOnly>0)S.numOnly--;
   return false;
 }
 function endTurn(){
   if(S.phase==='over')return;
   if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}S.histCur=null;
-  clearFlash();S.auto=false;
+  S.auto=false;
   const crossed=S.crossed;S.crossed=false;
   for(const i of alive())if(S.players[i].thorned&&markOut(i))return;
   if(!crossed&&endTurnHook(S.turn))return;
@@ -391,7 +370,7 @@ function endTurn(){
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
   if(S.pending>0&&comboMode()==='none'&&!R.nou){
     const v=S.turn;S.chal=null;
-    if(noDraw(v)||curseOn('ice',v)||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
+    if(noDraw(v)||curseIs('ice')||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
     const n=drawAmt(v,S.pending);drawN(v,n);stampOn(v,'⊘','var(--cr)');hold(900);
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
@@ -416,13 +395,12 @@ function startTurn(){
   render();
   if(cur().bot)scheduleBot();
   else if(confused(0))autoHuman();
-  else if(R.flash||curseIs('time'))startFlash();
   scheduleJumps();
 }
 function takeDraw(pi){
   const p=S.players[pi];
   if(pi===0)S.mull=false;
-  if(S.pending>0&&(S.weather==='blizzard'||curseOn('ice',pi))){
+  if(S.pending>0&&(S.weather==='blizzard'||curseIs('ice'))){
     const n=S.pending;S.pending=0;S.pendingType=null;S.chal=null;
     fx(S.weather==='blizzard'?'❄️':'🧊',`${pi===0?'Você perde':who(pi)+' perde'} a vez (+${n} congelado)`,'#5aa9d6','stamp');stampOn(pi,'⊘','var(--cr)');
     log(`${who(pi)} perdeu a vez sem comprar (+${n} congelado).`);endTurn();return;
@@ -444,18 +422,18 @@ function takeDraw(pi){
     fx('☠️',`${who(pi)} não podia comprar!`,'#0d0a14','slam');log(`${who(pi)} precisou comprar e foi eliminado.`);
     if(markOut(pi,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return;endTurn();return;
   }
-  if(curseOn('ice',pi)){
+  if(curseIs('ice')){
     S.pending=0;S.pendingType=null;S.chal=null;
     fx('🧊',`${who(pi)} não pode comprar e passa`,'var(--cb)','stamp');log(`${who(pi)} passou (gelo).`);endTurn();return;
   }
   if(S.pending>0){
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.chal=null;drawn99(pi,endTurn);return}
-    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);hold(700);icemiceHook(pi);
+    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);hold(700);
     log(`${who(pi)} comprou ${n}.`);
     if(overloaded(pi)&&markOut(pi))return;
     endTurn();return;
   }
-  if(R.tracking||(p.bot&&['drekkemaus','jingle','charlotte'].some(k=>ab(pi,k)))){
+  if(R.tracking){
     if(S.color&&S.pending===0)memLack(pi,S.color);
     const opts=[];
     if(p.luck){
@@ -467,7 +445,7 @@ function takeDraw(pi){
     const wasCalled=p.called;
     // com a Bigorna, também vai para a mão uma das opções que sobraram (ao acaso)
     const finish=pick=>{
-      const rest=opts.filter(c=>c!==pick),extra=curseOn('anvil',pi)&&rest.length?rand(rest):null;
+      const rest=opts.filter(c=>c!==pick),extra=curseIs('anvil')&&rest.length?rand(rest):null;
       rest.filter(c=>c!==extra).forEach(c=>S.deck.unshift(c));
       give(pi,pick);if(extra)give(pi,extra);afterDraw(pi,pick,extra?2:1,wasCalled);
     };
@@ -487,14 +465,13 @@ function takeDraw(pi){
   }
   const wasCalled=p.called;
   drawn=drawOne(pi);if(drawn)count=1;
-  if(curseOn('anvil',pi)&&drawOne(pi))count++;
-  icemiceHook(pi);
+  if(curseIs('anvil')&&drawOne(pi))count++;
   afterDraw(pi,drawn,count,wasCalled);
 }
 // +99: quem precisa comprar as cartas dele é eliminado na hora, depois de uma enxurrada de cartas voando do monte até ele.
 // As cartas não são compradas de verdade. Só escapa quem não compraria por causa da Nevasca ou do Gelo
 function drawn99(pi,then){
-  const g=S.gen,sp=fastMode()?.4:1,N=RM?0:22,step=50*sp;S.busy=true;clearFlash();render();
+  const g=S.gen,sp=fastMode()?.4:1,N=RM?0:22,step=50*sp;S.busy=true;render();
   const from=$('deck').getBoundingClientRect();
   for(let k=0;k<N;k++)setTimeout(()=>{if(g!==S.gen)return;ghost(from,targetRect(pi),0);if(k%3===0)sfx('draw')},k*step);
   log(`${who(pi)} ${pi===0?'precisa':'precisou'} comprar as cartas do +99.`);
@@ -510,7 +487,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   const p=S.players[pi];
   log(`${who(pi)} comprou ${count} carta${count===1?'':'s'}.`);
   if(overloaded(pi)){if(markOut(pi))return;endTurn();return}
-  const fast=(R.fastdraw||ab(pi,'papaille'))&&drawn&&drawn.type!=='bomb'&&p.hand.includes(drawn);
+  const fast=R.fastdraw&&drawn&&drawn.type!=='bomb'&&p.hand.includes(drawn);
   if(!fast&&(!drawn||R.insatisfaction)){endTurn();return}
   if(!fast&&R.satisfaction&&!p.hand.some(c=>canPlay(p,c))&&S.deck.length+S.discard.length>1){
     S.phase='play';S.drawnId=drawn.id;S.tok++;render();if(p.bot)scheduleBot(true);return;
@@ -527,7 +504,7 @@ function afterDraw(pi,drawn,count,wasCalled){
     setTimeout(()=>{if(g!==S.gen||S.phase!=='drawn'||S.turn!==pi)return;S.busy=false;endTurn()},700);return;
   }
   S.tok++;render();
-  if(p.bot)scheduleBot();else if(R.flash||curseIs('time'))startFlash();
+  if(p.bot)scheduleBot();
 }
 /* ---------- Terminar e descobrir vencedor (turbo) ----------
    Depois que você é eliminado, joga o resto da partida sem esperas, sons nem efeitos 3D: os timers pendentes vão
@@ -572,7 +549,7 @@ function turboStop(){
   $('turboOv').hidden=true;render();
 }
 function endRound(pi){
-  S.phase='over';clearFlash();closeOverlays();if(limboT){clearInterval(limboT);limboT=null}if(timeT){clearInterval(timeT);timeT=null}if(addT){clearInterval(addT);addT=null}
+  S.phase='over';closeOverlays();
   let pts=0;const winners=pi<0?[]:R.team?[pi,partner(pi)]:[pi];
   if(pi>=0){
     pts=S.players.reduce((s,p)=>s+p.hand.reduce((a,c)=>a+cardPoints(c),0),0);

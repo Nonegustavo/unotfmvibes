@@ -76,7 +76,6 @@ function botChoose(p,opts){
     const hasCol=p.hand.some(x=>x.color!=='w'&&sameCol(x.color,S.color));
     if(hasCol){const safe=opts.filter(c=>!(c.type==='d4'||c.type==='d99'));if(safe.length)opts=safe}
   }
-  if(ab(S.turn,'elise')&&S.pending===0){const fair=opts.filter(c=>!(c.type==='d4'||c.type==='d99')||!p.hand.some(x=>x.color!=='w'&&sameCol(x.color,S.color)));if(fair.length)opts=fair}
   if(R.diff==='easy'||confused(S.turn))return rand(opts);
   const nn=seenLen(S.turn,nextIdx(S.turn,1));
   const cc=colorCounts(p.hand);
@@ -161,7 +160,6 @@ function morphCard(card,prev){
 const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simon'];
 const needsAnn=(pi,card)=>card.type==='random'||card.type==='clone'||(pi!==0&&(isWildPick(card)||ASK_TYPES.includes(card.type)));
 function announce(pi,card,cont,wait){
-  clearFlash();
   const p=S.players[pi];const rect=S.fastSrc||srcRect(pi,card);S.fastSrc=null;
   p.hand=p.hand.filter(c=>c.id!==card.id);
   card.rot=Math.random()*24-12;S.discard.push(card);S.ann=card;

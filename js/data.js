@@ -79,9 +79,6 @@ const RULES=[
   {g:'Compras',k:'insatisfaction',n:'Compra e Passa',d:'Comprar carta fará você passar a vez automaticamente.'},
   {g:'Compras',k:'fastdraw',n:'Compra Rápida',d:'Cartas compradas são jogadas imediatamente, mesmo que não combinem (exceto penalidades).'},
   {g:'Compras',k:'tracking',n:'Rastrear',d:'Ao comprar carta, você escolhe uma entre três cartas para comprar.'},
-  {g:'Pressão',k:'flash',n:'Rápido',d:'São apenas 5 segundos para jogar!'},
-  {g:'Pressão',k:'limbo',n:'Limbo',d:'Quem ultrapassar o limite de cartas na mão será eliminado. O limite começa em 12 e reduz em 1 a cada minuto.'},
-  {g:'Pressão',k:'hard',n:'Modo rigoroso',d:'Clicar em carta errada faz comprar 1 e passar a vez. Não tocar a sineta faz comprar 4 cartas.'},
 ];
 const C4=['r','b','y','g'],C8=[...C4,...C4];
 const SP={
@@ -136,16 +133,12 @@ RULES.push({g:'Cartas especiais',k:'weather',n:'Cartas de Clima',d:'Cada carta d
 RULES.push({g:'Cartas especiais',k:'mix',n:'Cartas Combo',d:'Estas cartas ativam os dois efeitos correspondentes aos símbolos delas (Inverter+Bloqueio, Inverter+2, Bloqueio+2).'});
 RULES.splice(RULES.findIndex(r=>r.k==='hell'),0,{g:'Jogadas',k:'bg',n:'Azul e Verde',d:'Cartas azuis e verdes serão tratadas como se fossem da mesma cor.'});
 RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem Desafiar',d:'Os +4 não podem mais ser desafiados. (Sem esta regra, quem recebe um +4 pode desafiar o último jogado: se foi blefe, quem jogou compra as cartas dessa carta e o desafiante compra o restante acumulado; se não foi, o desafiante compra tudo e mais 2.)'});
-RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'time',n:'Tempo reduzido',d:'Após 6 minutos, vence quem tiver menos pontos na mão.'});
-RULES.splice(RULES.findIndex(r=>r.k==='hard'),0,{g:'Pressão',k:'limitless',n:'Sem limite',d:'Os jogadores agora podem ter mais de 30 cartas na mão. (Sem esta regra, quem passar de 30 cartas é eliminado.)'});
 RULES.push(
   {g:'Partida',k:'poker',n:'Mix de Regras',d:'No início do jogo, cada jogador escolhe uma regra para colocar na partida.'},
   {g:'Partida',k:'team',n:'Jogo em Duplas',d:'Cada jogador tem uma dupla (quem senta à frente). Se um vencer, a equipe toda vence.'},
-  {g:'Partida',k:'addrules',n:'Mais regras',d:'O jogo adiciona outras regras de vez em quando (a cada 75 segundos).'},
   {g:'Partida',k:'tournament',n:'Torneio',d:'Várias partidas ocorrerão. Quando um jogador atingir 500 pontos, ele será o vencedor. Quem vence a rodada ganha os pontos das cartas que sobraram na mão dos outros.'},
   {g:'Partida',k:'survivor',n:'Torneio de Sobrevivência',d:'Várias partidas ocorrerão. Quando um jogador atingir 300 pontos, ele será eliminado do torneio. Vence quem sobrar. Cada um soma os pontos das cartas que sobraram na própria mão.'},
 );
-const BOTRULES=['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise'];
 const WEATHER={
   sun:{g:'☀️',n:'Ensolarado',t:'Pode jogar fora da cor, mas compra 1',c:'#e8a317'},
   fog:{g:'☁️',n:'Neblina',t:'Cartas dos adversários ocultas, sem sineta',c:'#8a86a0'},
@@ -171,7 +164,6 @@ RULES.push(
 // defesa em vigor: a da regra de defesa ativa ou, sem ela, a da configuração
 function comboMode(){for(const k in DEF_RULES)if(R[k])return DEF_RULES[k];return R.combo}
 const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload'];
-['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{const i=RULES.findIndex(r=>r.k===k);if(i>=0)RULES.splice(i,1)});
 const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw'],['satisfaction','fastdraw']];
 Object.keys(DEF_RULES).forEach((a,i,l)=>l.slice(i+1).forEach(b=>CONFLICT_PAIRS.push([a,b])));
 CONFLICT_PAIRS.push(['nou','dfnone']); // Contra-ataque não combina com a defesa desativada (também a da configuração, veja NOU_OFF)
@@ -229,21 +221,15 @@ let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
 CONFLICT_PAIRS.forEach(([a,b])=>{if(CFG[a]&&CFG[b])CFG[b]=false});
 let MESTRE=load('unotfm-solo-master',false);if(CFG.diff==='master'&&!MESTRE)CFG.diff='hard';
 let hardClicks={n:0,t:0};
-['flash','time','limbo','addrules','hard','limitless'].forEach(k=>{CFG[k]=false});
-['drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise','red','blue','yellow','green'].forEach(k=>{delete CFG[k]});
+// regras que não existem mais, guardadas em configurações antigas
+['flash','time','limbo','addrules','hard','limitless','drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise','red','blue','yellow','green'].forEach(k=>{delete CFG[k]});
 RULES.forEach(r=>{if(CFG[r.k]&&(CONFLICT[r.k]||[]).some(x=>CFG[x]&&RULES.findIndex(q=>q.k===x)<RULES.findIndex(q=>q.k===r.k)))CFG[r.k]=false});
 const NOU_OFF='Incompatível com a defesa contra compras desativada';if(CFG.combo==='none')CFG.nou=false;
 if(!CFG.mode)CFG.mode=RULES.some(r=>r.k!=='poker'&&CFG[r.k])?'custom':'mix';
 function rulesForMode(){const r={...CFG};if(CFG.mode!=='custom'){RULES.forEach(x=>r[x.k]=false);if(CFG.mode==='mix')r.poker=true;r.bots=3;r.start=7}return r}
 let R=rulesForMode();
 let SCORE=load('unotfm-solo-score',{});
-let S=null,uid=0,flashT=null,limboT=null,timeT=null,addT=null,TOUR=null,stormT=null;
-const CARRY={};
-const fmtTime=ms=>{const t=Math.ceil(ms/1000);return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`};
-function timeUp(){
-  if(timeT){clearInterval(timeT);timeT=null}
-  S.timeWin=true;fx('⏰','Tempo esgotado!','var(--cr)','slam');endRound(pointsLeader());
-}
+let S=null,uid=0,TOUR=null,stormT=null;
 // quem está no jogo com menos pontos na mão (empate: menos cartas)
 function pointsLeader(){
   const pts=i=>S.players[i].hand.reduce((a,c)=>a+cardPoints(c),0);
@@ -278,23 +264,15 @@ const sameCol=(a,b)=>a===b||(R.bg&&((a==='b'&&b==='g')||(a==='g'&&b==='b')));
 const colorful=p=>p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col));
 const holds=(pi,t)=>S.players[pi].hand.some(c=>c.type===t);
 // chamada só quando a compra vai acontecer: com a Carta do Rei, uma compra de mais de 1 carta cai pela metade e avisa na mesa
-function drawAmt(pi,n){let k=n;if(holds(pi,'half')){k=Math.ceil(k/2);if(n>1&&k<n)kingHalf()}if(curseOn('anvil',pi))k+=1;return k}
-const confused=pi=>!!(S.players[pi].confuse||curseOn('poison',pi));
-const ab=(pi,k)=>pi!=null&&pi>=0&&!!R[k]&&S.players[pi]&&S.players[pi].name.toLowerCase()===k;
-const curseOn=(k,pi)=>curseIs(k)&&!ab(pi,'elisah');
-const immune=pi=>ab(pi,'charlotte');
-const noDraw=pi=>(S.death||curseOn('thorn',pi))&&!immune(pi);
+function drawAmt(pi,n){let k=n;if(holds(pi,'half')){k=Math.ceil(k/2);if(n>1&&k<n)kingHalf()}if(curseIs('anvil'))k+=1;return k}
+const confused=pi=>!!(S.players[pi].confuse||curseIs('poison'));
+const noDraw=pi=>S.death||curseIs('thorn');
 function nextHand(pi){
   const p=S.players[pi];if(!p.hand2||!p.hand2.length)return false;
   p.hand=p.hand2;p.hand2=[];p.called=false;
   if(pi===0){S.newIds=p.hand.map(c=>c.id);S.handFrom=$('deck').getBoundingClientRect()}else ghost($('deck').getBoundingClientRect(),targetRect(pi),0);
   fx('✋',`${pi===0?'Você pega':who(pi)+' pega'} a segunda mão`,'var(--accent)','slam');log(`${who(pi)} terminou a primeira mão.`);
   return true;
-}
-function icemiceHook(pi){
-  if(!ab(pi,'icemice'))return;
-  const o=alive().filter(i=>i!==pi);if(!o.length)return;const t=rand(o);
-  drawN(t,1);log(`Icemice comprou, então ${who(t)} comprou 1.`);
 }
 const topCard=()=>S.discard[S.discard.length-1];
 const cur=()=>S.players[S.turn];

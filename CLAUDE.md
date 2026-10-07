@@ -122,8 +122,9 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 ## Removido de propósito (não reintroduzir sem pedir)
 - Regras baseadas em tempo: Rápido, Tempo reduzido, Limbo, Mais regras e a maldição de 3 segundos. Funcionam mal no solo, porque só o humano sofre pressão de tempo.
 - Carta do Paradoxo.
+- O código de todas essas regras saiu do jogo (etapa A do multiplayer); as configurações antigas que ainda as tenham ligadas são limpas ao carregar (`data.js`).
 - Regras Sem limite e Modo rigoroso. Também não existe mais limite geral de cartas na mão (só a Sobrecarga limita).
-- Regras de bots específicos (Drekkemaus, Charlotte etc.). O código ainda existe, mas inativo (`BOTRULES`, `ab()`).
+- Regras de bots específicos (Drekkemaus, Charlotte etc.). O código também foi apagado (os nomes dos adversários continuam em `BOTNAMES`).
 - Botão "Regras" no topo. As regras são vistas tocando nos ícones da faixa acima das cadeiras dos adversários (`#rulestrip`).
 
 ## Ideias ainda não feitas
