@@ -251,12 +251,12 @@ const SND={
   play:()=>{noise(.06,{f:2500,vol:.12});tone(520,.08,{type:'triangle',to:720,vol:.14})},
   draw:()=>{noise(.1,{f:3000,fTo:1200,vol:.1,filter:'highpass'})},
   turn:()=>arp([660,880],.09,{type:'sine',vol:.16,d:.22}),
-  // sineta de balcão: dois dings, como quem chama. Tom, intervalo e força variam a cada toque para não cansar
+  // sineta de balcão: um toque com 1 carta, dois com a regra Duas! (no mesmo tom). O tom fica perto do agudo e varia
+  // um pouco a cada vez, junto com o intervalo e a força, para não cansar
   bell:()=>{
-    const v=(a,b)=>a+Math.random()*(b-a);
-    const f=[1568,1661,1760,1865,1976][Math.floor(Math.random()*5)]*v(.985,1.015);
-    const f2=f*[1,1,.94,1.06,.89][Math.floor(Math.random()*5)],gap=v(.14,.21),vol=v(.85,1.1);
-    ding(f,0,vol);ding(f2,gap,vol*v(.75,.95));
+    const v=(a,b)=>a+Math.random()*(b-a),n=typeof target==='function'?target():1;
+    const f=1976*[.944,1,1.059][Math.floor(Math.random()*3)]*v(.99,1.01),vol=v(.85,1.1);
+    let at=0;for(let i=0;i<n;i++){ding(f,at,i?vol*v(.8,.95):vol);at+=v(.15,.21)}
   },
   caught:()=>{tone(320,.35,{type:'sawtooth',to:140,vol:.14})},
   skip:()=>{tone(240,.09,{type:'square',vol:.12});tone(180,.14,{type:'square',vol:.12,at:.11})},

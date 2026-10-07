@@ -69,7 +69,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Os desenhos são PNG de uma cor só usados como molde (`mask-image`) e pintados com a cor do texto da carta, então funcionam em qualquer baralho e no outro lado do Portal. O coringa desenhado é preenchido com as 4 cores; os combos juntam dois símbolos.
   - As camadas do baralho são variáveis do CSS (`--carta-camadas`, `--carta-mistura`, `--verso`, `--carta-borda`, `--sim-cor`, `--carta-raio`…) aplicadas pelo `aplicarArte()`; as cores valem só no lado normal. Sem nada definido, o visual é o de sempre (conferido pixel a pixel).
   - No jogo ainda não há desenhos; por enquanto eles só aparecem no mostruário, que guarda as imagens no aparelho (IndexedDB).
-- **Sineta 🛎️ no lugar de "UNO"** (marca da Mattel; o DOS também é). O botão `#unoBtn` mostra 🛎️, o som `bell` são dois dings com tom e intervalo sorteados, e a regra `dos` se chama "Duas!". Não use as palavras UNO nem DOS nos textos do jogo.
+- **Sineta 🛎️ no lugar de "UNO"** (marca da Mattel; o DOS também é). O botão `#unoBtn` mostra 🛎️, o som `bell` é um toque (dois com a regra Duas!, no mesmo tom), perto do agudo e com tom e intervalo um pouco sorteados, e a regra `dos` se chama "Duas!". Não use as palavras UNO nem DOS nos textos do jogo.
 
 - **Estado:** `S` guarda a partida atual e `R` as regras ativas do lado atual. `CFG` é a configuração salva. `rulesForMode()` monta `R` a partir do modo.
 - **Modos:** Clássico (sem regras), Mix de Regras (chave `poker`: cada jogador escolhe uma regra **antes** da distribuição) e Personalizado. Clássico e Mix usam sempre 3 adversários e 7 cartas.
