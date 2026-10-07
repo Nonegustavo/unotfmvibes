@@ -346,7 +346,7 @@ function renderRail(){
     const badge=hidden?'?':said?`${word()}!`:near?`${v}/${lim}`:String(v);
     const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
-    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&S.weather!=='fog'&&colorful(p)?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
+    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&colorful(p)?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
       <div class="nm">${p.name}</div>
@@ -607,12 +607,14 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
   $('comboLegend').textContent=COMBO_DESC[CFG.combo]||'';$('modeLegend').textContent=MODE_DESC[CFG.mode]||'';$('rulesField').hidden=CFG.mode!=='custom';$('botsField').hidden=CFG.mode!=='custom';$('startField').hidden=CFG.mode!=='custom';
   let html='',g='';
   if(CFG.bots%2===0)CFG.team=false;
+  if(CFG.combo==='none')CFG.nou=false;
   RULES.forEach(r=>{
     if(DEF_RULES[r.k])return; // regras de defesa: a defesa já é escolhida na configuração
     if(r.g!==g){g=r.g;html+=`<div class="group">${g}</div>`}
     const block=(CONFLICT[r.k]||[]).filter(x=>CFG[x]);
     let why=block.length?`Incompatível com ${block.map(x=>RNAME[x]).join(', ')}`:'';
     if(r.k==='team'&&CFG.bots%2===0)why='Precisa de 1, 3 ou 5 adversários';
+    if(r.k==='nou'&&CFG.combo==='none')why=NOU_OFF;
     html+=`<label class="rule ${why?'off':''}" data-g="${r.g}"><input type="checkbox" data-k="${r.k}" ${CFG[r.k]?'checked':''} ${why?'disabled':''}><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}" ${BOTRULES.includes(r.k)?`style="background:${AVCOL[BOTNAMES.indexOf(r.k[0].toUpperCase()+r.k.slice(1))]};color:#fff;border-color:transparent"`:''}>${ruleIcon(r.k)}</span><div><b>${r.n}</b><span>${r.d}</span>${RULE_MORE[r.k]?`<button type="button" class="rmore" data-more="${r.k}" aria-expanded="${MORE.has(r.k)}">${MORE.has(r.k)?'Ocultar':'Ver'} ${RULE_MORE[r.k]}</button>${MORE.has(r.k)?ruleListHtml(r.k):''}`:''}${why?`<em>${why}</em>`:''}</div></label>`;
   });
   $('ruleList').innerHTML=html;
