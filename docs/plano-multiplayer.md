@@ -1,6 +1,9 @@
 # Plano: do solo ao multiplayer
 
-Proposta para aprovação (versão 2, revisada). Do plano, só a sineta já foi feita.
+Aprovado em 07/10/2026 (versão 2). Versão 2.1: acrescentada a seção 6, segurança no online.
+
+Andamento: a sineta já foi feita, e a prova de conceito da rede local (seção 4.1) está publicada esperando os testes nos
+celulares.
 
 Objetivo final: partidas online com salas privadas, fila pública e ranking, login e progresso salvo, e o jogo
 publicado também na Play Store e na App Store. O solo offline continua existindo.
@@ -16,7 +19,7 @@ Conferi cada afirmação da versão 1 contra o código. Principais correções e
 
    Além disso, a jogada do humano e a do adversário seguem **dois caminhos diferentes**. Unificar os dois é a parte mais arriscada da fase 1 e agora tem etapa própria.
 2. **O número de cada carta entrega qual carta ela é.** As cartas são numeradas na ordem em que o baralho é montado, antes de embaralhar. Quem souber o número de uma carta escondida consegue deduzir qual é. No multiplayer, a numeração precisa ser sorteada.
-3. **O Mestre não "joga limpo" com a quantidade de cartas.** Ele enxerga a quantidade real de cartas dos outros mesmo com Neblina e Camuflagem. Não vê as cartas, só a quantidade. As outras dificuldades respeitam a Neblina e a Camuflagem. Virou uma decisão para você (item 7.6).
+3. **O Mestre não "joga limpo" com a quantidade de cartas.** Ele enxerga a quantidade real de cartas dos outros mesmo com Neblina e Camuflagem. Não vê as cartas, só a quantidade. As outras dificuldades respeitam a Neblina e a Camuflagem. Virou a decisão 8.6.
 4. **A semente do sorteio precisa ser secreta.** Quem souber a semente consegue prever o baralho inteiro.
 5. **A pausa precisa ser respeitada pela mesa, não só pela tela.** Senão, os adversários jogam no meio das animações.
 6. **Mais código antigo para remover.** Além dos adversários com regras próprias, ainda existe código do Paradoxo, do Rápido, do Tempo reduzido, do Limbo, do Mais regras e do Modo rigoroso.
@@ -404,7 +407,73 @@ convidados veem a sala numa lista, sem QR code.
 
 ---
 
-## 6. Play Store e App Store
+## 6. Segurança no online
+
+**Não dá para impedir que alguém mande mensagens por fora do jogo.** Qualquer pessoa consegue ver o que o navegador
+envia e escrever um programa que imite o jogo. Mas dá para tornar isso inútil, com uma regra: **o servidor não confia
+em nada que vem do aparelho.** Ele funciona como o crupiê de uma mesa de cartas: as cartas ficam com ele, e ele só
+aceita jogadas válidas. Uma mensagem forjada só consegue fazer o que um jogador honesto faria pelo jogo.
+
+### 6.1 O que a arquitetura já resolve
+
+Com a mesa rodando no servidor (fases 1 e 3):
+- **Ninguém vê as mãos dos outros nem o baralho:** cada um recebe só a própria visão, e o número das cartas é sorteado (seção 2.1).
+- **Não dá para jogar carta que não tem, jogar fora da vez nem "comprar" uma carta escolhida:** toda ação passa pelas regras da mesa.
+- **Não dá para prever o baralho:** a semente do sorteio fica só no servidor (seção 2.6).
+- **O resultado é calculado pelo servidor:** o aparelho nunca diz "eu ganhei".
+
+### 6.2 O que o servidor confere em cada mensagem
+
+- **Quem é:** a conexão leva o token do login (Supabase), conferido pelo servidor. O token só vale para a cadeira daquela pessoa naquela sala.
+- **Se a ação vale agora:** é a vez dela? A carta está na mão dela? A regra permite? A resposta é para o pedido que está aberto?
+- **Formato e quantidade:** cada tipo de mensagem tem um formato fixo. Campos desconhecidos, mensagens grandes ou rápidas demais são descartados, e quem insiste é desconectado.
+- **Banco de dados:**
+  - a página nunca grava placar nem ranking; só o servidor grava, com uma chave secreta que fica só nele;
+  - no Supabase, as regras de acesso (RLS) deixam cada jogador ler só o que é permitido e mudar só o próprio perfil.
+- **Nada secreto no código da página:** ela é pública. A chave pública do Supabase pode ficar ali, porque é feita para isso e as regras de acesso a protegem.
+- **Conexão criptografada** (HTTPS e WSS), para ninguém espiar numa Wi-Fi pública.
+
+### 6.3 O que continua possível, e como diminuir
+
+Nenhum jogo online elimina estes riscos; os grandes também convivem com eles.
+
+| Risco | Como diminuir |
+|---|---|
+| Robô jogando pela pessoa, principalmente nos reflexos (sineta, Pegar, Jogar Junto) | Registrar o tempo de reação de cada jogador e revisar quem reage sempre rápido demais. No ranqueado, dá para considerar um tempo mínimo de reação. |
+| Combinação entre amigos no ranqueado (trocar informações por fora) | Sortear quem joga com quem; não entrar em dupla na fila ranqueada; revisar quem cai junto com frequência demais. |
+| Contas falsas para recomeçar o ranking | Ranqueado só com login do Google ou da Apple. |
+| Ajudante que sugere a melhor carta | Não dá para impedir, e ajuda pouco: usa só o que o jogador já vê. |
+| Sobrecarga de mensagens ou conexões | Limite por conta e por endereço. A infraestrutura do Fly.io absorve boa parte. |
+| Denúncias de trapaça | Guardar a semente e a lista de ações das partidas ranqueadas, para repetir jogada a jogada e conferir. |
+
+### 6.4 Em que fase entra cada coisa
+
+- **Fase 3 (salas privadas):**
+  - conferência do token e da cadeira;
+  - formato fixo das mensagens;
+  - limites de quantidade;
+  - HTTPS e WSS;
+  - RLS no banco.
+  - **Um teste automático com um "cliente trapaceiro"**, que tenta jogar fora da vez, usar cartas que não tem, responder pedidos alheios, mandar mensagens quebradas e inundar o servidor. Todas essas tentativas precisam ser recusadas.
+- **Fase 4 (fila casual):**
+  - filtro de nomes ofensivos;
+  - denunciar e bloquear jogadores (a Apple exige);
+  - registro do tempo de reação.
+- **Fase 5 (ranqueada):**
+  - login obrigatório do Google ou da Apple;
+  - sem dupla na fila;
+  - partidas guardadas para revisão;
+  - punição para quem abandona;
+  - ferramentas de administração (banir, anular pontos).
+
+### 6.5 Na rede local
+
+A rede local não tem essa proteção: o anfitrião roda a mesa e, se souber mexer, consegue ver tudo. Entre amigos isso
+não é problema, e já está aceito como limitação (seção 4.4).
+
+---
+
+## 7. Play Store e App Store
 
 **Como:** **Capacitor**, que embrulha o mesmo código num app nativo.
 - Dentro do app, os arquivos vão junto; o service worker fica desligado.
@@ -433,7 +502,7 @@ convidados veem a sala numa lista, sem QR code.
 
 ---
 
-## 7. Decisões para aprovar
+## 8. Decisões (aprovadas em 07/10/2026, com as sugestões abaixo)
 
 1. **Ordem:** prova de conceito da rede local, depois as fases 0 e 1 (A a H), depois a 1.5, depois as outras.
    - **Sugestão:** sim.
