@@ -164,7 +164,7 @@ function announce(pi,card,cont,wait){
   p.hand=p.hand.filter(c=>c.id!==card.id);
   card.rot=Math.random()*24-12;S.discard.push(card);S.ann=card;
   if(p.bot&&p.hand.length===target())afterOneCard(pi);
-  S.animPlay=rect;S.busy=true;S.announcing=true;S.annText='';sfx('play');
+  S.animPlay=rect;S.busy=true;S.announcing=true;S.annText='';emit({t:'som',k:'play'});
   render();
   const g=S.gen;
   const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;S.announcing=false;cont()};
@@ -173,7 +173,7 @@ function announce(pi,card,cont,wait){
     if(S.peace<=0&&(card.type==='clone'||card.type==='random')){
       const og=SP[card.type].g;
       morphCard(card,S.discard[S.discard.length-2]);S.lastTop=null;S.morph=true;card.flipped=true;
-      fx(og,`Virou ${card.color==='w'?label(card):cardName(card)}`,CVAR[card.color]||'var(--accent)','stamp');
+      emit({t:'fx',g:og,txt:`Virou ${card.color==='w'?label(card):cardName(card)}`,cor:CVAR[card.color]||'var(--accent)',modo:'stamp'});
       render();setTimeout(done,fastMode()?400:950);
     }else done();
   },wait||(fastMode()?400:950));

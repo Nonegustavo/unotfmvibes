@@ -1,4 +1,18 @@
 /* unotfm solo: motor da partida (baralho, regras de jogada, distribuição, portal, jogada de carta e fluxo de turnos) */
+/* ---------- eventos ----------
+   As regras não desenham nem tocam som: avisam a tela com emit({t:...}). Cada evento é só dados: lugares são números
+   de cadeira, 'mesa' ou 'monte'. A plateia fica em ev.a: 'todos' (padrão, quando não vem) ou o número do único jogador
+   que pode ver. Por enquanto a tela (TELA, em ui.js) executa cada evento na hora, e alguns ainda devolvem algo da tela
+   (duração da animação, se o dado 3D rolou), que a etapa F troca por tempos da própria mesa.
+   A pausa ({t:'pausa'}) também segura a mesa: os adversários esperam o efeito acabar (S.fxUntil). */
+let espiaEventos=null; // o teste das cartas grava aqui os eventos de cada cenário
+function emit(ev){
+  if(ev.t==='pausa')hold(ev.ms);
+  if(espiaEventos)espiaEventos(ev);
+  return TELA(ev);
+}
+// tempo de uma animação que a regra espera: nada com movimento reduzido nem no turbo (que não espera o tempo real)
+const anim=ms=>RM||S.turbo?0:ms;
 /* ---------- deck ops ---------- */
 function restoreCard(c){if(c.tm){Object.assign(c,c.tm);delete c.tm}if(c.orig){c.type=c.orig;c.color='w';c.value=null;delete c.orig}if(c.baseColor!=null){c.color=c.baseColor;delete c.baseColor}c.chosen=null;c.lock=false;c.flipped=false;return c}
 const returnable=cards=>cards.filter(c=>!c.extra).map(restoreCard);
@@ -13,10 +27,10 @@ function popDeck(){
 }
 function give(pi,c){
   const p=S.players[pi];
-  if(Date.now()-lastDrawSnd>70){lastDrawSnd=Date.now();sfx('draw')}
+  if(Date.now()-lastDrawSnd>70){lastDrawSnd=Date.now();emit({t:'som',k:'draw'})}
   if(c.type==='bomb'){
     S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,c);
-    S.boom=pi;FX3D.explode(targetRect(pi));fx('💣',`${who(pi)} comprou a bomba!`,'#0d0a14','slam');stampOn(pi,'💥','var(--cr)');
+    S.boom=pi;emit({t:'3d',k:'explode',onde:pi});emit({t:'fx',g:'💣',txt:`${who(pi)} comprou a bomba!`,cor:'#0d0a14',modo:'slam'});emit({t:'selo',p:pi,ic:'💥',cor:'var(--cr)'});
     return;
   }
   p.hand.push(c);
@@ -29,7 +43,7 @@ function drawOne(pi){if(S.weather==='blizzard'&&S.phase!=='deal')return null;if(
 function thornHit(pi){
   const p=S.players[pi];
   if(!curseIs('thorn')||p.out)return false;
-  if(!p.thorned){p.thorned=true;ghost($('deck').getBoundingClientRect(),targetRect(pi),0);stampOn(pi,'🌵','var(--cg)')}
+  if(!p.thorned){p.thorned=true;emit({t:'voa',de:'monte',para:pi,atraso:0});emit({t:'selo',p:pi,ic:'🌵',cor:'var(--cg)'})}
   return true;
 }
 function drawN(pi,n){let k=0;for(let i=0;i<n;i++)if(drawOne(pi))k++;return k}
@@ -41,7 +55,7 @@ function checkLimits(){
 }
 function markOut(pi,reason,icon){
   const p=S.players[pi];
-  FX3D.smoke(targetRect(pi));p.out=true;p.outAt=S.outSeq=(S.outSeq||0)+1;sfx('out');
+  emit({t:'3d',k:'smoke',onde:pi});p.out=true;p.outAt=S.outSeq=(S.outSeq||0)+1;emit({t:'som',k:'out'});
   // torneios: a mão do eliminado vale os pontos das cartas que ele tinha, no mínimo 50
   p.outPts=Math.max(50,[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0));
   if(S.other){const o=S.other.players[pi];S.other.deck.unshift(...returnable([...o.hand,...(o.hand2||[])]));o.hand=[];o.hand2=[]}
@@ -50,10 +64,10 @@ function markOut(pi,reason,icon){
   const why=reason||(S.boom===pi?'explodiu com a bomba':p.thorned?'comprou com a maldição do espinho':`passou de ${limit()} cartas`);p.thorned=false;
   p.outIcon=icon||(S.boom===pi?'💣':/morte súbita/.test(why)?'☠️':/espinho/.test(why)?'🌵':/batata/.test(why)?'🥔':(R.overload&&limit()<=10?'🏋️':String(limit())));
   if(S.boom===pi)S.boom=null;
-  log(`${who(pi)} foi eliminado: ${why}.`);toast(`${who(pi)} foi eliminado!`,'var(--cr)');
+  log(`${who(pi)} foi eliminado: ${why}.`);emit({t:'aviso',txt:`${who(pi)} foi eliminado!`,cor:'var(--cr)'});
   if(pi===0){S.outWhy=why;S.spectate=true}
   const a=alive();
-  if(pi===0&&a.length>1){toast('Você foi eliminado. Assistindo os adversários…','var(--cr)')}
+  if(pi===0&&a.length>1){emit({t:'aviso',txt:'Você foi eliminado. Assistindo os adversários…',cor:'var(--cr)'})}
   if(a.length===1||(R.team&&new Set(a.map(teamOf)).size===1)){endRound(a[0]);return true}
   return false;
 }
@@ -106,10 +120,9 @@ function canCombo(p,card){
 
 /* ---------- setup ---------- */
 function newGame(){
-  $('home').hidden=true;
   const gen=S?S.gen+1:1;
   semear(novaSemente());
-  closeOverlays();
+  emit({t:'fechaJanelas'});
   const tourMode=R.tournament?'tournament':R.survivor?'survivor':null;
   if(!tourMode)TOUR=null;
   else if(!TOUR||TOUR.mode!==tourMode||TOUR.done)TOUR={mode:tourMode,pts:{},names:null,out:[],round:0};
@@ -125,10 +138,10 @@ function newGame(){
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,log:[],busy:false,
      newIds:[],botDraw:{},animPlay:null,mull:R.mulligan,autoResolve:null,lastTop:null,semente:RNG.semente};
-  applyBg();S.added=[];S.removed=[];S.freshRules=[];S.ruleOrder=[];S.stripHold=false;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
+  applyBg();S.added=[];S.removed=[];S.freshRules=[];S.ruleOrder=[];S.stripHold=false;
   S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
-  $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';
+  emit({t:'novaPartida'});
   if(R.poker){
     const o=ruleOptions(3,true);
     // a faixa de regras fica vazia até o fim do Mix (flyRules)
@@ -182,7 +195,7 @@ function switchSide(pi){
   S.side=S.side==='b'?'a':'b';S.crossed=true;S.wxNow=true;S.cntJump=true;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.lastTop=null;
   applyBg();
-  $('hand').innerHTML='';S.newIds=[];$('fx').innerHTML='';
+  S.newIds=[];emit({t:'trocaLado'});
   log(`${who(pi)} abriu o portal: a mesa foi para ${S.side==='b'?'o outro lado':'o lado normal'}.`);
 }
 function portalSequence(pi){
@@ -190,40 +203,32 @@ function portalSequence(pi){
   S.busy=true;render();
   const finish=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()};
   if(RM){switchSide(pi);render();finish();return}
+  // carga sobre a pilha, cortina abrindo, troca de lado por baixo, cortina fechando sobre a pilha nova
   setTimeout(()=>{
     if(g!==S.gen)return;
-    // 1. carga discreta sobre a pilha
-    const dr=discardRect();const cx=dr.left+dr.width/2,cy=dr.top+dr.height/2;
-    const ring=document.createElement('div');ring.className='pring';const sz=dr.height*1.25;
-    Object.assign(ring.style,{left:(cx-sz/2)+'px',top:(cy-sz/2)+'px',width:sz+'px',height:sz+'px'});
-    ring.innerHTML='<i></i><i></i><i></i>';
-    document.body.appendChild(ring);sfx('portalCharge');
+    emit({t:'portal',fase:'carga'});
     setTimeout(()=>{
-      if(g!==S.gen){ring.remove();return}
-      // 2. cortina circular a partir da pilha
-      const ov=document.createElement('div');ov.className='pcover';
-      const R0=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy))+10;
-      ov.style.setProperty('--px',cx+'px');ov.style.setProperty('--py',cy+'px');
-      document.body.appendChild(ov);sfx('portal');ring.remove();
-      const open=ov.animate([{clipPath:`circle(0px at ${cx}px ${cy}px)`},{clipPath:`circle(${R0}px at ${cx}px ${cy}px)`}],{duration:520*sp,easing:'cubic-bezier(.6,0,.8,.3)',fill:'forwards'});
-      open.onfinish=()=>{
-        if(g!==S.gen){ov.remove();return}
-        // 3. troca de lado por baixo, já com a mão pronta
+      if(g!==S.gen)return;
+      emit({t:'portal',fase:'abre',ms:520*sp});
+      setTimeout(()=>{
+        if(g!==S.gen)return;
         switchSide(pi);render();
         setTimeout(()=>{
-          if(g!==S.gen){ov.remove();return}
-          const nr=discardRect();const nx=nr.left+nr.width/2,ny=nr.top+nr.height/2;
-          const R1=Math.hypot(Math.max(nx,innerWidth-nx),Math.max(ny,innerHeight-ny))+10;
-          ov.style.setProperty('--px',nx+'px');ov.style.setProperty('--py',ny+'px');
-          const close=ov.animate([{clipPath:`circle(${R1}px at ${nx}px ${ny}px)`},{clipPath:`circle(0px at ${nx}px ${ny}px)`}],{duration:520*sp,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
-          close.onfinish=()=>{ov.remove();toast(S.side==='b'?'🌀 Outro lado':'🌀 Lado normal','#8a4fd8');finish()};if(S.turbo)close.finish();
+          if(g!==S.gen)return;
+          emit({t:'portal',fase:'fecha',ms:520*sp});
+          setTimeout(()=>{if(g!==S.gen)return;emit({t:'portal',fase:'fim'});emit({t:'aviso',txt:S.side==='b'?'🌀 Outro lado':'🌀 Lado normal',cor:'#8a4fd8'});finish()},anim(520*sp));
         },260*sp);
-      };
-      if(S.turbo)open.finish(); // turbo: a cortina não espera o tempo real
+      },anim(520*sp));
     },900*sp);
   },480*sp);
 }
 /* ---------- core play ---------- */
+// raio + compra (Trovão e Tempestade): a tela mira o raio na cadeira ou, em você, nas cartas compradas
+function thunderDraw(pi,n){
+  emit({t:'relampago'});emit({t:'som',k:'thunder'});
+  const h=S.players[pi].hand,before=h.length;drawN(pi,n);
+  emit({t:'raio',p:pi,ids:S.players[pi].hand.slice(before).map(c=>c.id)});
+}
 function srcRect(pi,card){
   const el=pi===0?document.querySelector(`#hand [data-id="${card.id}"]`):document.querySelector(`[data-seat="${pi}"] .av`);
   return el?el.getBoundingClientRect():null;
@@ -231,7 +236,7 @@ function srcRect(pi,card){
 function playCard(pi,card,chosen){
   const p=S.players[pi];
   const annc=S.ann===card;if(annc){S.discard=S.discard.filter(c=>c!==card);S.ann=null;S.lastTop=null}
-  const before=p.hand.length+(p.hand.includes(card)?0:1);if(!annc)sfx('play');S.passes=0;
+  const before=p.hand.length+(p.hand.includes(card)?0:1);if(!annc)emit({t:'som',k:'play'});S.passes=0;
   S.animPlay=annc?null:(S.fastSrc||srcRect(pi,card));S.fastSrc=null;
   const inCombo=S.phase==='combo';
   if(inCombo&&R.sequence&&card.value!==S.comboValue&&!S.seqDir)S.seqDir=card.value-S.comboValue;
@@ -252,33 +257,33 @@ function playCard(pi,card,chosen){
   memPlay(pi,card);
   // Mão Colorida: perdeu o ícone ao jogar uma carta colorida, então não tem mais essa cor (o Mestre anota)
   if(R.shiny&&wasColorful&&orig===card.type&&card.color!=='w'&&!colorful(p)&&!(R.bg&&(card.color==='b'||card.color==='g')))memLack(pi,card.color);
-  if(black){S.color='k';card.chosen='k';fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR.k}"></span>`,'Descolorida!',CVAR.k,'stamp');burst(CVAR.k)}
+  if(black){S.color='k';card.chosen='k';emit({t:'fx',g:`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR.k}"></span>`,txt:'Descolorida!',cor:CVAR.k,modo:'stamp'});emit({t:'brilho',cor:CVAR.k})}
   if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}
   S.hist=S.hist||[];const he={by:pi,live:card,card:null,notes:[],side:S.side||'a'};S.hist.push(he);if(S.hist.length>12)S.hist.shift();S.histCur=he;
   let msg=`${who(pi)} jogou ${orig!==card.type?SP[orig].n+' → ':''}${cardName(card)}`;
   if(card.color==='w'&&chosen)msg+=` → ${CNAME[chosen]}`;
   const on=!(S.peace>0);
-  if(orig!==card.type&&!annc)stampOn(pi,SP[orig].g,'var(--accent)');
-  if(!on&&card.type!=='num'){msg+=' (sem efeito: Paz)';fx('🌼',card.color==='w'?`Sem efeito: Paz. A cor continua ${CNAME[S.color]||'a mesma'}`:'Sem efeito: Paz','var(--cg)','stamp')}
-  if(on&&card.type==='skip'){S.skip=true;const v=nextIdx(pi,1);fx('⊘',v===0?'Você perdeu a vez':`${who(v)} perdeu a vez`,'var(--cr)','stamp');stampOn(v,'⊘','var(--cr)')}
+  if(orig!==card.type&&!annc)emit({t:'selo',p:pi,ic:SP[orig].g,cor:'var(--accent)'});
+  if(!on&&card.type!=='num'){msg+=' (sem efeito: Paz)';emit({t:'fx',g:'🌼',txt:card.color==='w'?`Sem efeito: Paz. A cor continua ${CNAME[S.color]||'a mesma'}`:'Sem efeito: Paz',cor:'var(--cg)',modo:'stamp'})}
+  if(on&&card.type==='skip'){S.skip=true;const v=nextIdx(pi,1);emit({t:'fx',g:'⊘',txt:v===0?'Você perdeu a vez':`${who(v)} perdeu a vez`,cor:'var(--cr)',modo:'stamp'});emit({t:'selo',p:v,ic:'⊘',cor:'var(--cr)'})}
   if(on&&card.type==='rev'){
-    S.dir*=-1;chevFlip();
-    if(S.pending>0){fx(ARROWS,`Contra-ataque! +${S.pending} volta`,'var(--accent)',S.dir===1?'cw':'ccw');msg+=' e devolveu a compra'}
-    else{fx(ARROWS,'Sentido invertido',S.dir===1?'var(--accent)':'var(--accent)',S.dir===1?'cw':'ccw');if(alive().length===2)S.skip=true}
+    S.dir*=-1;emit({t:'sentido'});
+    if(S.pending>0){emit({t:'fx',g:ARROWS,txt:`Contra-ataque! +${S.pending} volta`,cor:'var(--accent)',modo:S.dir===1?'cw':'ccw'});msg+=' e devolveu a compra'}
+    else{emit({t:'fx',g:ARROWS,txt:'Sentido invertido',cor:S.dir===1?'var(--accent)':'var(--accent)',modo:S.dir===1?'cw':'ccw'});if(alive().length===2)S.skip=true}
   }
   if(on&&isDraw(card)){
     S.pending+=drawVal(card);S.pendingType=card.type;
     S.chal=(card.type!=='d2'&&!R.nochallenge)?{by:pi,bluff:hadColor,amt:drawVal(card),col:colBefore}:null;
     if(S.pending>drawVal(card))msg+=` (acumulado +${S.pending})`;
-    sfx('plus');hold(600);
+    emit({t:'som',k:'plus'});emit({t:'pausa',ms:600});
   }
   if(card.color==='w'&&chosen&&peaceOn){card.chosen=chosen}
-  else if(card.color==='w'&&chosen){card.chosen=chosen;burst(CVAR[chosen]);FX3D.sparks(discardRect(),CVAR[chosen]);if(!isDraw(card))fx(`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,CNAME[chosen],CVAR[chosen],'stamp')}
+  else if(card.color==='w'&&chosen){card.chosen=chosen;emit({t:'brilho',cor:CVAR[chosen]});emit({t:'3d',k:'sparks',onde:'mesa',args:[CVAR[chosen]]});if(!isDraw(card))emit({t:'fx',g:`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,txt:CNAME[chosen],cor:CVAR[chosen],modo:'stamp'})}
   log(msg+'.');
   if(sunPen){const k=drawN(pi,curseIs('anvil')?2:1);log(`${who(pi)} jogou fora da cor com sol e comprou ${k}.`)}
   if(p.hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}
   if(p.hand.length===target())afterOneCard(pi);
-  if(card.type==='num'&&R.perfection&&card.value===before){S.extra=true;log(`Perfeição! ${who(pi)} joga de novo.`);fx('★','Joga de novo','var(--cg)','stamp')}
+  if(card.type==='num'&&R.perfection&&card.value===before){S.extra=true;log(`Perfeição! ${who(pi)} joga de novo.`);emit({t:'fx',g:'★',txt:'Joga de novo',cor:'var(--cg)',modo:'stamp'})}
   if(S.weather==='storm'&&colBefore&&S.color!==colBefore&&!sameCol(S.color,colBefore)){
     // Tempestade: mudou a cor, um adversário aleatório compra 1 (mesmo raio do Trovão)
     const o=alive().filter(i=>i!==pi);
@@ -288,7 +293,7 @@ function playCard(pi,card,chosen){
   if(curseIs('shoe')&&orig!=='num'&&card.type!=='num'){drawN(pi,1);log(`${who(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}
   if(card.type==='chest'){
     // Tesouro: descarta todas as cartas que sobraram, uma de cada vez, e só então vence
-    fx('💰',`${who(pi)} abriu o tesouro!`,'var(--cy)','slam');
+    emit({t:'fx',g:'💰',txt:`${who(pi)} abriu o tesouro!`,cor:'var(--cy)',modo:'slam'});
     const rest=[...p.hand];if(!rest.length){endRound(pi);return 'win'}
     rest.forEach((c,k)=>discardCard(pi,c,k));log(`${who(pi)} descartou ${rest.length} carta${rest.length===1?'':'s'} com o tesouro.`);
     const g=S.gen;S.busy=true;render();
@@ -305,7 +310,7 @@ function playCard(pi,card,chosen){
 function afterOneCard(pi){
   const p=S.players[pi];
   if(S.weather==='fog')return;
-  if(p.bot&&!p.called){p.called=rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){sfx('bell');log(`${p.name} tocou a sineta.`);toast(`🛎️ ${p.name} tocou a sineta!`,'var(--cr)')}}
+  if(p.bot&&!p.called){p.called=rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){emit({t:'som',k:'bell'});log(`${p.name} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${p.name} tocou a sineta!`,cor:'var(--cr)'})}}
   if(!p.called)scheduleCatch(pi);
 }
 function scheduleCatch(pi){
@@ -321,10 +326,10 @@ function scheduleCatch(pi){
 function penalize(pi,by){
   const p=S.players[pi];
   if(S.weather==='fog'||p.out)return;
-  sfx('caught');p.called=false;
+  emit({t:'som',k:'caught'});p.called=false;
   if(S.death){
     log(`${who(by)} pegou ${pi===0?'você':p.name} sem tocar a sineta na morte súbita: eliminado!`);
-    fx('🚨',`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!`,'var(--cr)','slam');stampOn(pi,'🚨','var(--cr)');
+    emit({t:'fx',g:'🚨',txt:`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!`,cor:'var(--cr)',modo:'slam'});emit({t:'selo',p:pi,ic:'🚨',cor:'var(--cr)'});
     if(markOut(pi,'foi pego sem tocar a sineta na morte súbita'))return;
     if(pi===S.turn){endTurn();return}
     render();return;
@@ -332,7 +337,7 @@ function penalize(pi,by){
   const n=S.weather==='blizzard'?0:drawAmt(pi,2);
   if(n)drawN(pi,n);
   log(`${who(by)} pegou ${pi===0?'você':p.name} sem tocar a sineta${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
-  toast(`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!${n?` +${n}`:''}`,'var(--cy)');
+  emit({t:'aviso',txt:`${pi===0?'Você foi pego':p.name+' foi pego'} sem tocar a sineta!${n?` +${n}`:''}`,cor:'var(--cy)'});
   if(overloaded(pi)){if(markOut(pi))return;if(pi===S.turn){endTurn();return}}
   render();
 }
@@ -345,15 +350,15 @@ function endTurnHook(pi){
     if(bt){
       if(fp.batata>=5){
         fp.hand=fp.hand.filter(c=>c!==bt);fp.batata=0;
-        fx('🥔',`${who(pi)} ficou com a batata por 5 turnos!`,'var(--cr)','slam');stampOn(pi,'🥔','var(--cr)');
+        emit({t:'fx',g:'🥔',txt:`${who(pi)} ficou com a batata por 5 turnos!`,cor:'var(--cr)',modo:'slam'});emit({t:'selo',p:pi,ic:'🥔',cor:'var(--cr)'});
         if(markOut(pi,'ficou 5 turnos com a batata','🥔'))return true;
         const t=rand(alive());if(bt.baseColor==null)bt.baseColor=bt.color;bt.color=rand(COLORS);S.players[t].hand.push(bt);S.players[t].batata=0;
-        if(t===0){S.newIds.push(bt.id)}else ghost(targetRect(pi),targetRect(t),0);
-        hold(1200);
+        if(t===0){S.newIds.push(bt.id)}else emit({t:'voa',de:pi,para:t,atraso:0});
+        emit({t:'pausa',ms:1200});
       }
     }else fp.batata=0;
   }
-  if(S.curse){S.curse.left--;if(S.curse.left<=0){S.curse=null;toast('A maldição acabou!','var(--cg)')}}
+  if(S.curse){S.curse.left--;if(S.curse.left<=0){S.curse=null;emit({t:'aviso',txt:'A maldição acabou!',cor:'var(--cg)'})}}
   if(S.peace>0)S.peace--;
   return false;
 }
@@ -372,7 +377,7 @@ function endTurn(){
     const v=S.turn;S.chal=null;
     if(noDraw(v)||curseIs('ice')||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
-    const n=drawAmt(v,S.pending);drawN(v,n);stampOn(v,'⊘','var(--cr)');hold(900);
+    const n=drawAmt(v,S.pending);drawN(v,n);emit({t:'selo',p:v,ic:'⊘',cor:'var(--cr)'});emit({t:'pausa',ms:900});
     log(`${who(v)} ${v===0?'compra':'comprou'} ${n} e perde a vez.`);
     S.pending=0;S.pendingType=null;
     if(overloaded(v)&&markOut(v))return;
@@ -387,7 +392,7 @@ function startTurn(){
   if(!cp.out&&cp.hand.some(c=>c.type==='batata'))cp.batata=(cp.batata||0)+1;
   if(cp.webbed){
     cp.webbed=false;const g=S.gen,tok=S.tok;
-    stampOn(S.turn,'🕸️','var(--muted)');fx('🕸️',S.turn===0?'Você está preso na teia':`${cp.name} está preso na teia`,'var(--muted)','stamp');
+    emit({t:'selo',p:S.turn,ic:'🕸️',cor:'var(--muted)'});emit({t:'fx',g:'🕸️',txt:S.turn===0?'Você está preso na teia':`${cp.name} está preso na teia`,cor:'var(--muted)',modo:'stamp'});
     log(`${who(S.turn)} perdeu a vez (teia).`);render();
     setTimeout(()=>{if(g===S.gen&&tok===S.tok&&S.phase!=='over')endTurn()},1100);
     return;
@@ -402,7 +407,7 @@ function takeDraw(pi){
   if(pi===0)S.mull=false;
   if(S.pending>0&&(S.weather==='blizzard'||curseIs('ice'))){
     const n=S.pending;S.pending=0;S.pendingType=null;S.chal=null;
-    fx(S.weather==='blizzard'?'❄️':'🧊',`${pi===0?'Você perde':who(pi)+' perde'} a vez (+${n} congelado)`,'#5aa9d6','stamp');stampOn(pi,'⊘','var(--cr)');
+    emit({t:'fx',g:S.weather==='blizzard'?'❄️':'🧊',txt:`${pi===0?'Você perde':who(pi)+' perde'} a vez (+${n} congelado)`,cor:'#5aa9d6',modo:'stamp'});emit({t:'selo',p:pi,ic:'⊘',cor:'var(--cr)'});
     log(`${who(pi)} perdeu a vez sem comprar (+${n} congelado).`);endTurn();return;
   }
   if(S.weather==='blizzard'){
@@ -412,23 +417,23 @@ function takeDraw(pi){
     log(`${who(pi)} passou sem comprar (nevasca).`);
     if(S.passes>=alive().length){
       S.weather=null;S.passes=0;
-      fx('🌤️','A nevasca acabou: todos passaram a vez','#5aa9d6','slam');sfx('sun');
+      emit({t:'fx',g:'🌤️',txt:'A nevasca acabou: todos passaram a vez',cor:'#5aa9d6',modo:'slam'});emit({t:'som',k:'sun'});
       log('Todos passaram a vez: a nevasca acabou.');
-    }else fx('❄️',`${pi===0?'Você passa':who(pi)+' passa'} (${S.passes}/${alive().length})`,'#5aa9d6','stamp');
+    }else emit({t:'fx',g:'❄️',txt:`${pi===0?'Você passa':who(pi)+' passa'} (${S.passes}/${alive().length})`,cor:'#5aa9d6',modo:'stamp'});
     endTurn();return;
   }
   if(noDraw(pi)){
     S.pending=0;S.pendingType=null;S.chal=null;
-    fx('☠️',`${who(pi)} não podia comprar!`,'#0d0a14','slam');log(`${who(pi)} precisou comprar e foi eliminado.`);
+    emit({t:'fx',g:'☠️',txt:`${who(pi)} não podia comprar!`,cor:'#0d0a14',modo:'slam'});log(`${who(pi)} precisou comprar e foi eliminado.`);
     if(markOut(pi,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return;endTurn();return;
   }
   if(curseIs('ice')){
     S.pending=0;S.pendingType=null;S.chal=null;
-    fx('🧊',`${who(pi)} não pode comprar e passa`,'var(--cb)','stamp');log(`${who(pi)} passou (gelo).`);endTurn();return;
+    emit({t:'fx',g:'🧊',txt:`${who(pi)} não pode comprar e passa`,cor:'var(--cb)',modo:'stamp'});log(`${who(pi)} passou (gelo).`);endTurn();return;
   }
   if(S.pending>0){
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.chal=null;drawn99(pi,endTurn);return}
-    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);hold(700);
+    const n=drawAmt(pi,S.pending);S.pending=0;S.pendingType=null;S.chal=null;drawN(pi,n);emit({t:'pausa',ms:700});
     log(`${who(pi)} comprou ${n}.`);
     if(overloaded(pi)&&markOut(pi))return;
     endTurn();return;
@@ -438,7 +443,7 @@ function takeDraw(pi){
     const opts=[];
     if(p.luck){
       p.luck=false;const idx=[];for(let i=S.deck.length-1;i>=0&&idx.length<3;i--){const c=S.deck[i];if(c.type!=='bomb'&&canPlay(p,c))idx.push(i)}
-      idx.sort((a,b)=>b-a).forEach(i=>opts.push(S.deck.splice(i,1)[0]));if(opts.length)fx('🍀','Sorte: só cartas jogáveis','var(--cg)','stamp');
+      idx.sort((a,b)=>b-a).forEach(i=>opts.push(S.deck.splice(i,1)[0]));if(opts.length)emit({t:'fx',g:'🍀',txt:'Sorte: só cartas jogáveis',cor:'var(--cg)',modo:'stamp'});
     }
     if(!opts.length)for(let i=0;i<3;i++){const c=popDeck();if(c)opts.push(c)}
     if(!opts.length){endTurn();return}
@@ -461,7 +466,7 @@ function takeDraw(pi){
   if(p.luck){
     p.luck=false;
     const idx=S.deck.map((c,i)=>i).reverse().find(i=>S.deck[i].type!=='bomb'&&canPlay(p,S.deck[i]));
-    if(idx!=null){const [c]=S.deck.splice(idx,1);S.deck.push(c);fx('🍀','Sorte!','var(--cg)','stamp')}
+    if(idx!=null){const [c]=S.deck.splice(idx,1);S.deck.push(c);emit({t:'fx',g:'🍀',txt:'Sorte!',cor:'var(--cg)',modo:'stamp'})}
   }
   const wasCalled=p.called;
   drawn=drawOne(pi);if(drawn)count=1;
@@ -472,12 +477,11 @@ function takeDraw(pi){
 // As cartas não são compradas de verdade. Só escapa quem não compraria por causa da Nevasca ou do Gelo
 function drawn99(pi,then){
   const g=S.gen,sp=fastMode()?.4:1,N=RM?0:22,step=50*sp;S.busy=true;render();
-  const from=$('deck').getBoundingClientRect();
-  for(let k=0;k<N;k++)setTimeout(()=>{if(g!==S.gen)return;ghost(from,targetRect(pi),0);if(k%3===0)sfx('draw')},k*step);
+  for(let k=0;k<N;k++)setTimeout(()=>{if(g!==S.gen)return;emit({t:'voa',de:'monte',para:pi,atraso:0});if(k%3===0)emit({t:'som',k:'draw'})},k*step);
   log(`${who(pi)} ${pi===0?'precisa':'precisou'} comprar as cartas do +99.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;S.busy=false;
-    fx('+99',`${pi===0?'Você não aguentou':who(pi)+' não aguentou'} o +99!`,'var(--cr)','slam');stampOn(pi,'+99','var(--cr)');
+    emit({t:'fx',g:'+99',txt:`${pi===0?'Você não aguentou':who(pi)+' não aguentou'} o +99!`,cor:'var(--cr)',modo:'slam'});emit({t:'selo',p:pi,ic:'+99',cor:'var(--cr)'});
     if(markOut(pi,'comprou as cartas do +99','+99'))return;
     then();
   },N*step+450);
@@ -494,7 +498,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   }
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
-    S.forcedPlay=true;toast('Compra Rápida!');
+    S.forcedPlay=true;emit({t:'aviso',txt:'Compra Rápida!'});
     // quem já tinha tocado a sineta e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
     if(wasCalled&&p.hand.length-1<=target())p.called=true;
     S.fastSrc=$('deck').getBoundingClientRect();S.newIds=S.newIds.filter(id=>id!==drawn.id);if(S.botDraw[pi]){S.botDraw[pi]--;if(!S.botDraw[pi])delete S.botDraw[pi]}
@@ -549,7 +553,7 @@ function turboStop(){
   $('turboOv').hidden=true;render();
 }
 function endRound(pi){
-  S.phase='over';closeOverlays();
+  S.phase='over';emit({t:'fechaJanelas'});
   let pts=0;const winners=pi<0?[]:R.team?[pi,partner(pi)]:[pi];
   if(pi>=0){
     pts=S.players.reduce((s,p)=>s+p.hand.reduce((a,c)=>a+cardPoints(c),0),0);
@@ -571,25 +575,5 @@ function endRound(pi){
     }
   }
   render();
-  setTimeout(()=>{
-    sfx(pi>=0&&winners.includes(0)?'win':'lose');if(pi>=0&&winners.includes(0))FX3D.confetti();
-    let title=pi===0?'Você venceu!':pi<0?'Você foi eliminado':`${S.players[pi].name} venceu`;
-    if(R.team&&pi>=0)title=winners.includes(0)?(pi===0?'Sua dupla venceu!':`Sua dupla venceu com ${S.players[pi].name}!`):`${S.players[winners[0]].name} e ${S.players[winners[1]].name} venceram`;
-    if(S.timeWin&&pi>=0)title+=' por pontos';
-    $('endTitle').textContent=title;
-    $('endSub').textContent=(pi>=0?`Pontos da rodada: ${pts}. `:`Você ${S.outWhy}. `)+'Vitórias acumuladas neste navegador:';
-    if(TOUR){
-      const goal=TOUR.mode==='tournament'?500:300;
-      $('endSub').textContent=(tourMsg?tourMsg+' ':'')+`Rodada ${TOUR.round}. ${TOUR.mode==='tournament'?'Primeiro a 500 pontos vence.':'Quem chega a 300 pontos sai do torneio.'}`;
-      $('scoreTbl').innerHTML=['Você',...TOUR.names].sort((a,b)=>TOUR.mode==='tournament'?TOUR.pts[b]-TOUR.pts[a]:TOUR.pts[a]-TOUR.pts[b]).map(n=>`<tr><td>${n}${TOUR.out.includes(n)?' <span style="color:var(--muted)">(fora)</span>':''}</td><td>${TOUR.pts[n]} / ${goal}</td></tr>`).join('');
-      $('againBtn').textContent=TOUR.done?'Novo torneio':'Próxima partida';
-      $('endOv').classList.add('show');$('againBtn').focus();return;
-    }
-    $('againBtn').textContent='Nova rodada';
-    const hp=p=>[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
-    const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||((b.p.outAt||0)-(a.p.outAt||0))||(a.pts-b.pts)||(a.n-b.n));
-    $('endSub').textContent=(S.players[0].out?`Você ${S.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
-    $('scoreTbl').innerHTML=rank.map((x,k)=>`<tr${x.i===0?' style="font-weight:700"':''}><td>${['🥇','🥈','🥉'][k]||`${k+1}º`} ${x.p.name}${x.p.out?' <span style="color:var(--muted)">(eliminado)</span>':` <span style="color:var(--muted)">(${x.n} carta${x.n===1?'':'s'})</span>`}</td><td>${x.p.out?'—':x.pts+' pts'}</td></tr>`).join('');
-    $('endOv').classList.add('show');$('againBtn').focus();
-  },900);
+  setTimeout(()=>emit({t:'fim',pi,vencedores:winners,pts,tourMsg}),900);
 }

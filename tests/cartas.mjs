@@ -1,5 +1,5 @@
 // Teste de cada carta e regra: monta uma situação com semente fixa, joga a carta (ou começa a partida com a regra),
-// avança o tempo pelo relógio virtual do turbo e compara o resultado (mãos, mesa, vez e registro da partida) com o guardado em
+// avança o tempo pelo relógio virtual do turbo e compara o resultado (mãos, mesa, vez, registro da partida e eventos mandados à tela) com o guardado em
 // tests/cartas-resultados.json. Serve para conferir que uma mudança no código não mudou o jogo.
 // Uso: npm run test:cartas                     (compara com os resultados guardados)
 //      npm run test:cartas -- --gravar         (grava os resultados de agora, depois de uma mudança de propósito)
@@ -48,6 +48,10 @@ async function cenarioNaPagina(c) {
   // o registro completo da partida (o do jogo guarda só as últimas linhas)
   const registro = [], logJogo = log;
   log = msg => { registro.push(msg); logJogo(msg); };
+  // os eventos que as regras mandam para a tela (efeitos, sons, cartas voando), resumidos numa linha cada
+  const eventos = [];
+  const valor = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(valor).join(' ') + ']' : 'type' in v ? fmt(v) : JSON.stringify(v)) : String(v).replace(/<svg[\s\S]*<\/svg>/, '<svg>');
+  espiaEventos = ev => eventos.push(Object.entries(ev).filter(([k, v]) => v !== undefined && typeof v !== 'function').map(([k, v]) => k === 't' ? v : k + '=' + valor(v)).join(' '));
   newGame();
   S.turbo = true;
   const erros = [];
@@ -113,6 +117,7 @@ async function cenarioNaPagina(c) {
     mesa: S.discard.slice(-4).map(fmt), monte: S.deck.length,
     jogadores: S.players.map(p => `${p.name}${p.out ? ' (fora)' : ''}: ${p.hand.map(fmt).join(' ')}${p.hand2 && p.hand2.length ? ' | ' + p.hand2.map(fmt).join(' ') : ''}${marcas(p)}`),
     registro: registro.map(txt),
+    eventos: eventos.map(txt),
   };
 }
 

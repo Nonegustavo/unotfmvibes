@@ -389,11 +389,10 @@ function boltOn(pi,rect){
   svg.innerHTML=`<polyline points="${d}" class="glow"/><polyline points="${d}" class="core"/>`;
   document.body.appendChild(svg);svg.addEventListener('animationend',()=>svg.remove());
 }
-/* raio + compra (Trovão e Tempestade): no adversário, cai na cadeira; em você, cai exatamente sobre as cartas compradas */
-function thunderDraw(pi,n){
-  flashStorm();sfx('thunder');
-  const h=S.players[pi].hand,before=h.length;drawN(pi,n);quietDraw(pi);
-  const ids=S.players[pi].hand.slice(before).map(c=>c.id);
+/* raio do Trovão e da Tempestade (a compra é das regras): no adversário, cai na cadeira; em você, cai exatamente sobre
+   as cartas compradas (ids) */
+function raioFx(pi,ids){
+  quietDraw(pi);
   if(pi!==0||!ids.length){boltOn(pi);if(pi===0)stampOn(pi,'⚡','var(--cy)');return} // no adversário, só o raio (sem o selo ⚡)
   // espera a mão ser desenhada com as cartas novas para mirar nelas
   setTimeout(()=>{

@@ -264,14 +264,14 @@ const sameCol=(a,b)=>a===b||(R.bg&&((a==='b'&&b==='g')||(a==='g'&&b==='b')));
 const colorful=p=>p.hand.some(c=>c.color==='w')||COLORS.every(col=>p.hand.some(c=>c.color===col));
 const holds=(pi,t)=>S.players[pi].hand.some(c=>c.type===t);
 // chamada só quando a compra vai acontecer: com a Carta do Rei, uma compra de mais de 1 carta cai pela metade e avisa na mesa
-function drawAmt(pi,n){let k=n;if(holds(pi,'half')){k=Math.ceil(k/2);if(n>1&&k<n)kingHalf()}if(curseIs('anvil'))k+=1;return k}
+function drawAmt(pi,n){let k=n;if(holds(pi,'half')){k=Math.ceil(k/2);if(n>1&&k<n)emit({t:'rei'})}if(curseIs('anvil'))k+=1;return k}
 const confused=pi=>!!(S.players[pi].confuse||curseIs('poison'));
 const noDraw=pi=>S.death||curseIs('thorn');
 function nextHand(pi){
   const p=S.players[pi];if(!p.hand2||!p.hand2.length)return false;
   p.hand=p.hand2;p.hand2=[];p.called=false;
-  if(pi===0){S.newIds=p.hand.map(c=>c.id);S.handFrom=$('deck').getBoundingClientRect()}else ghost($('deck').getBoundingClientRect(),targetRect(pi),0);
-  fx('✋',`${pi===0?'Você pega':who(pi)+' pega'} a segunda mão`,'var(--accent)','slam');log(`${who(pi)} terminou a primeira mão.`);
+  if(pi===0){S.newIds=p.hand.map(c=>c.id);S.handFrom=$('deck').getBoundingClientRect()}else emit({t:'voa',de:'monte',para:pi,atraso:0});
+  emit({t:'fx',g:'✋',txt:`${pi===0?'Você pega':who(pi)+' pega'} a segunda mão`,cor:'var(--accent)',modo:'slam'});log(`${who(pi)} terminou a primeira mão.`);
   return true;
 }
 const topCard=()=>S.discard[S.discard.length-1];

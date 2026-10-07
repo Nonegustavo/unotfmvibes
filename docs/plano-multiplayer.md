@@ -287,6 +287,10 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
   - Os efeitos visuais e sons das regras (incluindo o `thunderDraw` e o `hold`) passam a sair por `emit({...})`, com plateia.
   - Por enquanto, o `emit` executa o efeito na hora.
   - **Conferir:** testes de carta idênticos e as mesmas animações.
+  - **Feito:** cerca de 200 chamadas viraram eventos (`emit`, tratados pelo `TELA` do `ui.js`). Portal, Chuva, Carta da
+    Regra, Maldição e Dado deixaram de esperar o fim da animação: a regra conta o próprio tempo e a tela só anima. O teste
+    das cartas passou a guardar também os eventos de cada cenário. Ficaram para depois: `render()` e o estado visual em
+    `S` (etapa D), pensamentos e janelas (E) e as durações que ainda vêm da tela (`some`, `magica`, `dado`; etapa F).
 - **C. Textos por quem vê (M)**
   - O `who()` e os "Você…" saem das regras e vão para o tradutor de eventos.
   - O registro da partida passa a ser montado pela tela.

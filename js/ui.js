@@ -87,6 +87,147 @@ function ghost(from,to,delay){
   a.onfinish=()=>g.remove();
 }
 
+/* ---------- tela: eventos das regras ----------
+   As regras avisam o que aconteceu com emit({t:...}) (engine.js), e a tela anima e toca os sons. Os lugares chegam
+   como número da cadeira, 'mesa' ou 'monte'. Alguns eventos ainda devolvem algo às regras (duração, se o dado 3D rolou) */
+const lugar=x=>typeof x==='number'?targetRect(x):x==='mesa'?discardRect():x==='monte'?$('deck').getBoundingClientRect():x;
+function TELA(ev){
+  switch(ev.t){
+    case 'pausa':return;
+    case 'fx':return fx(ev.g,ev.txt,ev.cor,ev.modo,ev.ms,ev.mudo);
+    case 'tada':return fx('🎩',randVis(MAGIC),ev.cor,'stamp',ev.ms,true);
+    case 'selo':return stampOn(ev.p,ev.ic,ev.cor);
+    case 'som':return sfx(ev.k);
+    case 'aviso':return toast(ev.txt,ev.cor);
+    case 'voa':return ghost(lugar(ev.de),lugar(ev.para),ev.atraso);
+    case '3d':return FX3D[ev.k](...(ev.onde!==undefined?[lugar(ev.onde)]:[]),...(ev.args||[]));
+    case 'rei':return kingHalf();
+    case 'sentido':return chevFlip();
+    case 'brilho':return burst(ev.cor);
+    case 'relampago':return flashStorm();
+    case 'raio':return raioFx(ev.p,ev.ids);
+    case 'espia':return peek(ev.p,ev.carta);
+    case 'revela':return revealCard(ev.p,ev.carta);
+    case 'some':return vanishCards(ev.p,ev.cartas,ev.sp);
+    case 'magica':return ev.p===0?morphMine(ev.carta,ev.antes,ev.depois,ev.sp):showCards(ev.p,[ev.antes],'morph',ev.sp,[ev.depois]);
+    case 'magicaFim':{const el=document.querySelector(`#hand [data-id="${ev.carta.id}"]`);if(el){el.innerHTML=faceHTML(ev.carta);el.setAttribute('aria-label',cardName(ev.carta))}return}
+    case 'mostra4':
+      if(ev.p!==0)return peek(ev.p,ev.carta);
+      if(!RM)document.querySelector(`#hand [data-id="${ev.carta.id}"]`)?.animate([{transform:'none'},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)',offset:.2},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)',offset:.8},{transform:'none'}],{duration:2000,easing:'ease-out'});
+      return;
+    case 'dado':return dadoFx(ev.p,ev.n,ev.ms);
+    case 'dadoFim':if(DADO){DADO.remove();DADO=null}return;
+    case 'dadoLegenda':$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${ev.ms}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${ev.txt}</div></div>`;return;
+    case 'roleta':return roletaFx(ev);
+    case 'chuva':return chuvaFx(ev.p,ev.ms,ev.id);
+    case 'chuvaFim':{const e=ev.id!=null&&document.querySelector(`#hand [data-id="${ev.id}"]`);if(e)e.style.visibility='';return}
+    case 'portal':return portalFx(ev.fase,ev.ms);
+    case 'regra':return regraFx(ev);
+    case 'infoRegra':return showRuleInfo(ev.k);
+    case 'cadeiras':S.seatFlip=Object.fromEntries([...document.querySelectorAll('#seatrow .seat')].map(e=>[e.dataset.name,e.getBoundingClientRect()]));return;
+    case 'fechaJanelas':return closeOverlays();
+    case 'novaPartida':
+      $('home').hidden=true;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
+      $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';
+      if(PORTAL){PORTAL.forEach(e=>e.remove());PORTAL=null}
+      if(DADO){DADO.remove();DADO=null}
+      return;
+    case 'trocaLado':$('hand').innerHTML='';$('fx').innerHTML='';return;
+    case 'fim':return telaFim(ev);
+  }
+  console.error('Evento desconhecido: '+ev.t);
+}
+// dado do adversário: pequeno, perto da cadeira; o seu: 3D (se houver). Devolve qual apareceu ('mini', '3d' ou nada)
+let DADO=null;
+function dadoFx(p,n,ms){
+  if(p!==0){DADO=miniDie(p,n,ms);return DADO?'mini':null}
+  return FX3D.available()&&FX3D.rollDie(n,(DICE_WAIT+800)/1000)?'3d':null;
+}
+// roleta da Maldição: começa num ícone qualquer e para no sorteado (ev.para)
+let ROLETA=null;
+function roletaFx(ev){
+  if(ev.opcoes){ROLETA={ops:ev.opcoes,i:Math.floor(Math.random()*ev.opcoes.length)};$('fx').innerHTML='<div class="fxin roul" style="--fxc:#6b2fa3"><div class="fxg" id="roulG" style="color:#6b2fa3"></div><div class="fxcap">Sorteando a maldição…</div></div>';return}
+  const el=$('roulG');if(!el||!ROLETA)return;
+  ROLETA.i=(ROLETA.i+1)%ROLETA.ops.length;el.textContent=ev.para||ROLETA.ops[ROLETA.i];
+  if(!RM)el.animate([{transform:'scale(.8)'},{transform:'none'}],{duration:120});sfx('tick');
+}
+// Chuva: a carta cai do céu até a cadeira; em você, cai exatamente no lugar da carta nova (escondida até chegar)
+function chuvaFx(p,ms,id){
+  if(p!==0)return rainDrop(p,ms,()=>{});
+  const el=id!=null&&document.querySelector(`#hand [data-id="${id}"]`);
+  if(el){el.scrollIntoView({block:'nearest',inline:'nearest'});el._flip?.cancel();el.style.visibility='hidden'}
+  rainDrop(0,ms,()=>{},el?el.getBoundingClientRect():null);
+}
+// Portal: carga discreta sobre a pilha, cortina circular abrindo a partir dela e fechando sobre a pilha do outro lado
+let PORTAL=null;
+function portalFx(fase,ms){
+  if(fase==='fim'||S.turbo){(PORTAL||[]).forEach(e=>e.remove());PORTAL=null;return}
+  if(fase==='carga'){
+    const dr=discardRect();const cx=dr.left+dr.width/2,cy=dr.top+dr.height/2;
+    const ring=document.createElement('div');ring.className='pring';const sz=dr.height*1.25;
+    Object.assign(ring.style,{left:(cx-sz/2)+'px',top:(cy-sz/2)+'px',width:sz+'px',height:sz+'px'});
+    ring.innerHTML='<i></i><i></i><i></i>';
+    document.body.appendChild(ring);sfx('portalCharge');PORTAL=[ring];return;
+  }
+  if(fase==='abre'){
+    const dr=discardRect();const cx=dr.left+dr.width/2,cy=dr.top+dr.height/2;
+    const ov=document.createElement('div');ov.className='pcover';
+    const R0=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy))+10;
+    ov.style.setProperty('--px',cx+'px');ov.style.setProperty('--py',cy+'px');
+    document.body.appendChild(ov);sfx('portal');(PORTAL||[]).forEach(e=>e.remove());PORTAL=[ov];
+    ov.animate([{clipPath:`circle(0px at ${cx}px ${cy}px)`},{clipPath:`circle(${R0}px at ${cx}px ${cy}px)`}],{duration:ms,easing:'cubic-bezier(.6,0,.8,.3)',fill:'forwards'});
+    return;
+  }
+  const ov=PORTAL&&PORTAL[0];
+  if(fase==='fecha'&&ov){
+    const nr=discardRect();const nx=nr.left+nr.width/2,ny=nr.top+nr.height/2;
+    const R1=Math.hypot(Math.max(nx,innerWidth-nx),Math.max(ny,innerHeight-ny))+10;
+    ov.style.setProperty('--px',nx+'px');ov.style.setProperty('--py',ny+'px');
+    ov.animate([{clipPath:`circle(${R1}px at ${nx}px ${ny}px)`},{clipPath:`circle(0px at ${nx}px ${ny}px)`}],{duration:ms,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
+  }
+}
+// Carta da Regra: ícone grande com o nome; depois voa até a faixa enquanto as cartas novas caem no monte.
+// Devolve se o voo começou (sem a faixa na tela, a regra só espera)
+function regraFx(ev){
+  if(ev.fase==='mostra'){$('fx').innerHTML=`<div class="fxin ruleshow" style="--fxc:var(--accent)"><div class="fxg" id="ruleG" style="color:var(--accent)">${ruleIcon(ev.k)}</div><div class="fxcap" id="ruleCap">${RNAME[ev.k]}</div></div>`;return}
+  if(ev.fase==='fim'){$('fx').innerHTML='';return}
+  const k=ev.k,sp=ev.sp;
+  const tgt=$('rulestrip').querySelector(`[data-k="${k}"]`),src=$('ruleG');
+  const dr=$('deck').getBoundingClientRect();ev.cartas.forEach((c,j)=>cardDrop(c,dr,j*110*sp));
+  if(!tgt||!src)return false;
+  const a=src.getBoundingClientRect(),b=tgt.getBoundingClientRect();
+  const el=document.createElement('div');el.className='rulefly';el.textContent=ruleIcon(k);
+  Object.assign(el.style,{left:(a.left+a.width/2)+'px',top:(a.top+a.height/2)+'px',fontSize:getComputedStyle(src).fontSize});
+  document.body.appendChild(el);src.style.visibility='hidden';tgt.style.visibility='hidden';
+  const cap=$('ruleCap');if(cap)cap.animate([{opacity:1},{opacity:0}],{duration:300,fill:'forwards'});
+  const sc=Math.max(.2,b.height*.6/a.height);
+  el.animate([{transform:'translate(-50%,-50%)'},{transform:`translate(calc(-50% + ${b.left+b.width/2-a.left-a.width/2}px),calc(-50% + ${b.top+b.height/2-a.top-a.height/2}px)) scale(${sc})`}],{duration:700*sp,easing:'cubic-bezier(.5,0,.3,1)',fill:'forwards'}).onfinish=()=>{
+    el.remove();tgt.style.visibility='';tgt.animate([{transform:'scale(1.6)'},{transform:'none'}],{duration:300,easing:'cubic-bezier(.2,.9,.3,1.3)'})};
+  return true;
+}
+/* placar do fim da partida (evento 'fim') */
+function telaFim({pi,vencedores:winners,pts,tourMsg}){
+  sfx(pi>=0&&winners.includes(0)?'win':'lose');if(pi>=0&&winners.includes(0))FX3D.confetti();
+  let title=pi===0?'Você venceu!':pi<0?'Você foi eliminado':`${S.players[pi].name} venceu`;
+  if(R.team&&pi>=0)title=winners.includes(0)?(pi===0?'Sua dupla venceu!':`Sua dupla venceu com ${S.players[pi].name}!`):`${S.players[winners[0]].name} e ${S.players[winners[1]].name} venceram`;
+  if(S.timeWin&&pi>=0)title+=' por pontos';
+  $('endTitle').textContent=title;
+  $('endSub').textContent=(pi>=0?`Pontos da rodada: ${pts}. `:`Você ${S.outWhy}. `)+'Vitórias acumuladas neste navegador:';
+  if(TOUR){
+    const goal=TOUR.mode==='tournament'?500:300;
+    $('endSub').textContent=(tourMsg?tourMsg+' ':'')+`Rodada ${TOUR.round}. ${TOUR.mode==='tournament'?'Primeiro a 500 pontos vence.':'Quem chega a 300 pontos sai do torneio.'}`;
+    $('scoreTbl').innerHTML=['Você',...TOUR.names].sort((a,b)=>TOUR.mode==='tournament'?TOUR.pts[b]-TOUR.pts[a]:TOUR.pts[a]-TOUR.pts[b]).map(n=>`<tr><td>${n}${TOUR.out.includes(n)?' <span style="color:var(--muted)">(fora)</span>':''}</td><td>${TOUR.pts[n]} / ${goal}</td></tr>`).join('');
+    $('againBtn').textContent=TOUR.done?'Novo torneio':'Próxima partida';
+    $('endOv').classList.add('show');$('againBtn').focus();return;
+  }
+  $('againBtn').textContent='Nova rodada';
+  const hp=p=>[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
+  const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||((b.p.outAt||0)-(a.p.outAt||0))||(a.pts-b.pts)||(a.n-b.n));
+  $('endSub').textContent=(S.players[0].out?`Você ${S.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
+  $('scoreTbl').innerHTML=rank.map((x,k)=>`<tr${x.i===0?' style="font-weight:700"':''}><td>${['🥇','🥈','🥉'][k]||`${k+1}º`} ${x.p.name}${x.p.out?' <span style="color:var(--muted)">(eliminado)</span>':` <span style="color:var(--muted)">(${x.n} carta${x.n===1?'':'s'})</span>`}</td><td>${x.p.out?'—':x.pts+' pts'}</td></tr>`).join('');
+  $('endOv').classList.add('show');$('againBtn').focus();
+}
+
 /* ---------- rendering ---------- */
 function makeCard(c){
   const b=document.createElement('button');b.dataset.id=c.id;b.innerHTML=faceHTML(c);b.setAttribute('aria-label',cardName(c));return b;
