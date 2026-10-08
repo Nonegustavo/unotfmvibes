@@ -416,7 +416,8 @@ function playCard(pi,card,chosen){
   if(S.weather==='storm'&&colBefore&&S.color!==colBefore&&!sameCol(S.color,colBefore)){
     // Tempestade: mudou a cor, um adversário aleatório compra 1 (mesmo raio do Trovão)
     const o=alive().filter(i=>i!==pi);
-    if(o.length){const v=rand(o);thunderDraw(v,1);
+    if(o.length&&congelado()){avisoCongelado();log('Tempestade: o monte está congelado, ninguém comprou.')}
+    else if(o.length){const v=rand(o);thunderDraw(v,1);
       log(`Tempestade: ${J(pi)} mudou a cor e ${J(v)} ${V(v,'compra','comprou')} 1.`);if(massCheck()==='win')return 'win'}
   }
   if(curseIs('shoe')&&orig!=='num'&&card.type!=='num'){drawN(pi,1);log(`${J(pi)} comprou 1 (maldição da bota).`);if(massCheck()==='win')return 'win'}

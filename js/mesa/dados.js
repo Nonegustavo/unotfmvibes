@@ -132,7 +132,7 @@ Object.entries(SP).forEach(([k,v])=>{if(!v.hide)RULES.push({g:'Cartas especiais'
 RULES.push({g:'Cartas especiais',k:'weather',n:'Cartas de Clima',d:'Cada carta de clima tem um efeito global que perdura até que outra carta de clima seja jogada.'});
 RULES.push({g:'Cartas especiais',k:'mix',n:'Cartas Combo',d:'Estas cartas ativam os dois efeitos correspondentes aos símbolos delas (Inverter+Bloqueio, Inverter+2, Bloqueio+2).'});
 RULES.splice(RULES.findIndex(r=>r.k==='hell'),0,{g:'Jogadas',k:'bg',n:'Azul e Verde',d:'Cartas azuis e verdes serão tratadas como se fossem da mesma cor.'});
-RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem Desafiar',d:'Os +4 não podem mais ser desafiados. (Sem esta regra, quem recebe um +4 pode desafiar o último jogado: se foi blefe, quem jogou compra as cartas dessa carta e o desafiante compra o restante acumulado; se não foi, o desafiante compra tudo e mais 2.)'});
+RULES.splice(RULES.findIndex(r=>r.k==='satisfaction'),0,{g:'Compras',k:'nochallenge',n:'Sem Desafiar',d:'Os +4 não podem mais ser desafiados.'});
 RULES.push(
   {g:'Partida',k:'poker',n:'Mix de Regras',d:'No início do jogo, cada jogador escolhe uma regra para colocar na partida.'},
   {g:'Partida',k:'team',n:'Jogo em Duplas',d:'Cada jogador tem uma dupla (quem senta à frente). Se um vencer, a equipe toda vence.'},
@@ -163,10 +163,10 @@ RULES.push(
 );
 // defesa em vigor: a da regra de defesa ativa ou, sem ela, a da configuração
 function comboMode(){for(const k in DEF_RULES)if(R[k])return DEF_RULES[k];return R.combo}
-const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload'];
+const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload','nochallenge'];
 const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw'],['satisfaction','fastdraw']];
 Object.keys(DEF_RULES).forEach((a,i,l)=>l.slice(i+1).forEach(b=>CONFLICT_PAIRS.push([a,b])));
-CONFLICT_PAIRS.push(['nou','dfnone']); // Contra-ataque não combina com a defesa desativada (também a da configuração, veja NOU_OFF)
+CONFLICT_PAIRS.push(['nou','dfnone'],['nochallenge','noaction']); // Contra-ataque não combina com a defesa desativada (também a da configuração, veja NOU_OFF)
 RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k],['noaction',r.k]));
 const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));

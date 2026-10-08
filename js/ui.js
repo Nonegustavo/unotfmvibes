@@ -206,6 +206,8 @@ function TELA(ev){
     case 'infoRegra':return showRuleInfo(ev.k);
     case 'cadeiras':VIS.seatFlip=Object.fromEntries([...document.querySelectorAll('#seatrow .seat')].map(e=>[e.dataset.name,e.getBoundingClientRect()]));return;
     case 'fechaJanelas':return closeOverlays();
+    case 'seloVoa':return seloVoaFx(ev);
+    case 'tesouro':return tesouroFx(ev);
     // Rastrear: enquanto alguém escolhe, a carta de cima do monte fica puxada para fora (a da sua prévia continua a mesma)
     case 'rastreando':{
       document.querySelectorAll('.rastreio-compra').forEach(e=>e.remove());
@@ -363,6 +365,72 @@ function portalFx(fase,ms){
 }
 // Carta da Regra: ícone grande com o nome; depois voa até a faixa enquanto as cartas novas caem no monte.
 // Devolve se o voo começou (sem a faixa na tela, a regra só espera)
+/* ícone que voa até os selos (Busca, Sorte, clima, maldição, Paz, Semáforo): o ícone grande do efeito encolhe e voa até o
+   selo do jogador ou da mesa. Até ele chegar, o selo novo fica escondido (ou mostra o valor de antes, em ev.de); ao
+   chegar, o selo pula (ou gira mostrando a troca, com ev.troca) */
+function comVoo(L,alvo){
+  const v=VIS.seloVoa;if(!v||v.para!==alvo)return L;
+  return L.map(x=>x.ic!==v.g?x:{...x,short:v.de||x.short,voo:v.de?'de':'oculto'});
+}
+const seloHTML=x=>x.voo?`<i class="sv ${x.voo==='oculto'?'oculto':''}">${x.short}</i>`:x.short;
+function alvoSelo(para){
+  if(para==='mesa')return document.querySelector('#meta .sv')||[...document.querySelectorAll('#meta .tst')].pop()||$('meta');
+  if(para===0)return document.querySelector('#mystat .sv')||$('mystat');
+  return document.querySelector(`[data-seat="${para}"] .sv`)||document.querySelector(`[data-seat="${para}"] .tag.stat`)||document.querySelector(`[data-seat="${para}"]`);
+}
+function seloVoaFx(ev){
+  if(S.turbo||RM)return;
+  const sp=ev.sp||1,meu={...ev};VIS.seloVoa=meu;render();
+  const chega=()=>{
+    if(VIS.seloVoa!==meu)return;
+    const fim=()=>{if(VIS.seloVoa!==meu)return;VIS.seloVoa=null;render();
+      const t=alvoSeloNovo(ev);if(t)t.animate(ev.troca?[{transform:'rotateX(90deg)'},{transform:'none'}]:[{transform:'scale(1.6)'},{transform:'none'}],{duration:ev.troca?220*sp:300,easing:ev.troca?'ease-out':'cubic-bezier(.2,.9,.3,1.3)'})};
+    // troca: o selo de antes gira até ficar de lado, e o novo termina o giro
+    const t=alvoSelo(ev.para);
+    if(ev.troca&&t&&t.classList.contains('sv')){t.animate([{transform:'none'},{transform:'rotateX(90deg)'}],{duration:220*sp,easing:'ease-in',fill:'forwards'});setTimeout(fim,220*sp)}
+    else fim();
+  };
+  setTimeout(()=>{
+    if(VIS.seloVoa!==meu)return;
+    const src=document.querySelector('#fx .fxg'),tgt=alvoSelo(ev.para);
+    if(!src||!tgt){chega();return}
+    const a=src.getBoundingClientRect(),b=tgt.getBoundingClientRect();
+    const el=document.createElement('div');el.className='rulefly';el.textContent=ev.g;
+    Object.assign(el.style,{left:(a.left+a.width/2)+'px',top:(a.top+a.height/2)+'px',fontSize:getComputedStyle(src).fontSize});
+    document.body.appendChild(el);src.style.visibility='hidden';
+    const sc=Math.max(.12,b.height*.8/a.height);
+    el.animate([{transform:'translate(-50%,-50%)'},{transform:`translate(calc(-50% + ${b.left+b.width/2-a.left-a.width/2}px),calc(-50% + ${b.top+b.height/2-a.top-a.height/2}px)) scale(${sc})`}],{duration:650*sp,easing:'cubic-bezier(.5,0,.3,1)',fill:'forwards'});
+    // termina por tempo (a animação para com a aba em segundo plano)
+    setTimeout(()=>{el.remove();chega()},650*sp);
+  },ev.atraso||550);
+}
+// o selo já sem a marca do voo: o do jogador ou o da mesa com o ícone
+function alvoSeloNovo(ev){
+  if(ev.para==='mesa')return [...document.querySelectorAll('#meta .tst')].find(e=>e.textContent.includes(ev.g))||null;
+  if(ev.para===0)return $('mystat');
+  return document.querySelector(`[data-seat="${ev.para}"] .tag.stat`);
+}
+// Carta do Tesouro: aparece virada para cima no meio da mesa, para todos, e vai para a mão de quem achou
+function tesouroFx(ev){
+  if(S.turbo)return;
+  const d=discardRect(),w=d.width*1.25,c=ev.carta;
+  // o texto fica embaixo da carta
+  const cap=document.createElement('div');cap.className='fxcap tesouro-cap';cap.style.setProperty('--fxc','var(--cy)');cap.textContent=texto(ev.txt);
+  Object.assign(cap.style,{position:'fixed',left:'50%',top:(d.top+d.height/2+w*.75+12)+'px',transform:'translateX(-50%)',zIndex:27,pointerEvents:'none'});
+  document.body.appendChild(cap);cap.animate([{opacity:0},{opacity:1,offset:.1},{opacity:1,offset:.8},{opacity:0}],{duration:ev.ms,fill:'forwards'});setTimeout(()=>cap.remove(),ev.ms);
+  if(RM)return;
+  const el=document.createElement('div');el.className=`card c-${c.color} flyclone`;el.innerHTML=faceHTML(c);
+  Object.assign(el.style,{position:'fixed',left:(d.left+d.width/2-w/2)+'px',top:(d.top+d.height/2-w*.75)+'px',width:w+'px',margin:'0',zIndex:27,pointerEvents:'none'});
+  el.style.setProperty('--cw',w+'px');document.body.appendChild(el);
+  el.animate([{transform:'scale(.3) rotate(-20deg)',opacity:0},{transform:'scale(1.1) rotate(4deg)',opacity:1,offset:.6},{transform:'none',opacity:1}],{duration:450,easing:'ease-out',fill:'backwards'});
+  const voa=ev.ms*.62;
+  setTimeout(()=>{
+    const r=ev.p===0?$('hand').getBoundingClientRect():targetRect(ev.p);if(!r){el.remove();return}
+    const tx=r.left+r.width/2-(d.left+d.width/2),ty=r.top+r.height/2-(d.top+d.height/2),sc=ev.p===0?1/1.25:Math.max(.25,r.height/(w*1.5));
+    el.animate([{transform:'none',opacity:1},{transform:`translate(${tx}px,${ty}px) scale(${sc})`,opacity:ev.p===0?1:.2}],{duration:ev.ms-voa,easing:'cubic-bezier(.5,0,.3,1)',fill:'forwards'});
+    setTimeout(()=>el.remove(),ev.ms-voa);
+  },voa);
+}
 function regraFx(ev){
   if(ev.fase==='mostra'){$('fx').innerHTML=`<div class="fxin ruleshow" style="--fxc:var(--accent)"><div class="fxg" id="ruleG" style="color:var(--accent)">${ruleIcon(ev.k)}</div><div class="fxcap" id="ruleCap">${RNAME[ev.k]}</div></div>`;return}
   if(ev.fase==='fim'){$('fx').innerHTML='';return}
@@ -535,7 +603,6 @@ function tableStatus(){
   if(S.death)L.push({short:'☠️',ic:'☠️',name:'Morte súbita',txt:'quem precisar comprar ou cometer um erro é eliminado',warn:1});
   if(S.traffic)L.push({short:`🚦${S.traffic==='odd'?'ímpar':'par'}`,ic:'🚦',name:'Semáforo',txt:`proibido vencer com carta ${S.traffic==='odd'?'ímpar':'par'}`});
   if(R.overload)L.push({short:`🏋️${limit()}`,ic:'🏋️',name:'Sobrecarga',txt:`quem passar de ${limit()} cartas na mão é eliminado`});
-  if(S.simon&&S.simon.length)L.push({short:`🧠${S.simon.length}`,ic:'🧠',name:'Memória',txt:`a sequência a repetir tem ${S.simon.length} cor${S.simon.length===1?'':'es'}`});
   if(TOUR){const nm=TOUR.mode==='tournament'?'Torneio':'Torneio de Sobrevivência',head={ic:tourIc(),name:`${nm}, rodada ${TOUR.round}`,txt:TOUR.mode==='tournament'?`o primeiro a ${tourGoal()} pontos vence`:`quem chega a ${tourGoal()} pontos sai. Vence quem sobrar`};
     L.push({...head,short:`${tourIc()}${TOUR.round}ª`,rows:[head,...tourRanking()]})}
   return L;
@@ -642,8 +709,8 @@ function renderRail(){
       <div class="nm">${p.name}</div>
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
       ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${ctCls}">${badge}</span></div>`}
-      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" aria-label="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const st=seatStatus(i).map(x=>x.short);
-        return st.length?`<span class="tag stat">${st.join(' ')}</span>`:''})()}${(()=>{const t=[];if(!p.out&&partner(i)===0)t.push('🤝');if(TOUR)t.push(tourItem(p.name).short);
+      ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" aria-label="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const sv=comVoo(seatStatus(i),i),st=sv.map(seloHTML),vazio=sv.every(x=>x.voo==='oculto');
+        return st.length?`<span class="tag stat ${vazio?'oculto':''}">${st.join(' ')}</span>`:''})()}${(()=>{const t=[];if(!p.out&&partner(i)===0)t.push('🤝');if(TOUR)t.push(tourItem(p.name).short);
         return t.length?`<span class="tops">${t.map(x=>`<span class="tag top">${x}</span>`).join('')}</span>`:''})()}</div>`);
   });
   row.innerHTML=parts.join('');
@@ -723,7 +790,7 @@ function desenha(){
   hw.classList.toggle('webbed',!!S.players[0].webbed&&S.phase!=='over');
   {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);
    const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️');
-   const ms=$('mystat');ms.hidden=!st.length;ms.textContent=st.map(x=>x.short).join(' ');}
+   const ms=$('mystat');ms.hidden=!st.length;const sv0=comVoo(st,0);ms.innerHTML=sv0.map(seloHTML).join(' ');ms.style.visibility=sv0.length&&sv0.every(x=>x.voo==='oculto')?'hidden':'';}
   {const me0=S.players[0],lim=limit(),thr=Math.max(3,Math.round(lim*.25)),n=me0.hand.length,rem=lim-n;
    const near=S.phase!=='over'&&!me0.out&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
    hw.classList.toggle('near',near);hw.style.setProperty('--lv',lv.toFixed(2));
@@ -762,7 +829,7 @@ function desenha(){
       const t=document.querySelector('.table');if(!t.classList.contains('bolt')){t.classList.remove('flick');void t.offsetWidth;t.classList.add('flick')}
       if(Math.random()<.5)noise(1.2,{f:120,filter:'lowpass',vol:.12});stormT=setTimeout(tick,6000+Math.random()*9000)};
     stormT=setTimeout(tick,4000+Math.random()*6000)}FX3D.setWeather(S.phase==='over'?null:S.weather,wxNow);
-  $('meta').innerHTML=tableStatus().map((x,k)=>`<button type="button" class="tst ${x.warn?'warn':''}" data-k="${k}" aria-label="${x.name}">${x.short}</button>`).join('');
+  $('meta').innerHTML=comVoo(tableStatus(),'mesa').map((x,k)=>`<button type="button" class="tst ${x.warn?'warn':''} ${x.voo?'sv':''} ${x.voo==='oculto'?'oculto':''}" data-k="${k}" aria-label="${x.name}">${x.short}</button>`).join('');
   {const pe=$('pend'),show=S.pending>0&&S.phase!=='over';
    if(!show){pe.hidden=true;pe.dataset.v=''}
    else{const v=String(S.pending),tgt=S.turn,lbl=tgt===0?'para você':'para '+who(tgt);
@@ -778,7 +845,10 @@ function desenha(){
   const handX=e=>e.offsetLeft-hand.scrollLeft;
   const oldX=RM?null:new Map([...existing].map(([id,e])=>[id,handX(e)+(e._flip?.playState==='running'?parseFloat(getComputedStyle(e).translate)||0:0)]));
   sortHand(me.hand).forEach((c,idx)=>{
-    let el=existing.get(c.id);if(!el)el=makeCard(c);existing.delete(c.id);
+    let el=existing.get(c.id);if(!el){el=makeCard(c);
+      // ritmo do balanço da Confusão: fixo para cada carta e preso ao relógio, então não recomeça a cada redesenho
+      const dzd=1900+Math.abs(c.id)%800;el.style.setProperty('--dzd',dzd+'ms');el.style.setProperty('--dzt',-(performance.now()%dzd).toFixed(0)+'ms')}
+    existing.delete(c.id);
     let cls=`card c-${c.color}`;
     if(turn)cls+=canPlay(me,c)?(S.weather==='sun'&&(S.phase==='play'||S.phase==='drawn')&&S.pending===0&&!matchTop(c)?' ok sunny':' ok'):' no';
     else if(canJump(0,c))cls+=' jump';

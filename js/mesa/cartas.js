@@ -288,6 +288,12 @@ function sequenceFx(list,step){
 }
 // as cartas compradas aparecem direto na mão, sem voar do monte
 function quietDraw(i){emit({t:'semVoo',p:i})}
+// o ícone grande do efeito encolhe e voa até os selos de um jogador (número) ou da mesa ('mesa'); de: o selo que estava lá
+// antes (fica até o ícone chegar); troca: o selo gira mostrando a troca. A mesa espera o voo
+function seloVoa(g,para,o={}){const sp=fastMode()?.4:1;emit({t:'seloVoa',g,para,de:o.de||null,troca:!!o.troca,atraso:o.atraso||550,sp});emit({t:'pausa',ms:(o.atraso||550)+(o.troca?1100:900)*sp})}
+// monte congelado (Nevasca ou maldição do Gelo): Chuva, Trovão e o raio da Tempestade não fazem ninguém comprar
+const congelado=()=>S.weather==='blizzard'||curseIs('ice');
+function avisoCongelado(){emit({t:'fx',g:'❄️',txt:'Monte congelado: ninguém compra',cor:'#5aa9d6',modo:'stamp'})}
 // o adversário pensa: a tela mostra o balão com as opções piscando até parar na escolhida; a mesa só espera o tempo dele
 function botThink(pi,kind,list,pickIdx,done){
   const steps0=4+rng()*3;
@@ -328,6 +334,7 @@ function applySpecial(pi,card){
       return pedeEspecial(pi,card,'carta',{titulo:'Carta do Desejo',sub:'Escolha uma carta da pilha. Uma carta aleatória sua vai para a pilha no lugar.',opcoes:()=>wishOptions()},
         ()=>{const opts=wishOptions();return {e:opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0],lista:opts,ver:'down'}},c=>{wishSwap(pi,c);return 'done'});
     case 'rain':{
+      if(congelado()){avisoCongelado();log('Chuva: o monte está congelado, ninguém comprou.');return 'done'}
       // um adversário por vez, no sentido do jogo: a carta cai do céu até ele
       const order=[];for(let i=nextIdx(pi,1);i!==pi&&!order.includes(i);i=nextIdx(i,1))if(opp.includes(i))order.push(i);
       log('Chuva: todos os adversários compram 1.');emit({t:'som',k:'rain'});
@@ -339,6 +346,7 @@ function applySpecial(pi,card){
         agendar(()=>{emit({t:'chuvaFim',id:nc&&nc.id,a:i});atualiza();agendar(next,160*sp)},anim(560*sp));
       })}
     case 'thunder':{
+      if(congelado()){avisoCongelado();log('Trovão: o monte está congelado, ninguém comprou.');return 'done'}
       // 2 jogadores sorteados (pode ser quem jogou), cada um compra de 1 a 5; um por vez, as cartas aparecem de repente
       const vs=shuffle(alive()).slice(0,2);
       log(`Trovão atingiu ${vs.map(i=>J(i)).join(' e ')}.`);
@@ -364,7 +372,7 @@ function applySpecial(pi,card){
       opp.forEach((i,k)=>{const h=pool.splice(0,sizes[k]);S.players[i].hand=h;memReset(i);emit({t:'recebe',p:i,ids:h.map(c=>c.id),de:'mesa',maoNova:true,voa:false});agendar(()=>emit({t:'voa',de:'mesa',para:i,atraso:0}),350)});
       graceCalls();emit({t:'fx',g:'🌪️',txt:'Mãos dos adversários embaralhadas',cor:col,modo:'slam'});log('Tornado embaralhou as mãos dos adversários.');return 'done'}
     case 'steal':return transmute(pi,col);
-    case 'peace':{const n=alive().length*2+2;S.peace=n+1;emit({t:'fx',g:'🌼',txt:'Ações sem efeito por alguns turnos',cor:'var(--cg)',modo:'stamp'});log('Paz: cartas de ação sem efeito por alguns turnos.');return 'done'}
+    case 'peace':{const n=alive().length*2+2;S.peace=n+1;emit({t:'fx',g:'🌼',txt:'Ações sem efeito por alguns turnos',cor:'var(--cg)',modo:'stamp'});seloVoa('🌼','mesa');log('Paz: cartas de ação sem efeito por alguns turnos.');return 'done'}
     case 'batata':
       return pedeEspecial(pi,card,'alvo',{titulo:'Passar a batata para…',sub:'Quem ficar 5 turnos com ela é eliminado.',opcoes:()=>outros(pi)},
         ()=>{const b=botTarget(pi);return {e:b>=0?b:rand(opp),lista:outros(pi),ver:'player'}},t=>{giveBatata(pi,card,t);return 'done'});
@@ -377,7 +385,7 @@ function applySpecial(pi,card){
       agendar(()=>{
         if(g!==S.gen||S.phase==='over')return;
         S.curse={k,left:CURSES[k].n*alive().length+2};emit({t:'3d',k:'aura',args:['#8b3fd1']});
-        S.fxUntil=0;emit({t:'fx',g:CURSES[k].g,txt:`Maldição ${CURSES[k].nm}: ${CURSES[k].t}`,cor:'#6b2fa3',modo:'slam',ms:2600*sp});
+        S.fxUntil=0;emit({t:'fx',g:CURSES[k].g,txt:`Maldição ${CURSES[k].nm}: ${CURSES[k].t}`,cor:'#6b2fa3',modo:'slam',ms:2600*sp});seloVoa(CURSES[k].g,'mesa',{atraso:1300*sp});
         log(`Maldição ${CURSES[k].nm}: ${CURSES[k].t.toLowerCase()}.`);atualiza();
         agendar(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;atualiza();endTurn()},2500*sp);
       },steps[steps.length-1]+250*sp);
@@ -394,8 +402,9 @@ function applySpecial(pi,card){
           const q=S.players[t];if(!q.out&&!q.thorned){S.skip=true;emit({t:'selo',p:t,ic:'⊘',cor:'var(--cr)'})}atualiza();if(S.phase!=='over')endTurn()},n);
       },fastMode()?500:1450);
       return 'defer'}
-    case 'oddeven':S.traffic=S.traffic==='odd'?'even':S.traffic==='even'?'odd':rand(['odd','even']);
-      emit({t:'fx',g:'🚦',txt:`Proibido vencer com cartas ${S.traffic==='odd'?'ímpares':'pares'}`,cor:col,modo:'stamp'});log(`Semáforo: proibido vencer com ${S.traffic==='odd'?'ímpares':'pares'}.`);return 'done';
+    case 'oddeven':{const antes=S.traffic;S.traffic=S.traffic==='odd'?'even':S.traffic==='even'?'odd':rand(['odd','even']);
+      emit({t:'fx',g:'🚦',txt:`Proibido vencer com cartas ${S.traffic==='odd'?'ímpares':'pares'}`,cor:col,modo:'stamp'});
+      seloVoa('🚦','mesa',antes?{de:`🚦${antes==='odd'?'ímpar':'par'}`,troca:true}:{});log(`Semáforo: proibido vencer com ${S.traffic==='odd'?'ímpares':'pares'}.`);return 'done'}
     case 'death':S.death=true;emit({t:'fx',g:'☠️',txt:'Morte súbita! Quem comprar ou errar é eliminado',cor:'#0d0a14',modo:'slam'});log('Morte súbita ativada.');return 'done';
     case 'share':{
       const copies=shuffle([...p.hand]).slice(0,10).map(c=>{const n=mk(c.color,c.type,c.value);n.extra=true;return n});
@@ -422,11 +431,22 @@ function applySpecial(pi,card){
       opp.forEach(i=>{const q=S.players[i];if(q.hand.length)emit({t:'espia',p:i,carta:rand(q.hand)})});
       emit({t:'fx',g:'👁️',txt:'Todos mostram uma carta',cor:col,modo:'stamp'});log('Clarividência: todos mostraram uma carta.');return 'done';
     case 'treasure':{
-      p.treasure=(p.treasure||0)+1;
-      if(p.treasure>=3){p.treasure=0;const c=mk(card.color,'chest');c.extra=true;p.hand.push(c);p.called=false;emit({t:'recebe',p:pi,ids:[c.id],de:'mesa',voa:false});
-        emit({t:'fx',g:'💰',txt:`${J(pi)} achou a Carta do Tesouro!`,cor:'var(--cy)',modo:'slam'});log(`${J(pi)} recebeu a Carta do Tesouro.`)}
-      else{emit({t:'fx',g:'🧭',txt:`Busca de ${V(pi,'você',J(pi))}: ${p.treasure}/3`,cor:col,modo:'stamp'})}
-      return 'done'}
+      const antes=p.treasure||0;p.treasure=antes+1;
+      emit({t:'fx',g:'🧭',txt:`Busca de ${V(pi,'você',J(pi))}: ${p.treasure}/3`,cor:col,modo:'stamp'});
+      seloVoa('🧭',pi,antes?{de:`🧭${antes}`}:{});
+      if(p.treasure<3)return 'done';
+      const g=S.gen,sp=fastMode()?.4:1,c=mk(card.color,'chest');c.extra=true;S.busy=true;atualiza();
+      agendar(()=>{
+        if(g!==S.gen||S.phase==='over')return;
+        p.treasure=0;emit({t:'tesouro',p:pi,carta:c,txt:`${J(pi)} achou a Carta do Tesouro!`,ms:1700*sp});emit({t:'som',k:'chest'});
+        log(`${J(pi)} recebeu a Carta do Tesouro.`);atualiza();
+        agendar(()=>{
+          if(g!==S.gen||S.phase==='over')return;
+          p.hand.push(c);p.called=false;emit({t:'recebe',p:pi,ids:[c.id],de:'mesa',voa:false});
+          S.busy=false;aposEscolha('done');
+        },1700*sp);
+      },2000*sp);
+      return 'defer'}
     case 'lock':
       opp.forEach(i=>{const free=shuffle(S.players[i].hand.filter(c=>!c.lock)).slice(0,2);free.forEach(c=>c.lock=true);if(free.length)emit({t:'selo',p:i,ic:'🔒',cor:col})});
       emit({t:'fx',g:'🔒',txt:'Duas cartas trancadas por jogador',cor:col,modo:'stamp'});log('Tranca: duas cartas de cada adversário trancadas.');return 'done';
@@ -458,12 +478,12 @@ function applySpecial(pi,card){
         (k,fim)=>{if(k==null)return 'done';addRule(pi,k,false,()=>fim('done'));return 'defer'})}
     case 'sun':case 'fog':case 'storm':case 'blizzard':{
       const w=WEATHER[T];S.weather=T;S.passes=0;if(T==='blizzard'){S.pending=0;S.pendingType=null;S.chal=null}
-      emit({t:'fx',g:w.g,txt:`${w.n}: ${w.t}`,cor:w.c,modo:'slam'});log(`O clima mudou para ${w.n.toLowerCase()}.`);
+      emit({t:'fx',g:w.g,txt:`${w.n}: ${w.t}`,cor:w.c,modo:'slam'});seloVoa(w.g,'mesa');log(`O clima mudou para ${w.n.toLowerCase()}.`);
       if(T==='storm')emit({t:'relampago'});
       if(T==='fog')S.players.forEach(q=>q.called=false);
       return 'done'}
     case 'portal':if(!S.other)return 'done';portalSequence(pi);return 'defer';
-    case 'luck':p.luck=true;emit({t:'fx',g:'🍀',txt:V(pi,'Sua próxima compra será jogável',`Próxima compra de ${J(pi)} será jogável`),cor:'var(--cg)',modo:'stamp'});log(`${J(pi)} está com sorte.`);return 'done';
+    case 'luck':p.luck=true;emit({t:'fx',g:'🍀',txt:V(pi,'Sua próxima compra será jogável',`Próxima compra de ${J(pi)} será jogável`),cor:'var(--cg)',modo:'stamp'});seloVoa('🍀',pi);log(`${J(pi)} está com sorte.`);return 'done';
   }
   return 'done';
 }
