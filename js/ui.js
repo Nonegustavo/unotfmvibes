@@ -846,7 +846,7 @@ function desenha(){
   $('log').innerHTML=VIS.log.map(l=>`<div>${l}</div>`).join('');
   // hand (keyed)
   const hand=$('hand');const turn=myTurn();
-  hand.classList.toggle('myturn',turn);
+  hand.classList.toggle('myturn',turn);hand.classList.toggle('espera',S.phase!=='over'&&S.turn!==0&&!me.out);
   const existing=new Map([...hand.children].map(e=>[+e.dataset.id,e]));
   // posição de cada carta antes de redesenhar (inclui o deslize em andamento), para ela deslizar até o lugar novo
   const handX=e=>e.offsetLeft-hand.scrollLeft;
