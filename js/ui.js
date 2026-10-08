@@ -370,31 +370,44 @@ function portalFx(fase,ms){
    chegar, o selo pula (ou gira mostrando a troca, com ev.troca) */
 function comVoo(L,alvo){
   const v=VIS.seloVoa;if(!v||v.para!==alvo)return L;
-  return L.map(x=>x.ic!==v.g?x:{...x,short:v.de||x.short,voo:v.de?'de':'oculto'});
+  return L.map(x=>x.ic!==v.g?x:{...x,short:v.chegou?x.short:(v.de||x.short),voo:v.chegou?'chegou':v.de?'de':'oculto'});
 }
+// o selo que está voando: escondido e fora do lugar (oculto), com o valor de antes (de) ou recém-chegado (chegou)
 const seloHTML=x=>x.voo?`<i class="sv ${x.voo==='oculto'?'oculto':''}">${x.short}</i>`:x.short;
+const seloSV=para=>para==='mesa'?document.querySelector('#meta .sv'):para===0?document.querySelector('#mystat .sv'):document.querySelector(`[data-seat="${para}"] .sv`);
+// para onde o ícone voa: o lugar que o selo vai ocupar (medido por um instante, sem aparecer) ou o selo de antes
 function alvoSelo(para){
-  if(para==='mesa')return document.querySelector('#meta .sv')||[...document.querySelectorAll('#meta .tst')].pop()||$('meta');
-  if(para===0)return document.querySelector('#mystat .sv')||$('mystat');
-  return document.querySelector(`[data-seat="${para}"] .sv`)||document.querySelector(`[data-seat="${para}"] .tag.stat`)||document.querySelector(`[data-seat="${para}"]`);
+  const sv=seloSV(para);
+  if(sv&&sv.classList.contains('oculto')){sv.classList.add('mede');const r=sv.getBoundingClientRect();sv.classList.remove('mede');return r}
+  if(sv)return sv.getBoundingClientRect();
+  const e=para==='mesa'?$('meta'):para===0?$('mystat'):document.querySelector(`[data-seat="${para}"]`);
+  return e?e.getBoundingClientRect():null;
 }
 function seloVoaFx(ev){
   if(S.turbo||RM)return;
   const sp=ev.sp||1,meu={...ev};VIS.seloVoa=meu;render();
+  const solta=()=>{if(VIS.seloVoa===meu){VIS.seloVoa=null;render()}};
+  // chegou: o selo novo abre espaço aos poucos e pula (ou termina de girar, na troca); o resto da área só desliza
+  const fim=()=>{if(VIS.seloVoa!==meu)return;meu.chegou=true;render();
+    const t=seloSV(ev.para);if(!t){solta();return}
+    if(ev.troca)t.animate([{transform:'rotateX(90deg)'},{transform:'none'}],{duration:220*sp,easing:'ease-out'});
+    else if(ev.de)t.animate([{transform:'scale(1.6)'},{transform:'none'}],{duration:300,easing:'cubic-bezier(.2,.9,.3,1.3)'});
+    else{const w=t.offsetWidth,cs=getComputedStyle(t);
+      t.animate([{width:'0px',paddingLeft:'0px',paddingRight:'0px',transform:'scale(.3)',opacity:.4},{width:w+'px',paddingLeft:cs.paddingLeft,paddingRight:cs.paddingRight,transform:'scale(1.35)',opacity:1,offset:.6},{width:w+'px',paddingLeft:cs.paddingLeft,paddingRight:cs.paddingRight,transform:'none',opacity:1}],{duration:380,easing:'ease-out'})}
+    setTimeout(solta,420);
+  };
   const chega=()=>{
     if(VIS.seloVoa!==meu)return;
-    const fim=()=>{if(VIS.seloVoa!==meu)return;VIS.seloVoa=null;render();
-      const t=alvoSeloNovo(ev);if(t)t.animate(ev.troca?[{transform:'rotateX(90deg)'},{transform:'none'}]:[{transform:'scale(1.6)'},{transform:'none'}],{duration:ev.troca?220*sp:300,easing:ev.troca?'ease-out':'cubic-bezier(.2,.9,.3,1.3)'})};
     // troca: o selo de antes gira até ficar de lado, e o novo termina o giro
-    const t=alvoSelo(ev.para);
-    if(ev.troca&&t&&t.classList.contains('sv')){t.animate([{transform:'none'},{transform:'rotateX(90deg)'}],{duration:220*sp,easing:'ease-in',fill:'forwards'});setTimeout(fim,220*sp)}
+    const t=seloSV(ev.para);
+    if(ev.troca&&t){t.animate([{transform:'none'},{transform:'rotateX(90deg)'}],{duration:220*sp,easing:'ease-in',fill:'forwards'});setTimeout(fim,220*sp)}
     else fim();
   };
   setTimeout(()=>{
     if(VIS.seloVoa!==meu)return;
-    const src=document.querySelector('#fx .fxg'),tgt=alvoSelo(ev.para);
-    if(!src||!tgt){chega();return}
-    const a=src.getBoundingClientRect(),b=tgt.getBoundingClientRect();
+    const src=document.querySelector('#fx .fxg'),b=alvoSelo(ev.para);
+    if(!src||!b){chega();return}
+    const a=src.getBoundingClientRect();
     const el=document.createElement('div');el.className='rulefly';el.textContent=ev.g;
     Object.assign(el.style,{left:(a.left+a.width/2)+'px',top:(a.top+a.height/2)+'px',fontSize:getComputedStyle(src).fontSize});
     document.body.appendChild(el);src.style.visibility='hidden';
@@ -403,12 +416,6 @@ function seloVoaFx(ev){
     // termina por tempo (a animação para com a aba em segundo plano)
     setTimeout(()=>{el.remove();chega()},650*sp);
   },ev.atraso||550);
-}
-// o selo já sem a marca do voo: o do jogador ou o da mesa com o ícone
-function alvoSeloNovo(ev){
-  if(ev.para==='mesa')return [...document.querySelectorAll('#meta .tst')].find(e=>e.textContent.includes(ev.g))||null;
-  if(ev.para===0)return $('mystat');
-  return document.querySelector(`[data-seat="${ev.para}"] .tag.stat`);
 }
 // Carta do Tesouro: aparece virada para cima no meio da mesa, para todos, e vai para a mão de quem achou
 function tesouroFx(ev){
@@ -674,7 +681,7 @@ const CHEV={off:0,boost:0,last:0};
 function chevFlip(){$('chevs').classList.toggle('ccw',S.dir===-1);CHEV.boost=1}
 function chevLoop(t){
   const dt=Math.min(.1,(t-(CHEV.last||t))/1000);CHEV.last=t;
-  if(!RM){CHEV.boost*=Math.exp(-dt/.9);CHEV.off=(CHEV.off+dt*.4*(1+9*CHEV.boost))%1;$('chevs').style.setProperty('--chx',CHEV.off.toFixed(4))}
+  if(!RM){CHEV.boost*=Math.exp(-dt/.9);CHEV.off=(CHEV.off+dt*.4*(1+9*CHEV.boost))%1;const ch=$('chevs');ch.style.setProperty('--chx',CHEV.off.toFixed(4));ch.style.setProperty('--chb',CHEV.boost<.005?'0':CHEV.boost.toFixed(3))}
   requestAnimationFrame(chevLoop);
 }
 /* Maldição do espinho: ramo com espinhos em volta do monte (viewBox com a carta em 8..108 × 7.5..157.5) */
