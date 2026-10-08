@@ -66,7 +66,7 @@ function ghost(from,to,delay){
 }
 
 /* ---------- tela: eventos das regras ----------
-   As regras avisam o que aconteceu com emit({t:...}) (engine.js), e a tela anima e toca os sons. Os lugares chegam
+   As regras avisam o que aconteceu com emit({t:...}) (js/mesa/regras.js), e a tela anima e toca os sons. Os lugares chegam
    como número da cadeira, 'mesa' ou 'monte'. Alguns eventos ainda devolvem algo às regras (duração, se o dado 3D rolou) */
 /* Estado só da tela, que não faz parte da partida (cada aparelho tem o seu): cartas que acabaram de chegar à sua mão e
    de onde vieram, compras dos adversários a animar, de onde saiu a carta jogada, inclinação das cartas na mesa,
@@ -168,6 +168,8 @@ function TELA(ev){
       return;
     case 'trocaLado':$('hand').innerHTML='';$('fx').innerHTML='';VIS.wxNow=true;VIS.cntJump=true;VIS.lastTop=null;VIS.newIds=[];return;
     case 'fim':return telaFim(ev);
+    case 'atualiza':return render();
+    case 'cores':return applyBg();
     case 'eliminado':VIS.outWhy=ev.motivo;return;
     case 'mostraMix':return openPoker();
   }
@@ -279,6 +281,7 @@ function regraFx(ev){
 }
 /* placar do fim da partida (evento 'fim') */
 function telaFim({pi,vencedores:winners,pts,tourMsg}){
+  if(pi>=0){winners.forEach(i=>{const n=S.players[i].name;SCORE[n]=(SCORE[n]||0)+1});save('unotfm-solo-score',SCORE)}
   sfx(pi>=0&&winners.includes(0)?'win':'lose');if(pi>=0&&winners.includes(0))FX3D.confetti();
   let title=pi===0?'Você venceu!':pi<0?'Você foi eliminado':`${S.players[pi].name} venceu`;
   if(R.team&&pi>=0)title=winners.includes(0)?(pi===0?'Sua dupla venceu!':`Sua dupla venceu com ${S.players[pi].name}!`):`${S.players[winners[0]].name} e ${S.players[winners[1]].name} venceram`;

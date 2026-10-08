@@ -331,6 +331,11 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
   - **Formato:** continuam scripts clássicos, para não mexer no resto do site. No Node, são carregados com o módulo `vm`, como num navegador. Um empacotador (esbuild) só entra se for preciso, na fase 3.
   - Um teste novo roda milhares de partidas só com adversários no Node, em segundos. De bônus, mostra estatísticas como quem vence mais e com quais regras.
   - Os arquivos novos entram na lista `CORE` do `sw.js`.
+  - **Feito:** `js/mesa/` com `dados.js`, `regras.js`, `cartas.js` e `adversarios.js`; o turbo foi para `js/turbo.js` e os
+    desenhos das cartas ficaram em `js/cards.js`. A mesa recebe da página só `OPCOES` (movimento reduzido, velocidade,
+    controladores) e pede redesenho pelo evento `atualiza`. `npm run test:mesa` joga 2000 partidas só com adversários no
+    Node em uns 4 s (10 mil em 38 s, sem erros nem travamentos) e já achou um `who` que tinha escapado da etapa C.
+    Os 173 cenários continuam idênticos, inclusive os eventos.
 - **H. Duas telas com rede de mentira (M)**
   - Duas abas conversam com a mesa por `BroadcastChannel`.
   - Toda mensagem é convertida em texto (JSON) e atrasada de propósito (100 a 300 ms). Assim aparecem os erros que só existiriam com rede de verdade, como objetos compartilhados por engano ou ordem de chegada.

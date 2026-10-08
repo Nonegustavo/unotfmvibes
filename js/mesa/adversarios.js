@@ -1,4 +1,5 @@
-/* unotfm solo: inteligência dos adversários (inclui o nível Mestre) */
+/* unotfm, mesa: inteligência dos adversários (inclui o nível Mestre) e o controlador deles (CONTROLES.bot).
+   Não usa nada da página */
 /* ---------- bots ---------- */
 // quick: compra seguida (Compra Implacável), sem o tempo de pensar de uma jogada
 function scheduleBot(quick){
@@ -156,53 +157,6 @@ function morphCard(card,prev){
   if(card.type==='clone'&&(!prev||['chest','batata','simon','half','bomb','clone','random'].includes(prev.type)))card.type='random';
   if(card.type==='clone'){card.type=prev.type;card.value=prev.value;card.color=(prev.color==='w'||prev.color==='k')?'w':prev.color}
   else if(card.type==='random'){card.type=rand(randomPool());card.value=null;card.color=rand(COLORS)}
-}
-const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simon'];
-function announce(pi,card,cont,wait){
-  const p=S.players[pi];emit({t:'origem',p:pi,carta:card});
-  p.hand=p.hand.filter(c=>c.id!==card.id);
-  S.discard.push(card);S.ann=card;
-  if(deBot(pi)&&p.hand.length===target())afterOneCard(pi);
-  S.busy=true;emit({t:'anuncio',txt:''});emit({t:'som',k:'play'});
-  render();
-  const g=S.gen;
-  const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;emit({t:'anuncioFim'});cont()};
-  agendar(()=>{
-    if(g!==S.gen||S.phase==='over')return;
-    if(S.peace<=0&&(card.type==='clone'||card.type==='random')){
-      const og=SP[card.type].g;
-      morphCard(card,S.discard[S.discard.length-2]);emit({t:'redesenhaMesa'});emit({t:'gira'});card.flipped=true;
-      emit({t:'fx',g:og,txt:`Virou ${card.color==='w'?label(card):cardName(card)}`,cor:CVAR[card.color]||'var(--accent)',modo:'stamp'});
-      render();agendar(done,fastMode()?400:950);
-    }else done();
-  },wait||(fastMode()?400:950));
-}
-/* ---------- jogar uma carta (pessoa ou adversário) ----------
-   Cartas de ação pousam na mesa antes do efeito (announce). A pessoa vê o anúncio curto e escolhe a cor depois; o
-   adversário anuncia com mais calma as cartas em que vai pensar (cor, alvo). A última carta da pessoa vence direto,
-   sem escolher cor; na Paz o curinga não muda a cor */
-function jogar(pi,card){
-  const p=S.players[pi],h=humano(pi);
-  const ultima=h&&p.hand.length===1&&!(p.hand2&&p.hand2.length);
-  if(h)S.mull=false;
-  const vira=card.type==='clone'||card.type==='random';
-  // espera do anúncio: undefined é a padrão, null é sem anúncio
-  let espera;
-  if(h)espera=card.type==='num'?null:vira&&!ultima&&!(S.peace>0)?undefined:480;
-  else espera=vira||isWildPick(card)||ASK_TYPES.includes(card.type)?undefined:card.type!=='num'?(fastMode()?250:480):null;
-  const depois=()=>{
-    if(isWildPick(card)&&S.peace<=0&&!ultima){pedir(pi,{tipo:'cor',carta:card,responde:col=>termina(pi,card,col)});return}
-    if(h&&card.type!=='num')S.preLanded=card;
-    termina(pi,card,null);
-  };
-  if(espera===null)depois();else announce(pi,card,depois,espera);
-}
-function termina(pi,card,col){
-  S.busy=false;
-  const r=playCard(pi,card,col);
-  if(r==='win'||r==='defer')return;
-  if(r==='combo'){S.tok++;render();pedirJogada(pi);return}
-  endTurn();
 }
 /* ---------- controlador do adversário: pensa (balão) e responde aos pedidos ---------- */
 CONTROLES.bot={

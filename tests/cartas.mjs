@@ -40,7 +40,7 @@ async function cenarioNaPagina(c) {
     (p.batata ? ` [batata ${p.batata}]` : '') + (p.treasure ? ` [busca ${p.treasure}]` : '');
   const fmt = x => x ? `${x.color}:${x.type}${x.value ?? ''}${x.chosen ? '>' + x.chosen : ''}${x.lock ? '#' : ''}` : '-';
   // tempo virtual desde o começo: Date.now() fica fixo e os timers só andam quando o teste manda
-  TB.on = true; TB.now = 1e12; TB.turns = 0; TB.q.clear();
+  TB.on = true; TB.now = 1e12; TB.q.clear();
   for (const [, t] of TB.live) nativeClear(t.h);
   TB.live.clear();
   MUTED = true;
@@ -54,7 +54,7 @@ async function cenarioNaPagina(c) {
   const eventos = [];
   const valor = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(valor).join(' ') + ']' : 'type' in v ? fmt(v) : JSON.stringify(v)) : texto(String(v)).replace(/<svg[\s\S]*<\/svg>/, '<svg>');
   // o registro e o histórico já vêm inteiros em 'registro'; os textos saem como você os vê (texto())
-  const IGNORA = ['registro', 'jogada', 'fimJogada', 'histInicio'];
+  const IGNORA = ['registro', 'jogada', 'fimJogada', 'histInicio', 'atualiza', 'cores']; // redesenhar não é evento de jogo
   espiaEventos = ev => IGNORA.includes(ev.t) || eventos.push(Object.entries(ev).filter(([k, v]) => v !== undefined && typeof v !== 'function').map(([k, v]) => k === 't' ? v : k + '=' + valor(v)).join(' '));
   newGame();
   S.turbo = true;
@@ -82,7 +82,7 @@ async function cenarioNaPagina(c) {
     let espera = 0;
     for (let guarda = 0; guarda < 20000; guarda++) {
       if (S.phase === 'over') return 'fim';
-      if (TB.turns >= limTurnos) return 'turnos';
+      if ((S.vezes || 0) >= limTurnos) return 'turnos';
       let next = null;
       for (const x of TB.q.values()) if (!next || x.due < next.due || (x.due === next.due && x.id < next.id)) next = x;
       if (next) {
@@ -110,7 +110,7 @@ async function cenarioNaPagina(c) {
     S.tok++;
     jogar(c.quem, carta);
   }
-  const fim = await avancar(TB.turns + c.turnos);
+  const fim = await avancar((S.vezes || 0) + c.turnos);
   // "Azul?"/"Verde?" (Azul e Verde) é sorteado só no texto, fora da semente
   const txt = s => String(s).replace(/(Azul|Verde)\?/g, 'Azul/Verde?');
   return {

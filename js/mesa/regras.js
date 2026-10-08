@@ -1,4 +1,5 @@
-/* unotfm solo: motor da partida (baralho, regras de jogada, distribuição, portal, jogada de carta e fluxo de turnos) */
+/* unotfm, mesa: motor da partida (eventos, controladores e pedidos, relógio, baralho, canPlay, distribuição, Portal,
+   jogar e playCard, fim de turno, compras, eliminação e fim da partida). Não usa nada da página */
 /* ---------- eventos ----------
    As regras não desenham nem tocam som: avisam a tela com emit({t:...}). Cada evento é só dados: lugares são números
    de cadeira, 'mesa' ou 'monte'. A plateia fica em ev.a: 'todos' (padrão, quando não vem) ou o número do único jogador
@@ -6,6 +7,8 @@
    (duração da animação, se o dado 3D rolou), que a etapa F troca por tempos da própria mesa.
    A pausa ({t:'pausa'}) também segura a mesa: os adversários esperam o efeito acabar (S.fxUntil). */
 let espiaEventos=null; // o teste das cartas grava aqui os eventos de cada cenário
+// a tela redesenha a partida (no navegador, render())
+const atualiza=()=>emit({t:'atualiza'});
 function emit(ev){
   // pausas da mesa: os adversários esperam o efeito acabar (um efeito na tela dura ms, ou 950 ms sem ms)
   if(ev.t==='pausa')hold(ev.ms);
@@ -16,7 +19,7 @@ function emit(ev){
 /* ---------- quem controla cada cadeira ----------
    Cada jogador tem um controlador (p.ctrl): 'tela' (a pessoa deste aparelho), 'bot' (adversário do computador) e, mais
    tarde, 'rede' (pessoa em outro aparelho). As regras não perguntam "é o jogador 0?": perguntam o tipo (deBot/humano)
-   e, quando precisam de uma escolha, fazem um pedido a quem controla a cadeira (CONTROLES: o do bot em bots.js e o da
+   e, quando precisam de uma escolha, fazem um pedido a quem controla a cadeira (CONTROLES: o do bot em adversarios.js e o da
    tela em ui.js). Pedido: {tipo:'cor'|'alvo'|'carta'|'regra'|'memoria', carta, responde(escolha), bot() com a escolha do
    computador (que também decide se o tempo acabar), tela:{titulo, sub, opcoes()}}. pedir devolve 'defer' (a jogada
    continua quando a resposta chegar) ou 'done' (o computador não tinha o que escolher) */
@@ -33,7 +36,7 @@ function pedirJogada(pi,rapido){ctrl(pi).jogada(pi,rapido)}
 const RELOGIO={agora:()=>Date.now(),depois:(fn,ms)=>setTimeout(fn,ms),cancela:id=>clearTimeout(id)};
 const agendar=(fn,ms)=>RELOGIO.depois(fn,ms);
 // tempo de uma animação que a regra espera: nada com movimento reduzido nem no turbo (que não espera o tempo real)
-const anim=ms=>RM||S.turbo?0:ms;
+const anim=ms=>OPCOES.semAnimacao||S.turbo?0:ms;
 /* ---------- deck ops ---------- */
 function restoreCard(c){if(c.tm){Object.assign(c,c.tm);delete c.tm}if(c.orig){c.type=c.orig;c.color='w';c.value=null;delete c.orig}if(c.baseColor!=null){c.color=c.baseColor;delete c.baseColor}c.chosen=null;c.lock=false;c.flipped=false;return c}
 const returnable=cards=>cards.filter(c=>!c.extra).map(restoreCard);
@@ -72,7 +75,7 @@ const limit=()=>R.overload?10:Infinity;
 const overloaded=pi=>!S.players[pi].out&&(S.players[pi].hand.length>limit()||S.boom===pi||!!S.players[pi].thorned);
 function checkLimits(){
   for(const i of alive())if(overloaded(i)&&markOut(i))return;
-  if(S.players[S.turn].out)endTurn();else render();
+  if(S.players[S.turn].out)endTurn();else atualiza();
 }
 function markOut(pi,reason,icon){
   const p=S.players[pi];
@@ -154,23 +157,24 @@ function newGame(){
     if(TOUR)TOUR.names=names;
   }
   if(TOUR){TOUR.round++;['Você',...names].forEach(n=>TOUR.pts[n]=TOUR.pts[n]||0)}
-  const players=[{name:'Você',ctrl:'tela',hand:[],called:false,col:'var(--accent)'}];
-  names.forEach(n=>players.push({name:n,ctrl:'bot',hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
+  const ctl=i=>(OPCOES.controles&&OPCOES.controles[i])||(i===0?'tela':'bot');
+  const players=[{name:'Você',ctrl:ctl(0),hand:[],called:false,col:'var(--accent)'}];
+  names.forEach((n,k)=>players.push({name:n,ctrl:ctl(k+1),hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,busy:false,
      mull:R.mulligan,autoResolve:null,semente:RNG.semente};
-  applyBg();S.added=[];S.removed=[];S.ruleOrder=[];
+  nomesCor();emit({t:'cores'});S.added=[];S.removed=[];S.ruleOrder=[];
   S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
   emit({t:'novaPartida'});
   if(R.poker){
     const o=ruleOptions(3,true);
     // a faixa de regras fica vazia até o fim do Mix (flyRules)
-    S.busy=true;emit({t:'seguraFaixa'});render();
-    const go=()=>{S.players.forEach((p,i)=>{if(humano(i))return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=true;emit({t:'mostraMix'})};
+    S.busy=true;emit({t:'seguraFaixa'});atualiza();
+    const go=()=>{S.players.forEach((p,i)=>{if(humano(i))return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=true;emit({t:'mostraMix'});if(eu<0)comecaMix()}; // sem pessoas na mesa, ninguém precisa confirmar
     // por enquanto só existe uma pessoa (a da tela); com mais, os pedidos vão juntos
     const eu=S.players.findIndex((p,i)=>humano(i));
-    if(o.length){pedir(eu,{tipo:'regra',mix:true,tela:{opcoes:()=>o,titulo:'Mix de Regras',sub:'Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.'},responde:k=>{addRule(eu,k,true);go()}});return}
+    if(o.length&&eu>=0){pedir(eu,{tipo:'regra',mix:true,tela:{opcoes:()=>o,titulo:'Mix de Regras',sub:'Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.'},responde:k=>{addRule(eu,k,true);go()}});return}
     go();return;
   }
   dealAndStart();
@@ -179,11 +183,11 @@ function newGame(){
 function comecaMix(){
   const n=S.added.length,m=ruleKeys().length-n,cresce=m?m*260+450:0;
   emit({t:'voaMix'});
-  agendar(()=>{S.busy=false;dealAndStart()},RM?0:n?(n-1)*160+700+300+cresce:cresce);
+  agendar(()=>{S.busy=false;dealAndStart()},OPCOES.semAnimacao?0:n?(n-1)*160+700+300+cresce:cresce);
 }
 function dealAndStart(){
   const players=S.players;
-  S.deck=buildDeck();S.mull=R.mulligan;applyBg();
+  S.deck=buildDeck();S.mull=R.mulligan;nomesCor();emit({t:'cores'});
   const startOf=i=>R.mini?4:R.maxi?9:R.start;
   for(let r=0;r<10;r++)for(let i=0;i<players.length;i++)if(r<startOf(i))drawOne(i);
   if(R.twohands)players.forEach((p,i)=>{const keep=p.hand;p.hand=[];for(let r=0;r<startOf(i);r++)drawOne(i);p.hand2=p.hand;p.hand=keep});
@@ -223,15 +227,15 @@ function switchSide(pi){
   const here=captureSide();applySide(S.other);S.other=here;
   S.side=S.side==='b'?'a':'b';S.crossed=true;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;
-  applyBg();
+  nomesCor();emit({t:'cores'});
   emit({t:'trocaLado'});
   log(`${J(pi)} abriu o portal: a mesa foi para ${S.side==='b'?'o outro lado':'o lado normal'}.`);
 }
 function portalSequence(pi){
   const g=S.gen,sp=fastMode()?.35:1;
-  S.busy=true;render();
-  const finish=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()};
-  if(RM){switchSide(pi);render();finish();return}
+  S.busy=true;atualiza();
+  const finish=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;atualiza();endTurn()};
+  if(OPCOES.semAnimacao){switchSide(pi);atualiza();finish();return}
   // carga sobre a pilha, cortina abrindo, troca de lado por baixo, cortina fechando sobre a pilha nova
   agendar(()=>{
     if(g!==S.gen)return;
@@ -241,7 +245,7 @@ function portalSequence(pi){
       emit({t:'portal',fase:'abre',ms:520*sp});
       agendar(()=>{
         if(g!==S.gen)return;
-        switchSide(pi);render();
+        switchSide(pi);atualiza();
         agendar(()=>{
           if(g!==S.gen)return;
           emit({t:'portal',fase:'fecha',ms:520*sp});
@@ -319,7 +323,7 @@ function playCard(pi,card,chosen){
     emit({t:'fx',g:'💰',txt:`${J(pi)} abriu o tesouro!`,cor:'var(--cy)',modo:'slam'});
     const rest=[...p.hand];if(!rest.length){endRound(pi);return 'win'}
     rest.forEach((c,k)=>discardCard(pi,c,k));log(`${J(pi)} descartou ${rest.length} carta${rest.length===1?'':'s'} com o tesouro.`);
-    const g=S.gen;S.busy=true;render();
+    const g=S.gen;S.busy=true;atualiza();
     agendar(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;endRound(pi)},(fastMode()?300:700)+rest.length*70);
     return 'win'}
   if(on&&SP[card.type]){const r=applySpecial(pi,card);if(r!=='done')return r}
@@ -355,14 +359,14 @@ function penalize(pi,by){
     emit({t:'fx',g:'🚨',txt:`${V(pi,'Você foi pego',J(pi)+' foi pego')} sem tocar a sineta!`,cor:'var(--cr)',modo:'slam'});emit({t:'selo',p:pi,ic:'🚨',cor:'var(--cr)'});
     if(markOut(pi,'foi pego sem tocar a sineta na morte súbita'))return;
     if(pi===S.turn){endTurn();return}
-    render();return;
+    atualiza();return;
   }
   const n=S.weather==='blizzard'?0:drawAmt(pi,2);
   if(n)drawN(pi,n);
   log(`${J(by)} pegou ${V(pi,'você',J(pi))} sem tocar a sineta${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
   emit({t:'aviso',txt:`${V(pi,'Você foi pego',J(pi)+' foi pego')} sem tocar a sineta!${n?` +${n}`:''}`,cor:'var(--cy)'});
   if(overloaded(pi)){if(markOut(pi))return;if(pi===S.turn){endTurn();return}}
-  render();
+  atualiza();
 }
 function endTurnHook(pi){
   const fp=S.players[pi];
@@ -409,18 +413,18 @@ function endTurn(){
   startTurn();
 }
 function startTurn(){
-  S.tok++;if(TB.on)TB.turns++;
+  S.tok++;S.vezes=(S.vezes||0)+1; // quantas vezes começaram nesta partida (o turbo e os testes contam por aqui)
   const cp=cur();
   // Batata: o contador mostra a vez atual com ela (1/5 na primeira, 5/5 na última)
   if(!cp.out&&cp.hand.some(c=>c.type==='batata'))cp.batata=(cp.batata||0)+1;
   if(cp.webbed){
     cp.webbed=false;const g=S.gen,tok=S.tok;
     emit({t:'selo',p:S.turn,ic:'🕸️',cor:'var(--muted)'});emit({t:'fx',g:'🕸️',txt:V(S.turn,'Você está preso na teia',`${J(S.turn)} está preso na teia`),cor:'var(--muted)',modo:'stamp'});
-    log(`${J(S.turn)} perdeu a vez (teia).`);render();
+    log(`${J(S.turn)} perdeu a vez (teia).`);atualiza();
     agendar(()=>{if(g===S.gen&&tok===S.tok&&S.phase!=='over')endTurn()},1100);
     return;
   }
-  render();
+  atualiza();
   // a pessoa confusa joga ao acaso (a mesa joga por ela); o adversário confuso joga ao acaso no botAct
   if(humano(S.turn)&&confused(S.turn))autoHuman(S.turn);
   else pedirJogada(S.turn);
@@ -498,7 +502,7 @@ function takeDraw(pi){
 // +99: quem precisa comprar as cartas dele é eliminado na hora, depois de uma enxurrada de cartas voando do monte até ele.
 // As cartas não são compradas de verdade. Só escapa quem não compraria por causa da Nevasca ou do Gelo
 function drawn99(pi,then){
-  const g=S.gen,sp=fastMode()?.4:1,N=RM?0:22,step=50*sp;S.busy=true;render();
+  const g=S.gen,sp=fastMode()?.4:1,N=OPCOES.semAnimacao?0:22,step=50*sp;S.busy=true;atualiza();
   for(let k=0;k<N;k++)agendar(()=>{if(g!==S.gen)return;emit({t:'voa',de:'monte',para:pi,atraso:0});if(k%3===0)emit({t:'som',k:'draw'})},k*step);
   log(`${J(pi)} ${V(pi,'precisa','precisou')} comprar as cartas do +99.`);
   agendar(()=>{
@@ -516,7 +520,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   const fast=R.fastdraw&&drawn&&drawn.type!=='bomb'&&p.hand.includes(drawn);
   if(!fast&&(!drawn||R.insatisfaction)){endTurn();return}
   if(!fast&&R.satisfaction&&!p.hand.some(c=>canPlay(p,c))&&S.deck.length+S.discard.length>1){
-    S.phase='play';S.drawnId=drawn.id;S.tok++;render();pedirJogada(pi,true);return;
+    S.phase='play';S.drawnId=drawn.id;S.tok++;atualiza();pedirJogada(pi,true);return;
   }
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
@@ -527,60 +531,17 @@ function afterDraw(pi,drawn,count,wasCalled){
     jogar(pi,drawn);return}
   // a pessoa que comprou e não tem o que jogar passa sozinha
   if(humano(pi)&&!p.hand.some(c=>canPlay(p,c))){
-    S.busy=true;S.tok++;render();const g=S.gen;
+    S.busy=true;S.tok++;atualiza();const g=S.gen;
     agendar(()=>{if(g!==S.gen||S.phase!=='drawn'||S.turn!==pi)return;S.busy=false;endTurn()},700);return;
   }
-  S.tok++;render();
+  S.tok++;atualiza();
   pedirJogada(pi);
-}
-/* ---------- Terminar e descobrir vencedor (turbo) ----------
-   Depois que você é eliminado, joga o resto da partida sem esperas, sons nem efeitos 3D: os timers pendentes vão
-   para a fila virtual (TB, em data.js) e turboRun() os executa na ordem, em blocos curtos para a tela não travar.
-   Ao terminar, o que sobrou da fila volta para o navegador (a tela de fim aparece no tempo normal).
-   Partida longa demais (TURBO_MAX vezes): vence quem tiver menos pontos na mão */
-const TURBO_MAX=2000;
-function turboStart(){
-  if(!S||S.phase==='over'||!S.players[0].out||TB.on)return;
-  const now=realNow();
-  TB.on=true;TB.now=now;TB.turns=0;TB.idle=0;
-  for(const [id,t] of TB.live){nativeClear(t.h);TB.q.set(id,{fn:t.fn,a:t.a,due:now+Math.max(0,t.due-now),id})}
-  TB.live.clear();
-  TB.saved={muted:MUTED,fx3d:CFG.fx3d};MUTED=true;CFG.fx3d=false;FX3D.reset();
-  $('turboOv').hidden=false;render();S.turbo=true;
-  nativeTimeout(turboRun,30);
-}
-function turboRun(){
-  const lim=realNow()+40;let next=null;
-  while(TB.on){
-    if(!S||S.phase==='over'){turboStop();return}
-    if(TB.turns>=TURBO_MAX){turboStop();S.timeWin=true;log('Partida longa demais: vence quem tem menos pontos na mão.');endRound(pointsLeader());return}
-    next=null;for(const x of TB.q.values())if(!next||x.due<next.due||(x.due===next.due&&x.id<next.id))next=x;
-    if(!next||realNow()>lim)break;
-    TB.q.delete(next.id);TB.now=Math.max(TB.now,next.due);
-    try{next.fn(...next.a)}catch(e){turboStop();throw e}
-  }
-  // fila vazia: espera algo do navegador (animação do Portal etc.); parado por mais de 5 s, desiste do turbo
-  if(next)TB.idle=0;else if(!TB.idle)TB.idle=realNow();else if(realNow()-TB.idle>5000){turboStop();return}
-  if(TB.on)nativeTimeout(turboRun,next?0:30);
-}
-function turboStop(){
-  if(!TB.on)return;
-  const now=realNow();TB.on=false;
-  for(const [id,x] of TB.q){const ms=Math.min(Math.max(0,x.due-TB.now),5000);TB.live.set(id,{fn:x.fn,a:x.a,due:now+ms,h:nativeTimeout(()=>{TB.live.delete(id);x.fn(...x.a)},ms)})}
-  TB.q.clear();
-  // marcas de tempo guardadas no tempo virtual voltam a zero
-  MUTED=TB.saved.muted;CFG.fx3d=TB.saved.fx3d;lastDrawSnd=0;MK.until=0;
-  if(S){S.turbo=false;S.fxUntil=0;VIS.progScroll=0}
-  // restos visuais criados durante o cálculo
-  $('fx').innerHTML='';$('toast').classList.remove('show');$('kingNote').classList.remove('show');document.querySelectorAll('.stamp,.showc,.peekc,.minidie,.think,.puff,.rulefly,.flyclone,.banc,.burst,.ghost,.pcover,.pring,.raincard,.raindrop,.rainsplash,.dropcard').forEach(e=>e.remove());
-  $('turboOv').hidden=true;render();
 }
 function endRound(pi){
   S.phase='over';emit({t:'fechaJanelas'});
   let pts=0;const winners=pi<0?[]:R.team?[pi,partner(pi)]:[pi];
   if(pi>=0){
     pts=S.players.reduce((s,p)=>s+p.hand.reduce((a,c)=>a+cardPoints(c),0),0);
-    winners.forEach(i=>{const n=S.players[i].name;SCORE[n]=(SCORE[n]||0)+1});save('unotfm-solo-score',SCORE);
   }
   let tourMsg='';
   if(TOUR){
@@ -597,6 +558,54 @@ function endRound(pi){
       else if(left.length<=1){TOUR.done=true;tourMsg=left[0]==='Você'?'Você sobreviveu e venceu o torneio!':`${left[0]} venceu o torneio.`}
     }
   }
-  render();
+  atualiza();
   agendar(()=>emit({t:'fim',pi,vencedores:winners,pts,tourMsg}),900);
+}
+
+const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simon'];
+function announce(pi,card,cont,wait){
+  const p=S.players[pi];emit({t:'origem',p:pi,carta:card});
+  p.hand=p.hand.filter(c=>c.id!==card.id);
+  S.discard.push(card);S.ann=card;
+  if(deBot(pi)&&p.hand.length===target())afterOneCard(pi);
+  S.busy=true;emit({t:'anuncio',txt:''});emit({t:'som',k:'play'});
+  atualiza();
+  const g=S.gen;
+  const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;emit({t:'anuncioFim'});cont()};
+  agendar(()=>{
+    if(g!==S.gen||S.phase==='over')return;
+    if(S.peace<=0&&(card.type==='clone'||card.type==='random')){
+      const og=SP[card.type].g;
+      morphCard(card,S.discard[S.discard.length-2]);emit({t:'redesenhaMesa'});emit({t:'gira'});card.flipped=true;
+      emit({t:'fx',g:og,txt:`Virou ${card.color==='w'?label(card):cardName(card)}`,cor:CVAR[card.color]||'var(--accent)',modo:'stamp'});
+      atualiza();agendar(done,fastMode()?400:950);
+    }else done();
+  },wait||(fastMode()?400:950));
+}
+/* ---------- jogar uma carta (pessoa ou adversário) ----------
+   Cartas de ação pousam na mesa antes do efeito (announce). A pessoa vê o anúncio curto e escolhe a cor depois; o
+   adversário anuncia com mais calma as cartas em que vai pensar (cor, alvo). A última carta da pessoa vence direto,
+   sem escolher cor; na Paz o curinga não muda a cor */
+function jogar(pi,card){
+  const p=S.players[pi],h=humano(pi);
+  const ultima=h&&p.hand.length===1&&!(p.hand2&&p.hand2.length);
+  if(h)S.mull=false;
+  const vira=card.type==='clone'||card.type==='random';
+  // espera do anúncio: undefined é a padrão, null é sem anúncio
+  let espera;
+  if(h)espera=card.type==='num'?null:vira&&!ultima&&!(S.peace>0)?undefined:480;
+  else espera=vira||isWildPick(card)||ASK_TYPES.includes(card.type)?undefined:card.type!=='num'?(fastMode()?250:480):null;
+  const depois=()=>{
+    if(isWildPick(card)&&S.peace<=0&&!ultima){pedir(pi,{tipo:'cor',carta:card,responde:col=>termina(pi,card,col)});return}
+    if(h&&card.type!=='num')S.preLanded=card;
+    termina(pi,card,null);
+  };
+  if(espera===null)depois();else announce(pi,card,depois,espera);
+}
+function termina(pi,card,col){
+  S.busy=false;
+  const r=playCard(pi,card,col);
+  if(r==='win'||r==='defer')return;
+  if(r==='combo'){S.tok++;atualiza();pedirJogada(pi);return}
+  endTurn();
 }
