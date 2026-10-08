@@ -183,7 +183,7 @@ function newGame(){
   // nomes das pessoas (no solo, "Você"); as cadeiras de adversários usam os nomes sorteados
   const nome=(i,n)=>(OPCOES.nomes&&OPCOES.nomes[i])||n;
   const players=[{name:nome(0,'Você'),ctrl:ctl(0),hand:[],called:false,col:'var(--accent)'}];
-  names.forEach((n,k)=>players.push({name:ctl(k+1)==='bot'?n:nome(k+1,n),ctrl:ctl(k+1),hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
+  names.forEach((n,k)=>players.push({name:ctl(k+1)==='bot'?n:nome(k+1,n),ctrl:ctl(k+1),hand:[],called:false,col:ctl(k+1)!=='bot'&&OPCOES.cores&&OPCOES.cores[k+1]||AVCOL[BOTNAMES.indexOf(n)]}));
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,busy:false,
      mull:R.mulligan,autoResolve:null,semente:RNG.semente};

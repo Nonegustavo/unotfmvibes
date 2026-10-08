@@ -881,7 +881,7 @@ function openPick(opts,cb,title='Rastrear',sub='Escolha qual carta comprar.'){
 }
 function buildSettings(){
   SEGS.diff=[['easy','Fácil'],['normal','Normal'],['hard','Difícil'],...(MESTRE?[['master','Mestre']]:[])];
-  document.querySelectorAll('.seg').forEach(seg=>{
+  document.querySelectorAll('.seg[data-key]').forEach(seg=>{
     const k=seg.dataset.key;
     seg.innerHTML=SEGS[k].map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${String(CFG[k])===String(v)}">${l}</button>`).join('');
     seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;CFG[k]=SEGS[k].find(x=>String(x[0])===b.dataset.v)[0];

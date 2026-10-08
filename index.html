@@ -65,7 +65,7 @@
 <div class="home" id="home">
   <div class="home-fan" id="homeFan" aria-hidden="true"></div>
   <div class="home-logo">unotfm <small>solo</small></div>
-  <div class="home-btns"><button type="button" class="btn main" id="homePlay">Jogar</button><button type="button" class="btn" id="homeCfg" aria-label="Configurações">⚙️</button></div>
+  <div class="home-btns"><button type="button" class="btn main" id="homePlay">Jogar</button><button type="button" class="btn" id="homeAmigos" aria-label="Jogar com amigos">👥</button><button type="button" class="btn" id="homeCfg" aria-label="Configurações">⚙️</button></div>
 </div>
 <div class="ov" id="settingsOv" role="dialog" aria-modal="true" aria-labelledby="stTitle">
   <div class="sheet">
@@ -129,6 +129,59 @@
     </ol>
     <div class="row2" style="margin-top:12px"><button class="btn main" id="iosClose">Entendi</button></div></div>
 </div>
+<div class="ov" id="salaOv" role="dialog" aria-modal="true" aria-labelledby="salaTitulo">
+  <div class="sheet sala">
+    <h2 id="salaTitulo">Jogar com amigos</h2>
+    <div id="salaInicio">
+      <p class="sub">Todos na mesma Wi-Fi. Um aparelho cria a sala, e os outros entram lendo um QR code. Não precisa de internet.</p>
+      <div class="field"><label class="lb" for="salaNome">Seu nome</label><input class="sala-input" id="salaNome" maxlength="16" autocomplete="nickname" placeholder="Como os outros vão te ver"></div>
+      <div class="row2"><button type="button" class="btn main" id="salaCriar">Criar sala</button><button type="button" class="btn" id="salaEntrar">Entrar numa sala</button></div>
+    </div>
+    <div id="salaAnfitriao" hidden>
+      <div class="field"><div class="lb">Lugares na mesa</div><div class="seg" id="salaLugaresSeg"></div><p class="legend">Os lugares vazios ficam com adversários do computador.</p></div>
+      <ul class="sala-lugares" id="salaLugares"></ul>
+      <label class="sala-check"><input type="checkbox" id="salaSortear"> Sortear os lugares a cada partida</label>
+      <div class="field"><div class="lb">Tempo para jogar</div><div class="seg" id="salaTempoSeg"></div><p class="legend" id="salaTempoLegenda"></p></div>
+      <div class="field"><div class="lb">Regras</div><p class="legend" id="salaRegrasTxt"></p><button type="button" class="btn" id="salaRegras">Mudar modo e regras</button></div>
+      <div class="sala-convite" id="salaConvite" hidden>
+        <p class="sub">Peça para quem vai entrar tocar em <b>Entrar numa sala</b> e ler este QR code. Depois, leia o QR code que aparecer no aparelho dele.</p>
+        <canvas id="salaQR" class="sala-qr"></canvas>
+        <div class="row2"><button type="button" class="btn main" id="salaLerResposta">📷 Ler a resposta</button><button type="button" class="btn" id="salaCopiar">Copiar código</button></div>
+        <details class="sala-sem"><summary>Sem câmera?</summary><textarea class="sala-input" id="salaColar" rows="3" placeholder="Cole aqui o código de resposta"></textarea><button type="button" class="btn" id="salaUsarColado">Usar o código</button></details>
+      </div>
+      <p class="sala-estado" id="salaEstado"></p>
+      <button type="button" class="btn" id="salaConvidar">➕ Convidar alguém</button>
+    </div>
+    <div id="salaConvidado" hidden>
+      <div id="salaLerConvite">
+        <p class="sub">Peça para o anfitrião tocar em <b>Convidar alguém</b> e leia o QR code que aparecer.</p>
+        <button type="button" class="btn main" id="salaLerConviteBtn">📷 Ler o convite</button>
+        <details class="sala-sem"><summary>Sem câmera?</summary><textarea class="sala-input" id="salaColarConvite" rows="3" placeholder="Cole aqui o código do convite"></textarea><button type="button" class="btn" id="salaUsarConvite">Usar o código</button></details>
+      </div>
+      <div id="salaResposta" hidden>
+        <p class="sub">Mostre este QR code para o anfitrião ler.</p>
+        <canvas id="salaQRResp" class="sala-qr"></canvas>
+        <button type="button" class="btn" id="salaCopiarResp">Copiar código</button>
+      </div>
+      <div id="salaDentro" hidden>
+        <p class="sub" id="salaDentroTxt"></p>
+        <ul class="sala-lugares" id="salaLugaresConv"></ul>
+        <p class="legend" id="salaRegrasConv"></p>
+        <button type="button" class="btn main" id="salaPronto">Estou pronto</button>
+      </div>
+      <p class="sala-estado" id="salaEstadoConv"></p>
+    </div>
+    <div class="row2 stick"><button type="button" class="btn" id="salaSair">Voltar</button><button type="button" class="btn main" id="salaComecar" hidden>Começar partida</button></div>
+  </div>
+</div>
+<div class="ov sala-cam" id="camOv" role="dialog" aria-modal="true" aria-labelledby="camTitulo">
+  <div class="sheet">
+    <h2 id="camTitulo">Ler QR code</h2>
+    <video id="camVideo" playsinline muted></video>
+    <p class="legend" id="camDica">Aponte a câmera para o QR code do outro aparelho.</p>
+    <button type="button" class="btn" id="camCancelar">Cancelar</button>
+  </div>
+</div>
 <div class="ov" id="endOv" role="dialog" aria-modal="true" aria-labelledby="endTitle">
   <div class="sheet">
     <h2 id="endTitle"></h2>
@@ -149,7 +202,10 @@
 <script src="js/effects.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/vendor/qrcode.js"></script>
+<script src="js/vendor/jsQR.js"></script>
 <script src="js/lan.js"></script>
 <script src="js/rede.js"></script>
+<script src="js/sala.js"></script>
 </body>
 </html>

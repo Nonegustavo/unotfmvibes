@@ -590,3 +590,30 @@ body>.handwrap{grid-row:5}body>.actions{grid-row:6}
 /* Dado: dado pequeno rolando perto do adversário */
 .minidie{position:fixed;z-index:27;pointer-events:none;width:2.125rem;height:2.125rem;animation:noteIn .2s}
 .minidie svg{width:100%!important;height:100%!important}
+
+/* ---------- jogar com amigos (sala) ---------- */
+.home-btns .btn#homeAmigos{flex:0 0 3.5rem}
+.sala-input{width:100%;box-sizing:border-box;background:var(--bg);color:var(--ink);border:2px solid var(--line);border-radius:0.75rem;padding:0.625rem 0.75rem;font:inherit}
+.sala-input:focus{outline:none;border-color:var(--accent)}
+.sala-lugares{list-style:none;margin:0 0 0.75rem;padding:0;display:flex;flex-direction:column;gap:0.375rem}
+.sala-lugares li{display:flex;align-items:center;gap:0.5rem;background:var(--bg);border-radius:0.75rem;padding:0.5rem 0.625rem;font-weight:600;font-size:.92rem}
+.sala-lugares li .av{width:1.75rem;height:1.75rem;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:.8rem;flex:0 0 auto}
+.sala-lugares li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sala-lugares li .tg{font-size:.75rem;font-weight:500;color:var(--muted)}
+.sala-lugares li .tg.ok{color:#5fd38d}
+.sala-lugares li.bot{color:var(--muted);font-weight:500}
+.sala-lugares li button{flex:0 0 auto;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:0.5rem;width:2rem;height:2rem;font-size:.9rem;padding:0}
+.sala-lugares li button:disabled{opacity:.3}
+.sala-check{display:flex;align-items:center;gap:0.5rem;font-size:.9rem;margin:0 0 1rem}
+.sala-check input{accent-color:var(--accent);width:1.1rem;height:1.1rem}
+.sala-convite{background:var(--bg);border-radius:1rem;padding:0.75rem;margin-bottom:0.75rem;display:flex;flex-direction:column;gap:0.625rem;align-items:stretch}
+.sala-qr{align-self:center;border-radius:0.5rem;background:#fff;max-width:100%}
+#salaResposta,#salaLerConvite,#salaDentro{display:flex;flex-direction:column;gap:0.625rem}
+#salaResposta[hidden],#salaLerConvite[hidden],#salaDentro[hidden]{display:none}
+.sala-sem summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+.sala-sem[open]{display:flex;flex-direction:column;gap:0.5rem}
+.sala-estado{min-height:1.2em;font-size:.88rem;margin:0.25rem 0 0.75rem;color:var(--muted)}
+.sala-estado.ok{color:#5fd38d}
+.sala-estado.erro{color:#ff8a84}
+.sala-cam .sheet{display:flex;flex-direction:column;gap:0.625rem}
+.sala-cam video{width:100%;border-radius:1rem;background:#000;aspect-ratio:4/3;object-fit:cover}

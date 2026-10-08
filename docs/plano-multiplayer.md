@@ -425,7 +425,13 @@ substituir os QR codes. Isso exige um serviço na internet só para apresentar o
 - **Etapa 1, conexões (feita):** `js/lan.js` com o código de conexão e de QR code (o `lan-teste` usa o mesmo arquivo);
   `js/rede.js` com ligações de dois tipos (de mentira entre abas, com atraso de 100 a 300 ms, e WebRTC) e até 5
   convidados, cada um com a sua cadeira, visão e pedidos. `npm run test:rede -- --webrtc --convidados=3` joga pela
-  conexão de verdade entre abas. Falta a sala (etapa 2) e as regras do multiplayer (etapa 3).
+  conexão de verdade entre abas.
+- **Etapa 2, sala (feita):** `js/sala.js` e o botão 👥 na tela inicial. Anfitrião: lugares (2 a 6), ordem das pessoas com
+  ▲▼ (o anfitrião é sempre "você", embaixo; os outros giram em volta), sortear a cada partida, tempo para jogar, regras
+  (as Configurações, sem a quantidade de adversários), convite por QR code e leitura da resposta pela câmera (ou colando
+  o código), começar e, no fim, nova rodada ou voltar à sala. Convidado: lê o convite, mostra a resposta, vê a sala e
+  toca em "Estou pronto". `npm run test:sala` faz tudo pelas telas. Falta a etapa 3 (tempos, ausência, queda e volta,
+  tela acesa, Mix de uma pessoa por vez).
 - **Decisões da sala (08/10/2026):** o anfitrião escolhe quantas cadeiras (as vazias são adversários), pode arrumar os
   lugares ou sortear a cada partida; os convidados tocam em "Pronto", mas quem começa é o anfitrião. Nome guardado no
   aparelho. Uma opção "Tempo para jogar" (Normal, Longo, Sem limite). No Mix de Regras, as pessoas escolhem uma de
