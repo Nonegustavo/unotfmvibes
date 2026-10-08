@@ -420,6 +420,18 @@ substituir os QR codes. Isso exige um serviço na internet só para apresentar o
   - WebRTC: convidados na rede local;
   - WebSocket: online, a partir da fase 3.
 
+### 4.3.1 Andamento
+
+- **Etapa 1, conexões (feita):** `js/lan.js` com o código de conexão e de QR code (o `lan-teste` usa o mesmo arquivo);
+  `js/rede.js` com ligações de dois tipos (de mentira entre abas, com atraso de 100 a 300 ms, e WebRTC) e até 5
+  convidados, cada um com a sua cadeira, visão e pedidos. `npm run test:rede -- --webrtc --convidados=3` joga pela
+  conexão de verdade entre abas. Falta a sala (etapa 2) e as regras do multiplayer (etapa 3).
+- **Decisões da sala (08/10/2026):** o anfitrião escolhe quantas cadeiras (as vazias são adversários), pode arrumar os
+  lugares ou sortear a cada partida; os convidados tocam em "Pronto", mas quem começa é o anfitrião. Nome guardado no
+  aparelho. Uma opção "Tempo para jogar" (Normal, Longo, Sem limite). No Mix de Regras, as pessoas escolhem uma de
+  cada vez, depois os adversários; a lista de regras aparece para todos, e a partida começa quando todos fecharem a
+  janela ou o tempo acabar. O `lan-teste` sai no fim da fase.
+
 ### 4.4 Limitações
 
 - **O anfitrião precisa ficar com o jogo aberto.** Se trocar de app ou bloquear a tela, principalmente no iPhone, a partida para para todos.
