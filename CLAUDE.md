@@ -135,7 +135,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - `infoPopup()` abre a janela explicativa com seta. Essas janelas não têm botão Ok e fecham ao tocar em qualquer lugar.
   - Segurar uma carta da mão por 0,5 s (`showCardInfo`) abre essa janela com o que a carta faz e a explicação de cada selo. Cartas numéricas só abrem se tiverem selo, e segurar nunca joga a carta.
   - Segurar a carta da mesa (`showTopInfo`) abre a mesma janela com o nome e a descrição dela (numéricas não abrem). Tocar normalmente abre o histórico.
-  - O Dado, a Maldição e as Cartas de Clima listam as possibilidades, uma por linha (`ruleListHtml`). Durante o jogo a lista aparece sempre; no menu de regras, só ao tocar em "Ver ..." (`RULE_MORE`).
+  - O Dado, a Maldição e as Cartas de Clima listam as possibilidades, uma por linha (`ruleListHtml`). Durante o jogo a lista aparece ao tocar no ícone da regra na faixa e ao segurar a carta; no menu de regras, só ao tocar em "Ver ..." (`RULE_MORE`). Não aparece nas janelas de escolha do Mix e da Carta da Regra nem na lista das regras do Mix.
 - **Mão Colorida:** com a regra ativa, faixas das quatro cores passam na diagonal, bem fracas, no fundo da cadeira (classe `shiny`, aparece também na Neblina e na Camuflagem) ou da sua área de jogo.
 - **Tesouro:** quem joga descarta as cartas que sobraram, uma de cada vez, e só então vence.
 - **Escala:** o tamanho de tudo vem de `--u` (no `:root` do `style.css`), que vale 1px num celular de 390×800 e acompanha a largura e a altura da tela. `--cw` (largura da carta) e o `font-size` da raiz derivam dele, e as medidas do CSS estão em `rem`. Use `rem` (ou `var(--cw)`) em vez de `px` em medidas novas; `px` só para bordas finas (até 3px).

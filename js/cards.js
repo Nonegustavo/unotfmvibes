@@ -207,7 +207,7 @@ function renderRuleStrip(){
 function freshen(el){el.classList.add('fresh');setTimeout(()=>el.classList.remove('fresh'),6000)}
 function openPoker(){
   const list=S.added.map(a=>{const ic=ruleIcon(a.k);
-    return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}">${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${texto(a.by)==='você'?'sua':'de '+texto(a.by)}</em></div><p>${ruleDesc(a.k)}${ruleListHtml(a.k)}</p></div></div>`}).join('');
+    return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}">${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${texto(a.by)==='você'?'sua':'de '+texto(a.by)}</em></div><p>${ruleDesc(a.k)}</p></div></div>`}).join('');
   $('pokerList').innerHTML=list||'<p class="sub">Nenhuma regra disponível para escolher.</p>';
   VIS.freshRules=[];render();
   $('pokerOv').classList.add('show');$('pokerGo').focus();
@@ -264,7 +264,7 @@ function openRuleChoice(opts,cb,title='Carta da Regra',sub='Escolha uma regra pa
   $('swaps').classList.remove('row');$('swapTitle').textContent=title;$('swapSub').textContent=sub;
   const desc=k=>(RULES.find(r=>r.k===k)||{}).d||'';
   const icon=ruleIcon;
-  $('swaps').innerHTML=opts.map(k=>`<button data-k="${k}" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="display:flex;align-items:center;gap:10px"><span class="av" style="background:var(--accent);font-size:1.05rem">${icon(k)}</span>${RNAME[k]}</span><small style="margin:0;font-weight:400">${desc(k)}${ruleListHtml(k)}</small></button>`).join('');
+  $('swaps').innerHTML=opts.map(k=>`<button data-k="${k}" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="display:flex;align-items:center;gap:10px"><span class="av" style="background:var(--accent);font-size:1.05rem">${icon(k)}</span>${RNAME[k]}</span><small style="margin:0;font-weight:400">${desc(k)}</small></button>`).join('');
   $('swapOv').classList.add('show');
   const done=k=>{closeOverlays();cb(k)};
   S.autoResolve=()=>done(opts[0]);
