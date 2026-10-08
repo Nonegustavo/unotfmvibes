@@ -271,7 +271,7 @@ function nextHand(pi){
   const p=S.players[pi];if(!p.hand2||!p.hand2.length)return false;
   p.hand=p.hand2;p.hand2=[];p.called=false;
   if(pi===0){S.newIds=p.hand.map(c=>c.id);S.handFrom=$('deck').getBoundingClientRect()}else emit({t:'voa',de:'monte',para:pi,atraso:0});
-  emit({t:'fx',g:'✋',txt:`${pi===0?'Você pega':who(pi)+' pega'} a segunda mão`,cor:'var(--accent)',modo:'slam'});log(`${who(pi)} terminou a primeira mão.`);
+  emit({t:'fx',g:'✋',txt:`${V(pi,'Você pega',J(pi)+' pega')} a segunda mão`,cor:'var(--accent)',modo:'slam'});log(`${J(pi)} terminou a primeira mão.`);
   return true;
 }
 const topCard=()=>S.discard[S.discard.length-1];
@@ -285,8 +285,20 @@ const cardName=c=>c.color==='w'?label(c):SP[c.type]?`${label(c)} (${CNAME[c.colo
 const cardPoints=c=>c.type==='num'?c.value:(c.color==='w'?50:20);
 const identical=(a,b)=>a.color!=='w'&&a.color===b.color&&a.type===b.type&&a.value===b.value;
 const who=pi=>pi===0?'Você':S.players[pi].name;
+/* Textos das regras sem "você": as regras não sabem quem está olhando. J(pi) marca o nome de um jogador (vira "Você"
+   para ele mesmo) e V(pi,'para ele','para os outros') escolhe a frase conforme quem vê. As marcas guardam o nome do
+   jogador (que não muda com a Dança das Cadeiras) e a tela troca tudo com texto(s) na hora de mostrar */
+const J=pi=>`${S.players[pi].name}`;
+const V=(pi,meu,dos)=>`${S.players[pi].name}${meu}${dos}`;
+// texto para quem vê (eu: nome do jogador desta tela; no solo, a cadeira 0)
+function texto(s,eu=S&&S.players[0].name){
+  if(typeof s!=='string'||!/[]/.test(s))return s;
+  return s.replace(/([^]*)([^]*)([^]*)/g,(x,n,meu,dos)=>n===eu?meu:dos)
+    .replace(/([^]*)/g,(x,n)=>n===eu?'Você':n);
+}
 
-function log(msg){S.log.unshift(msg);S.log=S.log.slice(0,2);if(S.histCur)S.histCur.notes.push(msg)}
+// registro da partida: a tela guarda as linhas (evento 'registro')
+function log(msg){emit({t:'registro',txt:msg})}
 const snap=c=>({type:c.type,color:c.color,value:c.value,chosen:c.chosen,orig:c.orig,rot:0});
 function toast(msg,bg){
   if(S&&S.turbo)return;

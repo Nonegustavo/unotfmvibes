@@ -295,6 +295,10 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
   - O `who()` e os "Você…" saem das regras e vão para o tradutor de eventos.
   - O registro da partida passa a ser montado pela tela.
   - **Conferir:** registro idêntico nos testes.
+  - **Feito:** cerca de 160 textos passaram a usar `J(pi)` e `V(pi, para ele, para os outros)`, marcas com o nome do
+    jogador que a tela traduz com `texto()`. O registro e o histórico das jogadas são montados pela tela. Teste das cartas
+    com estado, registro e eventos idênticos (a única diferença foi de propósito: o aviso de eliminado agora vai só para
+    quem saiu, com `a:pi`). Ainda ficam nas regras textos do humano que a etapa E resolve (`S.outWhy`, Mix de Regras).
 - **D. Estado visual separado (M)**
   - O que é só da tela sai do `S` e vai para um `V`, inclusive a inclinação das cartas na mesa.
   - O número das cartas passa a ser sorteado.

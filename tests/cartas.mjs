@@ -47,11 +47,13 @@ async function cenarioNaPagina(c) {
   window.SEMENTE = c.semente;
   // o registro completo da partida (o do jogo guarda só as últimas linhas)
   const registro = [], logJogo = log;
-  log = msg => { registro.push(msg); logJogo(msg); };
+  log = msg => { registro.push(texto(msg)); logJogo(msg); };
   // os eventos que as regras mandam para a tela (efeitos, sons, cartas voando), resumidos numa linha cada
   const eventos = [];
-  const valor = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(valor).join(' ') + ']' : 'type' in v ? fmt(v) : JSON.stringify(v)) : String(v).replace(/<svg[\s\S]*<\/svg>/, '<svg>');
-  espiaEventos = ev => eventos.push(Object.entries(ev).filter(([k, v]) => v !== undefined && typeof v !== 'function').map(([k, v]) => k === 't' ? v : k + '=' + valor(v)).join(' '));
+  const valor = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(valor).join(' ') + ']' : 'type' in v ? fmt(v) : JSON.stringify(v)) : texto(String(v)).replace(/<svg[\s\S]*<\/svg>/, '<svg>');
+  // o registro e o histórico já vêm inteiros em 'registro'; os textos saem como você os vê (texto())
+  const IGNORA = ['registro', 'jogada', 'fimJogada', 'histInicio'];
+  espiaEventos = ev => IGNORA.includes(ev.t) || eventos.push(Object.entries(ev).filter(([k, v]) => v !== undefined && typeof v !== 'function').map(([k, v]) => k === 't' ? v : k + '=' + valor(v)).join(' '));
   newGame();
   S.turbo = true;
   const erros = [];

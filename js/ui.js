@@ -92,13 +92,22 @@ function ghost(from,to,delay){
    como número da cadeira, 'mesa' ou 'monte'. Alguns eventos ainda devolvem algo às regras (duração, se o dado 3D rolou) */
 const lugar=x=>typeof x==='number'?targetRect(x):x==='mesa'?discardRect():x==='monte'?$('deck').getBoundingClientRect():x;
 function TELA(ev){
+  // no solo, esta tela é a do jogador 0: o que é só de outro jogador não aparece
+  if(ev.a!=null&&ev.a!=='todos'&&ev.a!==0)return;
   switch(ev.t){
     case 'pausa':return;
-    case 'fx':return fx(ev.g,ev.txt,ev.cor,ev.modo,ev.ms,ev.mudo);
+    case 'fx':return fx(ev.g,texto(ev.txt),ev.cor,ev.modo,ev.ms,ev.mudo);
     case 'tada':return fx('🎩',randVis(MAGIC),ev.cor,'stamp',ev.ms,true);
     case 'selo':return stampOn(ev.p,ev.ic,ev.cor);
     case 'som':return sfx(ev.k);
-    case 'aviso':return toast(ev.txt,ev.cor);
+    case 'aviso':return toast(texto(ev.txt),ev.cor);
+    case 'registro':{const m=texto(ev.txt);S.log.unshift(m);S.log=S.log.slice(0,2);if(S.histCur)S.histCur.notes.push(m);return}
+    // histórico das jogadas: cada carta jogada abre uma entrada; as linhas do registro entram nela até o fim da jogada
+    case 'histInicio':S.hist=[{by:null,card:ev.carta,notes:['Primeira carta da mesa.']}];S.histCur=null;return;
+    case 'jogada':{
+      if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}
+      S.hist=S.hist||[];const he={by:ev.p,live:ev.carta,card:null,notes:[],side:ev.lado};S.hist.push(he);if(S.hist.length>12)S.hist.shift();S.histCur=he;return}
+    case 'fimJogada':if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}S.histCur=null;return;
     case 'voa':return ghost(lugar(ev.de),lugar(ev.para),ev.atraso);
     case '3d':return FX3D[ev.k](...(ev.onde!==undefined?[lugar(ev.onde)]:[]),...(ev.args||[]));
     case 'rei':return kingHalf();
@@ -117,7 +126,7 @@ function TELA(ev){
       return;
     case 'dado':return dadoFx(ev.p,ev.n,ev.ms);
     case 'dadoFim':if(DADO){DADO.remove();DADO=null}return;
-    case 'dadoLegenda':$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${ev.ms}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${ev.txt}</div></div>`;return;
+    case 'dadoLegenda':$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${ev.ms}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${texto(ev.txt)}</div></div>`;return;
     case 'roleta':return roletaFx(ev);
     case 'chuva':return chuvaFx(ev.p,ev.ms,ev.id);
     case 'chuvaFim':{const e=ev.id!=null&&document.querySelector(`#hand [data-id="${ev.id}"]`);if(e)e.style.visibility='';return}
@@ -280,7 +289,7 @@ function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
   const p=cur();
   if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
-  if(S.announcing&&S.annText)return S.annText;
+  if(S.announcing&&S.annText)return texto(S.annText);
   if(p.bot)return '';
   if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
@@ -762,7 +771,7 @@ function openActive(){
   if(!S){openSettings();return}
   const segName=(k,v)=>{const e=SEGS[k].find(x=>String(x[0])===String(v));return e?e[1]:v};
   const basics=[`${S.players.length-1} adversário${S.players.length>2?'s':''}`,`Dificuldade: ${segName('diff',R.diff)}`,`Cartas iniciais: ${segName('start',R.start)}`,`Defesa contra compras: ${segName('combo',comboMode())}`];
-  const added=Object.fromEntries(S.added.map(a=>[a.k,a.by]));
+  const added=Object.fromEntries(S.added.map(a=>[a.k,texto(a.by)]));
   const on=RULES.filter(r=>R[r.k]);
   let html=`<div class="act-basics">${basics.map(b=>`<span class="chip">${b}</span>`).join('')}</div><p class="legend">${COMBO_DESC[comboMode()]}</p>`;
   if(!R.nochallenge)html+=`<div class="act"><b>Desafio do +4</b><span>Quem recebe um +4 pode desafiar: se foi blefe, quem jogou compra; se não, quem desafiou compra 2 a mais.</span></div>`;
@@ -771,7 +780,7 @@ function openActive(){
     if(r.g!==g){g=r.g;html+=`<div class="act-group">${g}</div>`}
     html+=`<div class="act act-i"><span class="mi ${txtIcon(ruleIcon(r.k))?'txt':''}">${ruleIcon(r.k)}</span><div><b>${r.n}</b>${added[r.k]?`<em class="new" style="font-style:normal">adicionada por ${added[r.k]}</em>`:''}<span>${r.d}</span></div></div>`;
   });
-  if(S.removed.length){html+=`<div class="act-group">Removidas nesta partida</div>`;S.removed.forEach(x=>{html+=`<div class="act"><b>${RNAME[x.k]}</b><em class="new gone" style="font-style:normal">banida por ${x.by}</em></div>`})}
+  if(S.removed.length){html+=`<div class="act-group">Removidas nesta partida</div>`;S.removed.forEach(x=>{html+=`<div class="act"><b>${RNAME[x.k]}</b><em class="new gone" style="font-style:normal">banida por ${texto(x.by)}</em></div>`})}
   if(!on.length)html+='<p class="sub" style="margin-top:10px">Nenhuma regra da casa ativa: jogo clássico.</p>';
   $('activeSub').textContent=S.added.length?`${on.length} regra${on.length===1?'':'s'} da casa ativa${on.length===1?'':'s'}, ${S.added.length} adicionada${S.added.length===1?'':'s'} durante a partida.`:`${on.length} regra${on.length===1?'':'s'} da casa ativa${on.length===1?'':'s'}.`;
   $('activeList').innerHTML=html;
@@ -916,7 +925,7 @@ $('rulestrip').addEventListener('click',e=>{
 function openRuleIcon(b){
   const k=b.dataset.k;b.classList.add('on');b.classList.remove('fresh');
   const a=(S&&S.added||[]).find(x=>x.k===k);
-  notice(k,a?`Em jogo, adicionada por ${a.by}`:'Em jogo desde o início',{info:true,title:RNAME[k],anchor:b});
+  notice(k,a?`Em jogo, adicionada por ${texto(a.by)}`:'Em jogo desde o início',{info:true,title:RNAME[k],anchor:b});
 }
 // janela automática da regra adicionada no meio da partida (pode ser desligada nas Configurações; tocar no ícone sempre abre)
 function showRuleInfo(k){
@@ -924,7 +933,7 @@ function showRuleInfo(k){
   const b=$('rulestrip').querySelector(`[data-k="${k}"]`);if(!b)return;
   document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));b.classList.add('on');
   const a=(S&&S.added||[]).find(x=>x.k===k);
-  notice(k,a?`Nova regra, adicionada por ${a.by}`:'Em jogo',{info:true,title:RNAME[k],anchor:b});
+  notice(k,a?`Nova regra, adicionada por ${texto(a.by)}`:'Em jogo',{info:true,title:RNAME[k],anchor:b});
 }
 $('openConfig').onclick=()=>{updateInstallUI();CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()};
 $('cfgClose').onclick=()=>$('configOv').classList.remove('show');
