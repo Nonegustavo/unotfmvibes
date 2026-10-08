@@ -35,10 +35,13 @@ function fazPrevia(a){
 }
 // a carta de cima do monte sai um pouco, virada, com um som baixo, até a carta de verdade chegar
 function compraPrevia(){
-  const d=$('deck');if(!d||RM)return;
-  if(acaoRemota)sfx('arrasta'); // no anfitrião a carta chega na hora: o som da compra basta
+  if(acaoRemota&&!RM&&$('deck'))sfx('arrasta'); // no anfitrião a carta chega na hora: o som da compra basta
+  cartaPuxada('previa-compra');
+}
+function cartaPuxada(cls){
+  const d=$('deck');if(!d||RM||(S&&S.turbo))return;
   const r=d.getBoundingClientRect(),el=document.createElement('div');
-  el.className='card back flyclone previa-compra';el.innerHTML=versoHTML();
+  el.className='card back flyclone '+cls;el.innerHTML=versoHTML();
   Object.assign(el.style,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',margin:'0',zIndex:21,pointerEvents:'none'});el.style.setProperty('--cw',r.width+'px');
   document.body.appendChild(el);
   el.animate([{transform:'none'},{transform:'translate(0.5rem,-0.9rem) rotate(7deg)'}],{duration:220,easing:'ease-out',fill:'forwards'});
@@ -203,6 +206,15 @@ function TELA(ev){
     case 'infoRegra':return showRuleInfo(ev.k);
     case 'cadeiras':VIS.seatFlip=Object.fromEntries([...document.querySelectorAll('#seatrow .seat')].map(e=>[e.dataset.name,e.getBoundingClientRect()]));return;
     case 'fechaJanelas':return closeOverlays();
+    // Rastrear: enquanto alguém escolhe, a carta de cima do monte fica puxada para fora (a da sua prévia continua a mesma)
+    case 'rastreando':{
+      document.querySelectorAll('.rastreio-compra').forEach(e=>e.remove());
+      if(ev.p==null)return;
+      const pv=document.querySelector('.previa-compra');
+      if(pv&&ev.p===0){pv.classList.replace('previa-compra','rastreio-compra');desfazPrevia('confirmada')}
+      else{if(ev.p===0)desfazPrevia('confirmada');cartaPuxada('rastreio-compra')}
+      return;
+    }
     // cartas chegando às mãos: na sua, entram marcadas como novas (e vêm de 'de'); nos outros, uma carta voa até a cadeira
     case 'compra':if(ev.p===0)VIS.newIds.push(ev.id);else VIS.botDraw[ev.p]=(VIS.botDraw[ev.p]||0)+1;return;
     case 'semVoo':if(ev.p===0)VIS.newIds=[];else delete VIS.botDraw[ev.p];return;
@@ -226,7 +238,7 @@ function TELA(ev){
     case 'anuncio':VIS.announcing=true;VIS.annText=ev.txt;return;
     case 'anuncioFim':VIS.announcing=false;return;
     case 'novaPartida':
-      VIS=novoVis();
+      VIS=novoVis();document.querySelectorAll('.rastreio-compra').forEach(e=>e.remove());
       $('home').hidden=true;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
       $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';
       if(PORTAL){PORTAL.forEach(e=>e.remove());PORTAL=null}

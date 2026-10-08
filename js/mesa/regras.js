@@ -584,8 +584,11 @@ function takeDraw(pi){
     const finish=pick=>{
       const rest=opts.filter(c=>c!==pick),extra=curseIs('anvil')&&rest.length?rand(rest):null;
       rest.filter(c=>c!==extra).forEach(c=>S.deck.unshift(c));
+      emit({t:'rastreando',p:null});
       give(pi,pick);if(extra)give(pi,extra);afterDraw(pi,pick,extra?2:1,wasCalled);
     };
+    // enquanto alguém escolhe, a carta de cima do monte fica puxada para fora
+    emit({t:'rastreando',p:pi});
     pedir(pi,{tipo:'carta',ja:true,quantas:opts.length,responde:finish,tela:{opcoes:()=>opts,titulo:'Rastrear',sub:'Escolha qual carta comprar.'},
       bot:()=>{const safe=opts.filter(c=>c.type!=='bomb');const good=safe.filter(c=>canPlay(p,c));
         return {e:good.length?(R.diff==='easy'?rand(good):botChoose(p,good)):rand(safe.length?safe:opts),lista:opts,ver:'down'}}});
