@@ -59,7 +59,8 @@ const passo = p => p.evaluate(() => {
   const ok = [...document.querySelectorAll('#hand .card.ok')];
   if (ok.length && Math.random() < .9) return click(pick(ok)) && 'jogar';
   const d = document.getElementById('drawBtn');
-  if (d && !d.disabled && !d.hidden && typeof myTurn === 'function' && myTurn()) return click(d) && 'comprar';
+  // comprar pelo botão ou tocando no monte
+  if (d && !d.disabled && !d.hidden && typeof myTurn === 'function' && myTurn()) return click(Math.random() < .5 ? d : document.getElementById('deck')) && 'comprar';
   document.body.click();
   return 'esperar';
 });
@@ -75,6 +76,16 @@ const vazamentos = () => conv.evaluate(() => {
   if (S.other) S.other.players.forEach((q, i) => { if (i > 0) (q.hand || []).forEach(c => { if (!c.oculta && c.type !== 'batata') v.push('carta do outro lado visível'); }); });
   return [...new Set(v)];
 });
+// as duas abas mostram a mesma partida: vez, topo da pilha e monte; e só quem está na vez vê "Sua vez"
+const mesmaPartida = async () => {
+  const h = await host.evaluate(() => S && S.players ? { vez: (S.turn - 1 + S.players.length) % S.players.length, topo: S.discard[S.discard.length - 1].id, monte: S.deck.length, fase: S.phase, status: document.getElementById('status').textContent, euVez: S.turn === 0 } : null);
+  const c = await conv.evaluate(() => S && S.players ? { vez: S.turn, topo: S.discard[S.discard.length - 1].id, monte: S.deck.length, fase: S.phase, status: document.getElementById('status').textContent, euVez: S.turn === 0 } : null);
+  if (!h || !c) return [];
+  const p = [];
+  if (h.vez !== c.vez || h.topo !== c.topo || h.monte !== c.monte) p.push(`abas diferentes: anfitrião ${JSON.stringify(h)}, convidado ${JSON.stringify(c)}`);
+  for (const [nome, x] of [['anfitrião', h], ['convidado', c]]) if (!x.euVez && /Sua vez/.test(x.status)) p.push(`${nome} mostra "Sua vez" fora da vez`);
+  return p;
+};
 const maoConvidado = () => conv.evaluate(() => S && S.players ? S.players[0].hand.map(c => c.id).sort().join(',') : '');
 const maoNaMesa = () => host.evaluate(() => S && S.players ? S.players[1].hand.map(c => c.id).sort().join(',') : '');
 const foto = () => host.evaluate(() => S ? [S.turn, S.discard.length, S.players.map(p => p.hand.length).join('/'), S.phase].join('|') : '');
@@ -101,6 +112,7 @@ for (let g = 1; g <= PARTIDAS; g++) {
       const [m1, m2] = [await maoConvidado(), await maoNaMesa()];
       conferidas++;
       if (m1 !== m2) { await host.waitForTimeout(800); if ((await maoConvidado()) !== (await maoNaMesa())) divergencias++; }
+      let dif = await mesmaPartida(); if (dif.length) { await host.waitForTimeout(1000); dif = await mesmaPartida(); } for (const x of dif) problemas.push(`partida ${g}: ${x}`);
       for (const v of await vazamentos()) problemas.push(`partida ${g}: ${v}`);
     }
     const agora = await foto();

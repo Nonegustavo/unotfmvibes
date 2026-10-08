@@ -101,6 +101,9 @@ function redeConvidado(){
   redeAviso('Rede de mentira: convidado (procurando o anfitrião)');
   $('home').hidden=true;
   acaoRemota=a=>{redeEnvia({t:'acao',acao:a});return true};
+  // o convidado não tem mesa: se a tela chamar uma regra direto (em vez de acao), é erro, e os testes pegam pelo console
+  for(const k of ['agir','jogar','termina','playCard','takeDraw','endTurn','startTurn','doJumpIn','penalize','doChallenge','newGame','dealAndStart','comecaMix','drawOne','markOut'])
+    globalThis[k]=()=>console.error('O convidado chamou uma regra direto: '+k);
   // começar e recomeçar a partida é com o anfitrião
   $('startBtn').onclick=$('againBtn').onclick=()=>{$('endOv').classList.remove('show');$('settingsOv').classList.remove('show')};
   const ola=()=>{if(!REDE.conectado){redeEnvia({t:'ola'});setTimeout(ola,1500)}};ola();

@@ -347,6 +347,8 @@ function statusText(){
   if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
   if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
   if(deBot(S.turn))return '';
+  // vez de outra pessoa (na rede): o nome dela, e não "Sua vez"
+  if(S.turn!==0){const q=S.players[S.turn];return S.busy?`${q.name} está escolhendo…`:S.pending>0?`Vez de ${q.name} (+${S.pending})`:`Vez de ${q.name}`}
   if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
     const parts=[];if(R.stack)parts.push(`outro ${S.comboValue}`);if(R.sequence)parts.push('continue a sequência');
@@ -970,7 +972,7 @@ document.addEventListener('pointerdown',e=>{if(e.target.closest('.seat')&&!e.tar
  deck.addEventListener('pointermove',e=>{if(lp&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10)cancel()});
  ['pointerup','pointercancel','pointerleave'].forEach(ev=>deck.addEventListener(ev,cancel));
  deck.addEventListener('contextmenu',e=>e.preventDefault());
- deck.onclick=()=>{if(fired){fired=false;return}if(myTurn()&&S.phase==='play')takeDraw(0)};}
+ deck.onclick=()=>{if(fired){fired=false;return}if(myTurn()&&S.phase==='play')acao({t:'principal'})};}
 $('drawBtn').onclick=e=>S&&S.players[0].out&&S.phase!=='over'?turboStart():humanMain(e);
 $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
