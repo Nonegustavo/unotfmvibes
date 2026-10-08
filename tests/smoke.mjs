@@ -87,7 +87,9 @@ async function step() {
     const ok = [...document.querySelectorAll('#hand .card.ok')];
     if (ok.length) return click(pick(ok)) && 'jogar';
     const draw = document.getElementById('drawBtn');
-    if (draw && !draw.disabled && !draw.hidden) return click(draw) && 'comprar';
+    if (draw && !draw.disabled && !draw.hidden) return click(draw) && 'passar';
+    const deck = document.querySelector('#deck.can');
+    if (deck) return click(deck) && 'comprar';
     document.body.click(); // fecha balões de informação
     return 'esperar';
   });

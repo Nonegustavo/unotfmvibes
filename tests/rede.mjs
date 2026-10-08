@@ -82,8 +82,10 @@ const passo = p => p.evaluate(() => {
   // na vez, a carta tocada sai da mão na hora (resposta instantânea), antes de a mesa confirmar
   if (ok.length && Math.random() < .9) { const el = pick(ok), me = S.players[0], c = me.hand.find(x => x.id === +el.dataset.id), vez = myTurn() && c && canPlay(me, c); click(el); return vez && document.querySelector(`#hand [data-id="${el.dataset.id}"]`) ? 'lento' : 'jogar'; }
   const d = document.getElementById('drawBtn');
-  // comprar pelo botão ou tocando no monte
-  if (d && !d.disabled && !d.hidden && typeof myTurn === 'function' && myTurn()) return click(Math.random() < .5 ? d : document.getElementById('deck')) && 'comprar';
+  // passar pelo botão da mesa ou comprar tocando no monte
+  if (d && !d.disabled && !d.hidden && typeof myTurn === 'function' && myTurn()) return click(d) && 'passar';
+  const monte = document.querySelector('#deck.can');
+  if (monte && typeof myTurn === 'function' && myTurn()) return click(monte) && 'comprar';
   document.body.click();
   return 'esperar';
 });

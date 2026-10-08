@@ -480,7 +480,7 @@ function seatStatus(i){
   const shiny=R.shiny&&(p.colorida??colorful(p));
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
   if(p.caiu)L.push({ic:'📵',short:'📵',name:'Caiu',txt:'a conexão caiu; um bot joga até ele voltar'});
-  else if(p.ctrlReal)L.push({ic:'🤖',short:'🤖',name:'Bot',txt:i===0?'o seu tempo acabou e um bot está jogando por você. Toque numa carta ou em Comprar para voltar':'o tempo dele acabou; um bot joga até ele voltar'});
+  else if(p.ctrlReal)L.push({ic:'🤖',short:'🤖',name:'Bot',txt:i===0?'o seu tempo acabou e um bot está jogando por você. Toque numa carta ou no monte para voltar':'o tempo dele acabou; um bot joga até ele voltar'});
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
   if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
   if(p.treasure)L.push({ic:'🧭',short:`🧭${p.treasure}`,name:'Busca',txt:`jogou ${p.treasure}/3, na terceira ganha a Carta do Tesouro`});
@@ -738,7 +738,7 @@ function desenha(){
   if(R.revelation&&dtop){deck.className=`card deckbtn reveal c-${dtop.color}`;deck.innerHTML=faceHTML(dtop)}
   else{deck.className='card back deckbtn';deck.innerHTML=versoHTML()}
   // sem "disabled": o monte precisa receber o toque longo e o mouse para mostrar os selos (a compra confere a vez)
-  deck.classList.toggle('can',mine);deck.classList.toggle('off',!mine);deck.setAttribute('aria-disabled',String(!mine));
+  deck.classList.toggle('can',mine);deck.classList.toggle('chama',mine&&!S.players[0].hand.some(c=>canPlay(S.players[0],c)));deck.classList.toggle('off',!mine);deck.setAttribute('aria-disabled',String(!mine));
   {const ic=deckBadges().map(x=>x.ic);
    // os selos ficam fora do monte (depois dos espinhos) para não ficarem cobertos por eles
    const cb=$('deckcb');cb.hidden=!ic.length;cb.textContent=ic.join(' ');
@@ -814,15 +814,13 @@ function desenha(){
   });
   VIS.botDraw={};
   // actions
+  // comprar (e perder a vez na Nevasca e no Gelo) é tocando no monte; o botão do meio da mesa só encerra a jogada ou passa
   const main=$('drawBtn');
-  if(S.phase==='combo'&&S.turn===0)main.textContent='Encerrar jogada';
-  else if(S.phase==='drawn'&&S.turn===0)main.textContent='Passar';
-  else if(S.pending>0&&S.turn===0)main.textContent=(S.weather==='blizzard'||curseIs('ice'))?`Perder a vez (+${S.pending})`:`Comprar ${S.pending}`;
-  else main.textContent=S.weather==='blizzard'&&S.turn===0?'Passar':'Comprar';
-  main.disabled=!turn;
-  // eliminado assistindo: o botão principal termina a partida na hora
+  main.textContent=S.phase==='combo'?'Encerrar jogada':'Passar';
+  main.hidden=!(turn&&(S.phase==='combo'||S.phase==='drawn'));main.disabled=false;
+  // eliminado assistindo: o botão termina a partida na hora
   const watching=me.out&&S.phase!=='over';
-  if(watching){main.textContent='Terminar e descobrir vencedor';main.disabled=TB.on}
+  if(watching){main.textContent='Terminar e descobrir vencedor';main.hidden=false;main.disabled=TB.on}
   $('unoBtn').hidden=watching;
   const unoOk=S.weather!=='fog'&&!me.called&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0));
   $('unoBtn').disabled=!unoOk;

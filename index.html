@@ -33,6 +33,7 @@
   <div class="wxl" aria-hidden="true"><div class="w-sun"><i></i></div><div class="w-storm"></div><div class="w-fog"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="w-snow"></div></div>
   <div class="toast" id="toast" role="status"></div>
   <div class="toast king" id="kingNote" role="status">👑 Rei compra a metade</div>
+  <div class="mesa-topo" aria-hidden="true"></div>
   <div class="arena">
     <div class="fx" id="fx"></div>
     <div class="meta" id="meta"></div>
@@ -48,18 +49,19 @@
     </div>
   </div>
     <div class="status" id="status"></div>
+    <div class="mesa-espaco" aria-hidden="true"></div>
   <div class="log" id="log" aria-live="polite" hidden></div>
 </main>
 <!-- setas do sentido: fora da mesa para ficarem na frente dos climas (inclusive das partículas 3D) -->
 <div class="chevs" id="chevs" aria-hidden="true"><i class="chev ctop"></i><i class="chev cbot"></i></div>
-<div class="tempo" id="tempoBar" hidden aria-hidden="true"><b></b></div>
+<!-- botões da mesa, acima das setas de baixo: os da vez no meio e a sineta no canto direito -->
+<div class="mesabtns" id="mesaBtns">
+  <div class="mb-meio"><button class="btn mull" id="mullBtn" hidden>Trocar mão</button><button class="btn mull" id="chalBtn" hidden>Desafiar</button><button class="btn main" id="drawBtn" hidden>Passar</button></div>
+  <button class="sino" id="unoBtn" aria-label="Tocar a sineta" title="Tocar a sineta">🛎️</button>
+</div>
 <section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><button type="button" class="tag stat mystat" id="mystat" hidden></button><div class="hand" id="hand" aria-label="Sua mão"></div></section>
-<nav class="actions">
-  <button class="btn mull" id="mullBtn" hidden>Trocar mão</button>
-  <button class="btn mull" id="chalBtn" hidden>Desafiar</button>
-  <button class="btn main" id="drawBtn">Comprar</button>
-  <button class="btn uno" id="unoBtn" aria-label="Tocar a sineta" title="Tocar a sineta">🛎️</button>
-</nav>
+<!-- espaço embaixo da mão (onde ficavam os botões): a barra do tempo para jogar -->
+<div class="rodape"><div class="tempo" id="tempoBar" hidden aria-hidden="true"><b></b></div></div>
 
 <div class="turbo" id="turboOv" hidden>Calculando o resto da partida…</div>
 
