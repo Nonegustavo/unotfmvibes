@@ -622,7 +622,7 @@ function thornsSVG(){
   return `<svg viewBox="0 0 116 165"><g fill="#e2d7a0" stroke="#5b4b1f" stroke-width=".6" stroke-linejoin="round">${th.join('')}</g>${rect('stroke="#2f6b26" stroke-width="3.6"')}${rect('stroke="#5aa845" stroke-width="1.5" stroke-dasharray="9 6"')}<g fill="#5fae48">${leaves}</g></svg>`;
 }
 function renderRail(){
-  const row=$('seatrow');$('rail').classList.toggle('many',S.players.length>=5);const ccw=S.dir===-1;
+  const row=$('seatrow');$('rail').classList.toggle('many',S.players.length>=5&&!TELA_GRANDE.matches);/* na tela grande cabem sem apertar */const ccw=S.dir===-1;
   const parts=[];
   S.players.forEach((p,i)=>{
     if(i===0)return;
@@ -692,6 +692,8 @@ function moveMarker(from,to){
 // desenha a partida como a tela mostra (com a prévia da última ação, se houver)
 // fase das faixas da Mão Colorida pelo relógio: a cadeira redesenhada continua de onde estava
 const shinyDelay=()=>-(performance.now()%7000).toFixed(0)+'ms';
+// mesma condição do @media das telas grandes no fim do style.css
+const TELA_GRANDE=matchMedia('(min-width:900px) and (min-height:560px)');
 function render(){
   if(!S||!(VIS.previa||VIS.sineta)||S.turbo)return desenha();
   const real=S;S=comPrevia(real);
