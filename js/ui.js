@@ -455,18 +455,17 @@ function sortHand(h){
 function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
   const p=cur();
-  if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
+  if(S.players[0].out)return 'Você foi eliminado. Assistindo…';
   if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
   if(deBot(S.turn))return '';
   // na vez de outra pessoa, nada (o balão e o cursor da vez mostram quem joga)
   if(S.turn!==0)return '';
   if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
-    const parts=[];if(R.stack)parts.push(`outro ${S.comboValue}`);if(R.sequence)parts.push('continue a sequência');
-    return `Combo: ${parts.join(' ou ')} — ou encerre`;
+    return R.stack&&R.sequence?`Combo: outro ${S.comboValue} ou sequência`:R.stack?`Combo: jogue outro ${S.comboValue}`:'Combo: continue a sequência';
   }
   if(S.phase==='drawn')return 'Jogue uma carta ou passe';
-  if(R.satisfaction&&S.drawnId!=null&&S.phase==='play')return 'Compra Implacável: compre até poder jogar';
+  if(R.satisfaction&&S.drawnId!=null&&S.phase==='play')return 'Compre até poder jogar';
   if(S.pending>0){
     const any=S.players[0].hand.some(c=>canPlay(S.players[0],c));
     return any?`Defenda o +${S.pending} ou compre`:`Você compra ${S.pending}`;

@@ -67,7 +67,7 @@ function rollDice(pi,t,then,n0){
   const txt=DICE_TXT[n-1]+' e perde a vez';
   const wait=fastMode()?700:DICE_WAIT,show=wait+1000;
   emit({t:'dadoResultado',n,txt:`${V(t,'Você',J(t))}: ${txt}`,ms:show});emit({t:'pausa',ms:show});log(`Dado de ${J(t)}: ${n} (${txt.toLowerCase()}).`);
-  emit({t:'anuncio',txt:`Dado: ${n}. ${V(t,'Você',J(t))}: ${txt.toLowerCase()}`});atualiza();
+  emit({t:'anuncio',txt:`${V(t,'Seu dado','Dado de '+J(t))}: ${n}`});atualiza();
   const g=S.gen;
   agendar(()=>{if(g!==S.gen||S.phase==='over')return;emit({t:'anuncioFim'});const r=diceEffect(pi,t,n);if(r==='win')return;then()},wait);
 }
