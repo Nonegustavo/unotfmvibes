@@ -104,8 +104,8 @@ const cadeira = async c => { const nome = await c.evaluate(() => S && S.players 
 // as abas mostram a mesma partida: vez, topo da pilha e monte; e só quem está na vez vê "Sua vez"
 const mesmaPartida = async c => {
   const g = await cadeira(c); if (g < 0) return [];
-  const h = await host.evaluate(g => S && S.players ? { vez: (S.turn - g + S.players.length) % S.players.length, topo: S.discard[S.discard.length - 1].id, monte: S.deck.length, status: document.getElementById('status').textContent, euVez: S.turn === 0 } : null, g);
-  const v = await c.evaluate(() => S && S.players ? { vez: S.turn, topo: S.discard[S.discard.length - 1].id, monte: S.deck.length, status: document.getElementById('status').textContent, euVez: S.turn === 0 } : null);
+  const h = await host.evaluate(g => S && S.players && S.discard.length ? { vez: (S.turn - g + S.players.length) % S.players.length, topo: S.discard[S.discard.length - 1].id, monte: S.deck.length, status: document.getElementById('status').textContent, euVez: S.turn === 0 } : null, g);
+  const v = await c.evaluate(() => S && S.players && S.discard.length ? { vez: S.turn, topo: S.discard[S.discard.length - 1].id, monte: S.deck.length, status: document.getElementById('status').textContent, euVez: S.turn === 0 } : null);
   if (!h || !v) return [];
   const p = [];
   if (h.vez !== v.vez || h.topo !== v.topo || h.monte !== v.monte) p.push(`${c.nome} diferente do anfitrião: ${JSON.stringify(h)} / ${JSON.stringify(v)}`);

@@ -214,7 +214,8 @@ function openPoker(){
   $('pokerGo').onclick=()=>{
     const src=[...$('pokerList').querySelectorAll('.pk-ic')].map((el,j)=>({k:S.added[j].k,r:el.getBoundingClientRect(),fs:getComputedStyle(el).fontSize}));
     $('pokerOv').classList.remove('show');
-    VIS.mixSrc=src;comecaMix();
+    VIS.mixSrc=src;acao({t:'fecharMix'});
+    if(S.mixFaltam&&S.mixFaltam.length)toast('Esperando os outros fecharem a lista…');
   };
 }
 // Mix de Regras: os ícones escolhidos voam até a faixa e ficam centralizados sozinhos; depois os ícones das

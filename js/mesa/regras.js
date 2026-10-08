@@ -31,8 +31,65 @@ const ctrl=pi=>CONTROLES[S.players[pi].ctrl];
 const deBot=pi=>S.players[pi].ctrl==='bot';
 const humano=pi=>!deBot(pi);
 function pedir(pi,ped){
-  if(humano(pi)&&!ped.mix)balaoPessoa(pi,ped);
+  if(humano(pi)){
+    if(!ped.mix)balaoPessoa(pi,ped);
+    pedidoDePessoa(pi,ped);
+  }
   return ctrl(pi).pedido(pi,ped)||'defer';
+}
+/* ---------- tempo para jogar (só no multiplayer) ----------
+   OPCOES.tempos: quanto tempo (ms) cada tipo de pedido tem (jogada, cor, alvo, carta, regra, memoria, mix); sem tempos
+   (solo), ninguém tem pressa. Quando o tempo acaba, o computador decide pela pessoa. Depois de 3 tempos esgotados
+   seguidos, ou se a pessoa cair, o computador fica na cadeira (p.ctrl 'bot', o controlador dela guardado em p.ctrlReal)
+   até ela voltar a agir (ou a conexão voltar) */
+const RELOGIOS={},ABERTOS={};
+const tempoDe=tipo=>{const t=OPCOES.tempos;return t?(t[tipo]||t.jogada||0):0};
+function poeRelogio(pi,tipo,acaba){
+  tiraRelogio(pi);const ms=tempoDe(tipo);if(!ms)return;
+  const g=S.gen,r={tipo};
+  r.id=agendar(()=>{if(g!==S.gen||RELOGIOS[pi]!==r)return;delete RELOGIOS[pi];emit({t:'relogioFim',p:pi});acaba()},ms);
+  RELOGIOS[pi]=r;emit({t:'relogio',p:pi,ms,tipo});
+}
+function tiraRelogio(pi){const r=RELOGIOS[pi];if(!r)return;RELOGIO.cancela(r.id);delete RELOGIOS[pi];emit({t:'relogioFim',p:pi})}
+// pedido de uma pessoa: a resposta vale uma vez só (a dela, ou a do computador quando o tempo acaba ou ela cai)
+function pedidoDePessoa(pi,ped){
+  const r0=ped.responde;
+  ped.responde=(...a)=>{if(ped.encerrado)return;ped.encerrado=true;delete ABERTOS[pi];tiraRelogio(pi);return r0(...a)};
+  ABERTOS[pi]=ped;
+  poeRelogio(pi,ped.mix?'mix':ped.tipo,()=>{S.players[pi].esgotou=(S.players[pi].esgotou||0)+1;decidePor(pi)});
+}
+// o computador responde ao pedido aberto da pessoa (a janela dela fecha)
+function decidePor(pi){
+  const ped=ABERTOS[pi];if(!ped||ped.encerrado||S.phase==='over')return;
+  emit({t:'fechaJanelas',a:pi});
+  if(ped.mix&&!ped.bot)return ped.responde((ped.tela.opcoes()||[])[0]);
+  if(CONTROLES.bot.pedido(pi,ped)==='done'){S.busy=false;ped.responde(null)}
+}
+// o computador assume a cadeira (tempo esgotado, ausência, queda) e devolve quando a pessoa volta
+function assume(pi){const p=S.players[pi];if(!p.ctrlReal){p.ctrlReal=p.ctrl;p.ctrl='bot';emit({t:'ausente',p:pi})}}
+function devolve(pi){const p=S.players[pi];if(!p.ctrlReal)return;p.ctrl=p.ctrlReal;delete p.ctrlReal;emit({t:'ausente',p:pi});atualiza()}
+function esgotouJogada(pi){
+  if(S.phase==='over'||S.turn!==pi||!humano(pi))return;
+  if(S.busy){agendar(()=>esgotouJogada(pi),300);return}
+  const p=S.players[pi];p.esgotou=(p.esgotou||0)+1;
+  log(`O tempo de ${J(pi)} acabou: o computador jogou.`);
+  assume(pi);S.tok++;botAct();
+}
+// queda: o computador joga pela pessoa (e responde o que estiver aberto); a volta devolve a cadeira na vez dela
+function caiu(pi){
+  const p=S.players[pi];if(!p||p.caiu||p.out)return;
+  p.caiu=true;tiraRelogio(pi);assume(pi);
+  emit({t:'aviso',txt:`📵 ${J(pi)} caiu: o computador joga até ele voltar`});log(`${J(pi)} caiu.`);
+  if(ABERTOS[pi])decidePor(pi);
+  else if(S.turn===pi&&!S.busy&&S.phase!=='over'){S.tok++;pedirJogada(pi)}
+  atualiza();
+}
+function voltou(pi){
+  const p=S.players[pi];if(!p||!p.caiu)return;
+  p.caiu=false;p.esgotou=0;emit({t:'aviso',txt:`📶 ${J(pi)} voltou`});log(`${J(pi)} voltou.`);
+  // volta na próxima vez dela (no meio da vez, o computador termina o que começou)
+  if(S.turn!==pi)devolve(pi);
+  atualiza();
 }
 /* Enquanto uma pessoa escolhe, os outros veem o balão de pensar perto da cadeira dela (como o dos adversários), até ela
    escolher. Escolhas secretas (cartas da mão, do monte ou da pilha, regras sorteadas) aparecem viradas para baixo */
@@ -51,7 +108,10 @@ function balaoPessoa(pi,ped){
   };
 }
 // a vez (ou a continuação dela, no combo e depois de comprar) é de pi: o adversário pensa e joga; a pessoa usa a tela
-function pedirJogada(pi,rapido){ctrl(pi).jogada(pi,rapido)}
+function pedirJogada(pi,rapido){
+  ctrl(pi).jogada(pi,rapido);
+  if(humano(pi))poeRelogio(pi,'jogada',()=>esgotouJogada(pi));
+}
 /* Relógio da mesa: as regras esperam por ele, nunca pelo setTimeout direto, e leem a hora em RELOGIO.agora(). No solo
    ele usa o timer do navegador, que o turbo transforma em tempo virtual (TB, em data.js); no Node e no servidor, o
    relógio é trocado sem mexer nas regras */
@@ -195,16 +255,34 @@ function newGame(){
     const o=ruleOptions(3,true);
     // a faixa de regras fica vazia até o fim do Mix (flyRules)
     S.busy=true;emit({t:'seguraFaixa'});atualiza();
-    const go=()=>{S.players.forEach((p,i)=>{if(humano(i))return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=true;emit({t:'mostraMix'});if(eu<0)comecaMix()}; // sem pessoas na mesa, ninguém precisa confirmar
-    // por enquanto só existe uma pessoa (a da tela); com mais, os pedidos vão juntos
-    const eu=S.players.findIndex((p,i)=>humano(i));
-    if(o.length&&eu>=0){pedir(eu,{tipo:'regra',mix:true,tela:{opcoes:()=>o,titulo:'Mix de Regras',sub:'Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.'},responde:k=>{addRule(eu,k,true);go()}});return}
-    go();return;
+    // as pessoas escolhem uma de cada vez (cada uma já vê as regras de quem escolheu antes), depois os adversários
+    const pessoas=S.players.map((p,i)=>i).filter(i=>humano(i));
+    const adversarios=()=>{S.players.forEach((p,i)=>{if(humano(i))return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});listaMix(pessoas)};
+    const escolhe=(k,op)=>{
+      if(k>=pessoas.length)return adversarios();
+      const pi=pessoas[k];op=op||ruleOptions(3,true);
+      if(!op.length)return escolhe(k+1);
+      pedir(pi,{tipo:'regra',mix:true,bot:()=>({e:op[0],lista:op,ver:'rule'}),
+        tela:{opcoes:()=>op,titulo:'Mix de Regras',sub:k===0?'Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.':'Escolha a sua regra. Ela entra junto com as que já foram escolhidas.'},
+        responde:r=>{if(r!=null)addRule(pi,r,true);escolhe(k+1)}});
+    };
+    if(o.length&&pessoas.length){escolhe(0,o);return}
+    adversarios();return;
   }
   dealAndStart();
 }
+// lista das regras do Mix para todos: a partida começa quando cada pessoa fechar a lista (ou o tempo acabar)
+function listaMix(pessoas){
+  S.busy=true;S.mixFaltam=[...pessoas];
+  emit({t:'mostraMix'});
+  if(!pessoas.length)return comecaMix();
+  const g=S.gen,ms=tempoDe('mix');
+  if(ms)agendar(()=>{if(g===S.gen&&S.mixFaltam&&S.mixFaltam.length){S.mixFaltam=[];comecaMix()}},ms);
+}
+function fechouMix(pi){S.mixFaltam=S.mixFaltam.filter(i=>i!==pi);if(!S.mixFaltam.length)comecaMix()}
 // fim do Mix: os ícones escolhidos voam até a faixa e os das outras regras entram um a um (flyRules); depois, a distribuição
 function comecaMix(){
+  if(S.mixComecou)return;S.mixComecou=true;
   const n=S.added.length,m=ruleKeys().length-n,cresce=m?m*260+450:0;
   emit({t:'voaMix'});
   agendar(()=>{S.busy=false;dealAndStart()},OPCOES.semAnimacao?0:n?(n-1)*160+700+300+cresce:cresce);
@@ -415,6 +493,7 @@ function endTurnHook(pi){
 }
 function endTurn(){
   if(S.phase==='over')return;
+  tiraRelogio(S.turn);
   emit({t:'fimJogada'});
   S.auto=false;
   const crossed=S.crossed;S.crossed=false;
@@ -448,6 +527,7 @@ function startTurn(){
     agendar(()=>{if(g===S.gen&&tok===S.tok&&S.phase!=='over')endTurn()},1100);
     return;
   }
+  if(cp.ctrlReal&&!cp.caiu&&(cp.esgotou||0)<3)devolve(S.turn);
   atualiza();
   // a pessoa confusa joga ao acaso (a mesa joga por ela); o adversário confuso joga ao acaso no botAct
   if(humano(S.turn)&&confused(S.turn))autoHuman(S.turn);
@@ -611,7 +691,15 @@ function announce(pi,card,cont,wait){
    comprar/passar (botão principal), tocar a sineta, pegar quem esqueceu, desafiar o +4 e trocar a mão no início.
    A mesa confere se a ação vale antes de fazer qualquer coisa e devolve se ela foi aceita */
 function agir(pi,a){
-  if(!S||S.phase==='over'||!a||!S.players[pi]||!humano(pi))return false;
+  if(!S||S.phase==='over'||!a||!S.players[pi])return false;
+  // a pessoa que o computador estava substituindo (fora de uma queda) volta ao agir
+  if(S.players[pi].ctrlReal&&!S.players[pi].caiu&&a.t!=='fecharMix'){devolve(pi);if(S.turn===pi&&!S.busy){S.tok++;pedirJogada(pi)}}
+  if(!humano(pi))return false;
+  const ok=agirValida(pi,a);
+  if(ok){S.players[pi].esgotou=0;if(['jogar','principal','desafiar'].includes(a.t)&&S.turn!==pi)tiraRelogio(pi)}
+  return ok;
+}
+function agirValida(pi,a){
   const p=S.players[pi],naVez=S.turn===pi&&!S.busy&&!S.auto&&!p.out;
   switch(a.t){
     case 'jogar':{
@@ -634,6 +722,7 @@ function agir(pi,a){
     case 'desafiar':
       if(!naVez||!S.chal)return false;
       doChallenge(pi);return true;
+    case 'fecharMix':if(!S.mixFaltam||!S.mixFaltam.includes(pi))return false;fechouMix(pi);return true;
     case 'trocarMao':{
       if(!S.mull||p.out)return false;
       const n=p.hand.length;

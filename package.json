@@ -10,7 +10,8 @@
     "test:cartas": "node tests/cartas.mjs",
     "test:mesa": "node tests/mesa.mjs",
     "test:rede": "node tests/rede.mjs",
-    "test:sala": "node tests/sala.mjs"
+    "test:sala": "node tests/sala.mjs",
+    "test:tempo": "node tests/tempo.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

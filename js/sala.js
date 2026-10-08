@@ -45,6 +45,13 @@ async function salaLiberaCamera(){
 }
 async function salaCopia(texto){try{await navigator.clipboard.writeText(comColchetes(texto));toast('Código copiado')}catch(e){toast('Não deu para copiar')}}
 
+/* ---------- tela acesa enquanto houver sala (se o anfitrião sair do jogo, a partida para para todos) ---------- */
+let TELA_ACESA=null;
+async function telaAcesa(){
+  try{if('wakeLock' in navigator&&!TELA_ACESA){TELA_ACESA=await navigator.wakeLock.request('screen');TELA_ACESA.addEventListener('release',()=>{TELA_ACESA=null})}}catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(SALA.papel&&document.visibilityState==='visible')telaAcesa()});
+
 /* ---------- início ---------- */
 function salaAbre(){
   $('salaNome').value=load('unotfm-nome','')||'';
@@ -58,7 +65,7 @@ function salaGuardaNome(){
 /* ---------- anfitrião ---------- */
 // lugares: um por cadeira, na ordem da mesa. 0 é sempre o anfitrião ('eu'); os outros são uma ligação (pessoa) ou null
 function salaCria(){
-  SALA.papel='anfitriao';salaGuardaNome();
+  SALA.papel='anfitriao';salaGuardaNome();telaAcesa();
   redeAnfitriao();REDE.sala=true;REDE.aoMudar=salaMudou;
   SALA.n=Math.min(6,Math.max(2,(CFG.bots||3)+1));SALA.lugares=['eu',...Array(SALA.n-1).fill(null)];
   SALA.sortear=!!CFG.sortearLugares;$('salaSortear').checked=SALA.sortear;
@@ -66,6 +73,7 @@ function salaCria(){
   $('salaTitulo').textContent='Sua sala';$('salaSair').textContent='Sair da sala';$('salaComecar').hidden=false;
   salaMostra('salaAnfitriao');salaDesenha();
   // fim da partida: nova rodada com a mesma sala, ou de volta à sala para mudar alguma coisa
+  const bs=$('openSettings');bs.hidden=false;bs.textContent='Sala';bs.setAttribute('aria-label','Sala');bs.onclick=()=>{$('salaOv').classList.add('show');salaDesenha()};
   $('againBtn').onclick=salaComeca;
   $('endRules').textContent='Voltar à sala';$('endRules').onclick=()=>{$('endOv').classList.remove('show');$('salaOv').classList.add('show');salaDesenha()};
 }
@@ -74,7 +82,8 @@ const pessoasNaSala=()=>REDE.ligacoes.filter(l=>l.aberta&&l.nome);
 function salaMudou(){
   if(SALA.papel!=='anfitriao')return;
   const ls=pessoasNaSala();
-  SALA.lugares=SALA.lugares.map(x=>x==='eu'||!x||ls.includes(x)?x:null);
+  const jogando=S&&S.phase!=='over';
+  SALA.lugares=SALA.lugares.map(x=>x==='eu'||!x||ls.includes(x)||(jogando&&x.cadeira!=null)?x:null);
   for(const l of ls)if(!SALA.lugares.includes(l)){
     const vazios=SALA.lugares.map((x,i)=>x?-1:i).filter(i=>i>0);
     if(!vazios.length){if(SALA.n<6){SALA.n++;SALA.lugares.push(null);vazios.push(SALA.n-1)}else continue}
@@ -105,7 +114,7 @@ function salaRegrasTxt(){
 function salaLinhas(lugares,eu){
   return lugares.map((x,i)=>{
     const bot=!x||x.tipo==='bot',nome=x==='eu'?(OPCOES.meuNome||'Anfitrião'):bot?'Adversário do computador':x.nome;
-    const tag=x==='eu'||(x&&x.voce)?'você':bot?'':x.anfitriao?'anfitrião':x.pronto?'✓ pronto':'entrou';
+    const tag=x==='eu'||(x&&x.voce)?'você':bot?'':x.anfitriao?'anfitrião':x.caiu||x.aberta===false?'📵 caiu':x.pronto?'✓ pronto':'entrou';
     return {i,bot,nome,tag,ok:!!(x&&x.pronto)};
   });
 }
@@ -119,7 +128,9 @@ function salaDesenha(){
   $('salaRegrasTxt').textContent=salaRegrasTxt();
   $('salaConvidar').textContent=pessoas?'➕ Convidar outra pessoa':'➕ Convidar alguém';
   $('salaConvidar').disabled=pessoas>=5;
-  $('salaComecar').disabled=!pessoas;
+  const jogando=S&&S.phase!=='over';
+  $('salaComecar').textContent=jogando?'Voltar ao jogo':'Começar partida';
+  $('salaComecar').disabled=!pessoas&&!jogando;
   // cada convidado vê a mesma lista (do jeito dele: "você" na linha dele)
   for(const l of pessoasNaSala())l.enviar({t:'sala',regras:salaRegrasTxt(),tempo:CFG.tempoRede,sortear:SALA.sortear,
     lugares:SALA.lugares.map((x,i)=>x==='eu'?{nome:OPCOES.meuNome||'Anfitrião',anfitriao:true,col:'var(--accent)'}:!x?{tipo:'bot'}:{nome:x.nome,pronto:!!x.pronto,voce:x===l,col:corDaPessoa(i)})});
@@ -161,7 +172,7 @@ function salaEditaRegras(){
 
 /* ---------- convidado ---------- */
 function salaEntra(){
-  SALA.papel='convidado';salaGuardaNome();
+  SALA.papel='convidado';salaGuardaNome();telaAcesa();
   redeConvidado();
   REDE.aoSala=salaDoAnfitriao;
   $('salaTitulo').textContent='Entrar numa sala';$('salaSair').textContent='Sair';$('salaComecar').hidden=true;
@@ -210,4 +221,4 @@ $('salaLerConviteBtn').onclick=async()=>{const r=await lerQRCamera('Ler o convit
 $('salaUsarConvite').onclick=()=>salaUsaConvite($('salaColarConvite').value);
 $('salaCopiarResp').onclick=()=>SALA.resposta&&salaCopia(SALA.resposta);
 $('salaPronto').onclick=()=>{SALA.pronto=!SALA.pronto;if(REDE.anfitriao)REDE.anfitriao.enviar({t:'pronto',pronto:SALA.pronto});$('salaPronto').textContent=SALA.pronto?'✓ Pronto (tocar para cancelar)':'Estou pronto'};
-$('salaComecar').onclick=()=>{if(!$('salaComecar').disabled)salaComeca()};
+$('salaComecar').onclick=()=>{if($('salaComecar').disabled)return;if(S&&S.phase!=='over')$('salaOv').classList.remove('show');else salaComeca()};

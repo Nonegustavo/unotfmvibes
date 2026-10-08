@@ -10,7 +10,7 @@ const copia=o=>o==null?o:JSON.parse(JSON.stringify(o));
 const mascara=(mao,dono)=>dono?copia(mao):(mao||[]).map(c=>c.type==='batata'?copia(c):{oculta:true});
 function jogadorVisto(q,dono,lado){
   const v={};
-  for(const k of ['name','col','ctrl','called','out','outAt','outPts','outIcon','luck','webbed','confuse','confuseNext','treasure','batata','escaped','thorned'])if(q[k]!==undefined)v[k]=q[k];
+  for(const k of ['name','col','ctrl','ctrlReal','caiu','esgotou','called','out','outAt','outPts','outIcon','luck','webbed','confuse','confuseNext','treasure','batata','escaped','thorned'])if(q[k]!==undefined)v[k]=q[k];
   v.hand=mascara(q.hand,dono);v.hand2=mascara(q.hand2,dono);
   // Mão Colorida (R.shiny) é pública: se ele segura todas as cores ou um curinga
   v.colorida=colorful(q);

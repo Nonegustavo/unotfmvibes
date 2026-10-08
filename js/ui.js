@@ -156,6 +156,10 @@ function TELA(ev){
     case 'somCompra':if(Date.now()-lastDrawSnd>70){lastDrawSnd=Date.now();sfx('draw')}return;
     case 'pensa':return pensaFx(ev);
     case 'pensouFim':return pensouFim(ev);
+    // tempo para jogar: a barra acima da sua mão encolhe até o computador decidir por você
+    case 'relogio':if(ev.p===0)tempoBarra(ev.ms);return;
+    case 'relogioFim':if(ev.p===0)tempoBarra(0);return;
+    case 'ausente':return;
     case 'memoriaBot':return memoriaBotFx(ev);
     case 'voaMix':{const s=VIS.mixSrc||[];VIS.mixSrc=null;return flyRules(s)}
     case 'aviso':return toast(texto(ev.txt),ev.cor);
@@ -269,6 +273,14 @@ function pensaFx({p:pi,tipo:kind,lista:list,escolha:pickIdx,passos,sp,aberto}){
   BALOES[pi]={el,escolheu:i=>{clearTimeout(t);marca(i)},fim:()=>{clearTimeout(t);el.remove();delete BALOES[pi]}};
 }
 function pensouFim({p,escolha}){if(BALOES[p])BALOES[p].escolheu(escolha)}
+// barra do tempo para jogar (ms 0: some)
+function tempoBarra(ms){
+  let el=$('tempoBar');
+  if(!el){el=document.createElement('div');el.id='tempoBar';el.className='tempo';el.innerHTML='<b></b>';$('handwrap').appendChild(el)}
+  const b=el.firstElementChild;b.getAnimations().forEach(a=>a.cancel());
+  el.hidden=!ms;if(!ms)return;
+  b.animate([{transform:'scaleX(1)',background:'#8b7bff'},{transform:'scaleX(.35)',background:'#ffd24d',offset:.65},{transform:'scaleX(0)',background:'#ff5a52'}],{duration:ms,easing:'linear',fill:'forwards'});
+}
 // Memória do adversário: as cores aparecem uma a uma; se ele errar, a errada fica marcada
 function memoriaBotFx({p:pi,seq,erraEm,sp}){
   const seat=document.querySelector(`[data-seat="${pi}"]`);
@@ -446,6 +458,8 @@ function seatStatus(i){
   const n=p.hand.length;
   const shiny=R.shiny&&(p.colorida??colorful(p));
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
+  if(p.caiu)L.push({ic:'📵',short:'📵',name:'Caiu',txt:'a conexão caiu; o computador joga até ele voltar'});
+  else if(p.ctrlReal)L.push({ic:'🤖',short:'🤖',name:'Computador',txt:i===0?'o seu tempo acabou e o computador está jogando por você. Toque numa carta ou em Comprar para voltar':'o tempo dele acabou; o computador joga até ele voltar'});
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
   if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
   if(p.treasure)L.push({ic:'🧭',short:`🧭${p.treasure}`,name:'Busca',txt:`jogou ${p.treasure}/3, na terceira ganha a Carta do Tesouro`});

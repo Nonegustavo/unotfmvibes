@@ -430,8 +430,14 @@ substituir os QR codes. Isso exige um serviço na internet só para apresentar o
   ▲▼ (o anfitrião é sempre "você", embaixo; os outros giram em volta), sortear a cada partida, tempo para jogar, regras
   (as Configurações, sem a quantidade de adversários), convite por QR code e leitura da resposta pela câmera (ou colando
   o código), começar e, no fim, nova rodada ou voltar à sala. Convidado: lê o convite, mostra a resposta, vê a sala e
-  toca em "Estou pronto". `npm run test:sala` faz tudo pelas telas. Falta a etapa 3 (tempos, ausência, queda e volta,
-  tela acesa, Mix de uma pessoa por vez).
+  toca em "Estou pronto". `npm run test:sala` faz tudo pelas telas.
+- **Etapa 3, regras do multiplayer (feita):** relógio de cada vez e de cada pedido de uma pessoa (Normal: 20 s, 15 s,
+  30 s; Longo: o dobro; Sem limite), com a barra acima da mão; tempo esgotado, o computador decide; depois de 3 seguidos,
+  fica na cadeira (🤖) até a pessoa agir. Queda: sem sinal por 8 s, o computador joga (📵) até o sinal voltar; com a
+  ligação fechada, a pessoa volta com um convite novo e recupera a cadeira (número do aparelho). Tela acesa na sala
+  (Wake Lock). Mix: uma pessoa por vez, depois os adversários, lista para todos e começo quando todos fecharem.
+  O anfitrião abre a sala durante a partida pelo botão "Sala" do topo. `npm run test:tempo` confere tudo isso.
+  Falta: teste em celulares de verdade e tirar o `lan-teste`.
 - **Decisões da sala (08/10/2026):** o anfitrião escolhe quantas cadeiras (as vazias são adversários), pode arrumar os
   lugares ou sortear a cada partida; os convidados tocam em "Pronto", mas quem começa é o anfitrião. Nome guardado no
   aparelho. Uma opção "Tempo para jogar" (Normal, Longo, Sem limite). No Mix de Regras, as pessoas escolhem uma de
