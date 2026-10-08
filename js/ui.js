@@ -2,7 +2,67 @@
 /* ---------- human ---------- */
 // ações da pessoa desta tela: vão para a mesa (agir); no convidado da rede, vão para o anfitrião (acaoRemota)
 let acaoRemota=null;
-const acao=a=>acaoRemota?acaoRemota(a):agir(0,a);
+/* Resposta instantânea: ao tocar, a tela já mostra o resultado esperado (a carta na pilha e a vez passando, a carta saindo
+   do monte, a vez passando) sem mexer na partida, até a mesa confirmar. No anfitrião a mesa confirma no mesmo instante;
+   no convidado, a prévia cobre a espera da rede. Se a mesa não confirmar, a tela volta para o que a mesa diz */
+const acao=a=>{
+  const pv=fazPrevia(a);
+  const ok=acaoRemota?acaoRemota(a):agir(0,a);
+  if(!ok&&pv)desfazPrevia('recusada');
+  return ok;
+};
+function fazPrevia(a){
+  if(!S||S.phase==='over')return null;
+  const me=S.players[0];
+  if(a.t==='jogar'){
+    const c=me.hand.find(x=>x.id===a.id);if(!c)return null;
+    // a vez só passa na hora com número que não continua jogada (combo, Perfeccionista)
+    const passa=myTurn()&&c.type==='num'&&!((R.stack||R.sequence)&&canCombo(me,c))&&!(R.perfection&&c.value===me.hand.length);
+    VIS.previa={t:'jogar',id:c.id,carta:c,vez:passa?nextIdx(0,1):null,desde:Date.now()};
+    VIS.animPlay=srcRect(0,c);VIS.rot[c.id]=Math.random()*24-12;
+  }else if(a.t==='principal'){
+    if(S.phase==='combo'||S.phase==='drawn')VIS.previa={t:'passar',vez:nextIdx(0,1),desde:Date.now()};
+    else{VIS.previa={t:'comprar',desde:Date.now()};compraPrevia()}
+  }else return null;
+  clearTimeout(VIS.previaT);VIS.previaT=setTimeout(()=>{if(VIS.previa)desfazPrevia('expirou')},4000);
+  render();return VIS.previa;
+}
+// a carta de cima do monte sai um pouco, virada, com um som baixo, até a carta de verdade chegar
+function compraPrevia(){
+  const d=$('deck');if(!d||RM)return;
+  if(acaoRemota)sfx('arrasta'); // no anfitrião a carta chega na hora: o som da compra basta
+  const r=d.getBoundingClientRect(),el=document.createElement('div');
+  el.className='card back flyclone previa-compra';el.innerHTML=versoHTML();
+  Object.assign(el.style,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',margin:'0',zIndex:21,pointerEvents:'none'});el.style.setProperty('--cw',r.width+'px');
+  document.body.appendChild(el);
+  el.animate([{transform:'none'},{transform:'translate(0.5rem,-0.9rem) rotate(7deg)'}],{duration:220,easing:'ease-out',fill:'forwards'});
+}
+// a mesa confirmou (ou mostrou outra coisa): a prévia sai, e a tela segue o que a mesa diz
+function confirmaPrevia(ev){
+  const pv=VIS.previa;if(!pv)return;
+  if(pv.t==='jogar'&&((ev.t==='origem'&&ev.p===0&&ev.carta&&ev.carta.id===pv.id)||(S&&!S.players[0].hand.some(c=>c.id===pv.id))))return desfazPrevia('confirmada');
+  if(pv.t==='comprar'&&(((ev.t==='compra'||ev.t==='recebe')&&ev.p===0)||(S&&S.turn!==0)))return desfazPrevia('confirmada');
+  if(pv.t==='passar'&&S&&(S.turn!==0||S.phase==='play'))return desfazPrevia('confirmada');
+}
+// confirmada: a mesa fez o esperado (a carta que já está na pilha fica); recusada ou expirou: a tela volta ao que a mesa diz
+function desfazPrevia(como){
+  VIS.previa=null;clearTimeout(VIS.previaT);
+  document.querySelectorAll('.previa-compra').forEach(e=>e.remove());
+  if(como==='confirmada')return;
+  VIS.lastTop=null;if(como==='recusada')sfx('error');render();
+}
+// a partida como a tela mostra: a da mesa com a prévia por cima (sem mudar a da mesa)
+function comPrevia(s){
+  const pv=VIS.previa;if(!pv)return s;
+  const v={...s};
+  if(pv.t==='jogar'){
+    v.players=s.players.map((q,i)=>i===0?{...q,hand:q.hand.filter(c=>c.id!==pv.id)}:q);
+    if(!s.discard.some(c=>c.id===pv.id))v.discard=[...s.discard,pv.carta];
+    if(pv.carta.color!=='w')v.color=pv.carta.color;
+  }
+  if(pv.vez!=null&&s.turn===0)v.turn=pv.vez;
+  return v;
+}
 const myTurn=()=>S&&S.phase!=='over'&&S.turn===0&&!S.busy&&!S.auto&&!S.players[0].out;
 function humanClick(id,el){
   if(!S||S.phase==='over')return;
@@ -75,6 +135,8 @@ const lugar=x=>typeof x==='number'?targetRect(x):x==='mesa'?discardRect():x==='m
 function TELA(ev){
   // no solo, esta tela é a do jogador 0: o que é só de outro jogador não aparece
   if(ev.a!=null&&ev.a!=='todos'&&ev.a!==0)return;
+  if(ev.exceto===0)return;
+  confirmaPrevia(ev);
   switch(ev.t){
     case 'pausa':return;
     case 'fx':return fx(ev.g,texto(ev.txt),ev.cor,ev.modo,ev.ms,ev.mudo);
@@ -84,6 +146,7 @@ function TELA(ev){
     // som das cartas compradas: no máximo um a cada 70 ms
     case 'somCompra':if(Date.now()-lastDrawSnd>70){lastDrawSnd=Date.now();sfx('draw')}return;
     case 'pensa':return pensaFx(ev);
+    case 'pensouFim':return pensouFim(ev);
     case 'memoriaBot':return memoriaBotFx(ev);
     case 'voaMix':{const s=VIS.mixSrc||[];VIS.mixSrc=null;return flyRules(s)}
     case 'aviso':return toast(texto(ev.txt),ev.cor);
@@ -173,24 +236,30 @@ function dadoFx(p,n,ms,txt){
   if(VIS.dadoNaTela){sfx('dice');VIS.announcing=true;VIS.annText=txt}
   else fx('🎲',texto(txt),'var(--accent)','roll',1100);
 }
-// balão do adversário pensando: as opções piscam (passos) e param na escolhida
-function pensaFx({p:pi,tipo:kind,lista:list,escolha:pickIdx,passos,sp}){
+// balão de pensar: as opções piscam e param na escolhida, sem som. O de um adversário dura o tempo que a mesa espera
+// (passos); o de uma pessoa (aberto) pisca devagar até ela escolher (pensouFim)
+const BALOES={};
+function pensaFx({p:pi,tipo:kind,lista:list,escolha:pickIdx,passos,sp,aberto}){
   const seat=document.querySelector(`[data-seat="${pi}"]`);
   if(!seat||RM||S.turbo)return;
+  if(BALOES[pi])BALOES[pi].fim();
   const g=S.gen,r=seat.getBoundingClientRect();
-  const el=document.createElement('div');el.className='think';el.innerHTML=`<span class="tdots">💭</span>${thinkItems(kind,list).join('')}`;
+  const el=document.createElement('div');el.className='think';
+  el.innerHTML=`<span class="tdots">${kind==='memoria'?'🧠':'💭'}</span>${kind==='memoria'?list.map(()=>'<span class="ti sq"></span>').join(''):thinkItems(kind,list).join('')}`;
   document.body.appendChild(el);
   const w=el.offsetWidth;el.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+6)+'px';
-  const items=[...el.querySelectorAll('.ti')];let steps=passos;
+  const items=[...el.querySelectorAll('.ti')];let steps=aberto?Infinity:passos,t=null;
+  const marca=i=>{items.forEach(x=>x.classList.remove('hl'));if(items[i])items[i].classList.add('pick');t=setTimeout(()=>{el.remove();delete BALOES[pi]},550*sp)};
   const tick=()=>{
-    if(g!==S.gen){el.remove();return}
+    if(g!==S.gen){el.remove();delete BALOES[pi];return}
     items.forEach(x=>x.classList.remove('hl'));
-    if(steps-->0){const j=items.length>1?(Math.random()*items.length|0):0;items[j].classList.add('hl');sfx('tick');setTimeout(tick,200*sp);return}
-    items[pickIdx]&&items[pickIdx].classList.add('pick');sfx('play');
-    setTimeout(()=>el.remove(),550*sp);
+    if(steps-->0){const j=items.length>1?(Math.random()*items.length|0):0;if(items[j])items[j].classList.add('hl');t=setTimeout(tick,(aberto?520:200)*sp);return}
+    marca(pickIdx);
   };
-  setTimeout(tick,250*sp);
+  t=setTimeout(tick,250*sp);
+  BALOES[pi]={el,escolheu:i=>{clearTimeout(t);marca(i)},fim:()=>{clearTimeout(t);el.remove();delete BALOES[pi]}};
 }
+function pensouFim({p,escolha}){if(BALOES[p])BALOES[p].escolheu(escolha)}
 // Memória do adversário: as cores aparecem uma a uma; se ele errar, a errada fica marcada
 function memoriaBotFx({p:pi,seq,erraEm,sp}){
   const seat=document.querySelector(`[data-seat="${pi}"]`);
@@ -201,9 +270,9 @@ function memoriaBotFx({p:pi,seq,erraEm,sp}){
   const items=[...el.querySelectorAll('.ti')];let i=0;
   const step=()=>{
     if(g!==S.gen){el.remove();return}
-    if(i===erraEm){items[i].classList.add('bad');items[i].textContent='✕';sfx('error');setTimeout(()=>el.remove(),700*sp);return}
+    if(i===erraEm){items[i].classList.add('bad');items[i].textContent='✕';setTimeout(()=>el.remove(),700*sp);return}
     if(i>=seq.length){setTimeout(()=>el.remove(),400*sp);return}
-    items[i].style.background=CVAR[seq[i]];items[i].classList.add('pick');sfx('tick');i++;setTimeout(step,380*sp);
+    items[i].style.background=CVAR[seq[i]];items[i].classList.add('pick');i++;setTimeout(step,380*sp);
   };
   setTimeout(step,300*sp);
 }
@@ -347,8 +416,8 @@ function statusText(){
   if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
   if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
   if(deBot(S.turn))return '';
-  // vez de outra pessoa (na rede): o nome dela, e não "Sua vez"
-  if(S.turn!==0){const q=S.players[S.turn];return S.busy?`${q.name} está escolhendo…`:S.pending>0?`Vez de ${q.name} (+${S.pending})`:`Vez de ${q.name}`}
+  // na vez de outra pessoa, nada (o balão e o cursor da vez mostram quem joga)
+  if(S.turn!==0)return '';
   if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
     const parts=[];if(R.stack)parts.push(`outro ${S.comboValue}`);if(R.sequence)parts.push('continue a sequência');
@@ -577,7 +646,13 @@ function moveMarker(from,to){
     requestAnimationFrame(()=>{if(ver===MK.ver)placeMarker(to,true)});
   },from!==0?420:0);
 }
+// desenha a partida como a tela mostra (com a prévia da última ação, se houver)
 function render(){
+  if(!S||!VIS.previa||S.turbo)return desenha();
+  const real=S;S=comPrevia(real);
+  try{desenha()}finally{S=real}
+}
+function desenha(){
   if(!S)return;
   // turbo (Terminar e descobrir vencedor): não desenha; só descarta os pedidos de animação de cada jogada
   if(S.turbo){VIS.pendingInfo=null;VIS.seatFlip=null;VIS.seatFollow=false;VIS.morph=false;VIS.animPlay=null;VIS.wxNow=false;VIS.handFrom=null;VIS.newIds=[];VIS.botDraw={};return}

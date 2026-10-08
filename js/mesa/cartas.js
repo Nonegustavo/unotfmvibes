@@ -326,7 +326,7 @@ function applySpecial(pi,card){
         ()=>{const t=botTarget(pi,true);return t<0?null:{e:t,lista:outros(pi),ver:'player'}},t=>{webOn(pi,t);return 'done'});
     case 'wish':if(!p.hand.length||S.discard.length<2)return 'done';
       return pedeEspecial(pi,card,'carta',{titulo:'Carta do Desejo',sub:'Escolha uma carta da pilha. Uma carta aleatória sua vai para a pilha no lugar.',opcoes:()=>wishOptions()},
-        ()=>{const opts=wishOptions();return {e:opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0],lista:opts,ver:'up'}},c=>{wishSwap(pi,c);return 'done'});
+        ()=>{const opts=wishOptions();return {e:opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0],lista:opts,ver:'down'}},c=>{wishSwap(pi,c);return 'done'});
     case 'rain':{
       // um adversário por vez, no sentido do jogo: a carta cai do céu até ele
       const order=[];for(let i=nextIdx(pi,1);i!==pi&&!order.includes(i);i=nextIdx(i,1))if(opp.includes(i))order.push(i);

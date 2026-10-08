@@ -250,6 +250,8 @@ function ding(f,at,k=1){
 const SND={
   play:()=>{noise(.06,{f:2500,vol:.12});tone(520,.08,{type:'triangle',to:720,vol:.14})},
   draw:()=>{noise(.1,{f:3000,fTo:1200,vol:.1,filter:'highpass'})},
+  // carta arrastando no monte (a compra foi pedida e a carta ainda vai chegar)
+  arrasta:()=>{noise(.16,{f:900,fTo:500,vol:.05,filter:'lowpass'})},
   turn:()=>arp([660,880],.09,{type:'sine',vol:.16,d:.22}),
   // sineta de balcão: um toque com 1 carta, dois com a regra Duas! (no mesmo tom). O tom fica perto do agudo e varia
   // um pouco a cada vez, junto com o intervalo e a força, para não cansar

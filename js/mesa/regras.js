@@ -30,7 +30,26 @@ const CONTROLES={};
 const ctrl=pi=>CONTROLES[S.players[pi].ctrl];
 const deBot=pi=>S.players[pi].ctrl==='bot';
 const humano=pi=>!deBot(pi);
-function pedir(pi,ped){return ctrl(pi).pedido(pi,ped)||'defer'}
+function pedir(pi,ped){
+  if(humano(pi)&&!ped.mix)balaoPessoa(pi,ped);
+  return ctrl(pi).pedido(pi,ped)||'defer';
+}
+/* Enquanto uma pessoa escolhe, os outros veem o balão de pensar perto da cadeira dela (como o dos adversários), até ela
+   escolher. Escolhas secretas (cartas da mão, do monte ou da pilha, regras sorteadas) aparecem viradas para baixo */
+function balaoPessoa(pi,ped){
+  const cols=COLORS.filter(c=>!(R.bg&&c==='g'));
+  const [tipo,lista]=ped.tipo==='cor'?['color',cols]:ped.tipo==='alvo'?['player',outros(pi)]:ped.tipo==='memoria'?['memoria',[...S.simon]]:['down',Array(ped.quantas||3).fill(0)];
+  emit({t:'pensa',p:pi,tipo,lista,escolha:-1,aberto:true,exceto:pi,sp:fastMode()?.4:1});
+  // a escolha marca a opção no balão (nas secretas, a posição dela entre as opções)
+  let vistas=null;
+  if(ped.tela&&ped.tela.opcoes){const o=ped.tela.opcoes;ped.tela={...ped.tela,opcoes:()=>(vistas=o())}}
+  const r0=ped.responde;
+  ped.responde=(e,...resto)=>{
+    const idx=tipo==='color'?cols.findIndex(c=>sameCol(c,e)):tipo==='player'?lista.indexOf(e):tipo==='memoria'?-1:vistas?vistas.indexOf(e):-1;
+    emit({t:'pensouFim',p:pi,escolha:idx,exceto:pi});
+    return r0(e,...resto);
+  };
+}
 // a vez (ou a continuação dela, no combo e depois de comprar) é de pi: o adversário pensa e joga; a pessoa usa a tela
 function pedirJogada(pi,rapido){ctrl(pi).jogada(pi,rapido)}
 /* Relógio da mesa: as regras esperam por ele, nunca pelo setTimeout direto, e leem a hora em RELOGIO.agora(). No solo
@@ -487,7 +506,7 @@ function takeDraw(pi){
       rest.filter(c=>c!==extra).forEach(c=>S.deck.unshift(c));
       give(pi,pick);if(extra)give(pi,extra);afterDraw(pi,pick,extra?2:1,wasCalled);
     };
-    pedir(pi,{tipo:'carta',ja:true,responde:finish,tela:{opcoes:()=>opts,titulo:'Rastrear',sub:'Escolha qual carta comprar.'},
+    pedir(pi,{tipo:'carta',ja:true,quantas:opts.length,responde:finish,tela:{opcoes:()=>opts,titulo:'Rastrear',sub:'Escolha qual carta comprar.'},
       bot:()=>{const safe=opts.filter(c=>c.type!=='bomb');const good=safe.filter(c=>canPlay(p,c));
         return {e:good.length?(R.diff==='easy'?rand(good):botChoose(p,good)):rand(safe.length?safe:opts),lista:opts,ver:'down'}}});
     return;

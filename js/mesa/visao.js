@@ -44,7 +44,9 @@ function visao(pi){
 // evento girado para quem vê (as cadeiras dentro dele)
 function eventoPara(pi,ev){
   const e=copia(ev);
-  for(const k of ['p','de','para','onde','pi','a'])if(typeof e[k]==='number')e[k]=giraPara(pi,e[k]);
+  for(const k of ['p','de','para','onde','pi','a','exceto'])if(typeof e[k]==='number')e[k]=giraPara(pi,e[k]);
+  // balão escolhendo um jogador: as opções também são cadeiras
+  if(e.t==='pensa'&&e.tipo==='player'&&Array.isArray(e.lista))e.lista=e.lista.map(i=>giraPara(pi,i));
   if(Array.isArray(e.vencedores))e.vencedores=e.vencedores.map(i=>giraPara(pi,i));
   return e;
 }

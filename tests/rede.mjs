@@ -57,7 +57,8 @@ const passo = p => p.evaluate(() => {
     if (shown(ov)) { const b = [...document.querySelectorAll(`#${box} button, #${box} .card`)].filter(x => !x.disabled); return click(pick(b)) && ov; }
   if (document.querySelectorAll('#hand .card').length === 2) document.getElementById('unoBtn')?.click();
   const ok = [...document.querySelectorAll('#hand .card.ok')];
-  if (ok.length && Math.random() < .9) return click(pick(ok)) && 'jogar';
+  // na vez, a carta tocada sai da mão na hora (resposta instantânea), antes de a mesa confirmar
+  if (ok.length && Math.random() < .9) { const el = pick(ok), me = S.players[0], c = me.hand.find(x => x.id === +el.dataset.id), vez = myTurn() && c && canPlay(me, c); click(el); return vez && document.querySelector(`#hand [data-id="${el.dataset.id}"]`) ? 'lento' : 'jogar'; }
   const d = document.getElementById('drawBtn');
   // comprar pelo botão ou tocando no monte
   if (d && !d.disabled && !d.hidden && typeof myTurn === 'function' && myTurn()) return click(Math.random() < .5 ? d : document.getElementById('deck')) && 'comprar';
@@ -94,9 +95,14 @@ const problemas = [];
 let feitas = 0;
 for (let g = 1; g <= PARTIDAS; g++) {
   const t0 = Date.now();
-  let ultimo = await foto(), mudou = Date.now(), resultado = '', divergencias = 0, conferidas = 0, n = 0;
+  let ultimo = await foto(), mudou = Date.now(), resultado = '', divergencias = 0, conferidas = 0, n = 0, balaoVisto = 0, janelas = 0;
   while (true) {
+    // com uma janela de escolha aberta no convidado, o anfitrião vê o balão dele
+    if (await conv.evaluate(() => ['colorOv', 'pickOv', 'swapOv', 'simonOv'].some(id => document.getElementById(id).classList.contains('show')))) {
+      await host.waitForTimeout(400); balaoVisto += await host.evaluate(() => !!document.querySelector('.think')) ? 1 : 0; janelas++;
+    }
     const [a, b] = [await passo(host), await passo(conv)];
+    if (b === 'lento') problemas.push(`partida ${g}: a carta do convidado não saiu da mão na hora`);
     if (a === 'fim') {
       // o fim também chega ao convidado
       let chegou = false; for (let k = 0; k < 30 && !chegou; k++) { chegou = await conv.evaluate(() => document.getElementById('endOv').classList.contains('show')); if (!chegou) await host.waitForTimeout(100); }
@@ -121,9 +127,10 @@ for (let g = 1; g <= PARTIDAS; g++) {
     if (Date.now() - t0 > 6 * 60 * 1000) { console.log('anfitrião:', JSON.stringify(await host.evaluate(() => ({ vez: S.turn, busy: S.busy, fase: S.phase, vezes: S.vezes, regras: Object.keys(R).filter(k => R[k] === true), maos: S.players.map(p => p.hand.length), clima: S.weather, maldicao: S.curse, janelas: ['colorOv','pickOv','swapOv','simonOv','pokerOv'].filter(id => document.getElementById(id).classList.contains('show')), registro: VIS.log }))));
       resultado = 'tempo esgotado'; problemas.push(`partida ${g} não terminou em 6 min`); break; }
   }
+  if (janelas && !balaoVisto) problemas.push(`partida ${g}: o anfitrião não viu o balão do convidado escolhendo (${janelas} janelas)`);
   if (divergencias) problemas.push(`partida ${g}: a mão do convidado ficou diferente da mesa ${divergencias} vez(es) em ${conferidas} conferências`);
   feitas++;
-  console.log(`Partida ${g}/${PARTIDAS}: ${resultado} (${Math.round((Date.now() - t0) / 1000)} s, mão conferida ${conferidas} vezes)`);
+  console.log(`Partida ${g}/${PARTIDAS}: ${resultado} (${Math.round((Date.now() - t0) / 1000)} s, mão conferida ${conferidas} vezes, balão do convidado visto em ${balaoVisto} de ${janelas} janelas)`);
   if (resultado === 'TRAVOU') break;
 }
 await browser.close(); server.close();

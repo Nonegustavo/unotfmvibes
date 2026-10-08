@@ -84,7 +84,8 @@ function redeAnfitriao(){
       if(!S||S.phase==='over')redeComeca();else redeEnvia({t:'evento',ev:{t:'atualiza'},visao:visao(REDE.cadeira)});
       return;
     }
-    if(m.t==='acao'&&m.acao){const a={...m.acao};if(typeof a.alvo==='number')a.alvo=giraDe(REDE.cadeira,a.alvo);agir(REDE.cadeira,a);return}
+    // ação do convidado: a mesa confere; se recusar, ele fica sabendo na hora (e a prévia dele sai)
+    if(m.t==='acao'&&m.acao){const a={...m.acao};if(typeof a.alvo==='number')a.alvo=giraDe(REDE.cadeira,a.alvo);if(!agir(REDE.cadeira,a))redeEnvia({t:'recusada',n:m.n});return}
     if(m.t==='escolher')respondePedido(m);
   };
   // cada evento da mesa vai para o convidado (os que são só de outro jogador, não), girado e com a visão dele
@@ -100,7 +101,7 @@ function redeAnfitriao(){
 function redeConvidado(){
   redeAviso('Rede de mentira: convidado (procurando o anfitrião)');
   $('home').hidden=true;
-  acaoRemota=a=>{redeEnvia({t:'acao',acao:a});return true};
+  acaoRemota=a=>{const n=++REDE.seq;if(VIS.previa)VIS.previa.n=n;redeEnvia({t:'acao',acao:a,n});return true};
   // o convidado não tem mesa: se a tela chamar uma regra direto (em vez de acao), é erro, e os testes pegam pelo console
   for(const k of ['agir','jogar','termina','playCard','takeDraw','endTurn','startTurn','doJumpIn','penalize','doChallenge','newGame','dealAndStart','comecaMix','drawOne','markOut'])
     globalThis[k]=()=>console.error('O convidado chamou uma regra direto: '+k);
@@ -118,6 +119,7 @@ function redeConvidado(){
     }
     if(m.t==='evento'){if(m.ev.t!=='mostraMix')TELA(m.ev)} // a janela do Mix (começar a partida) é do anfitrião
     else if(m.t==='pedido')redeAbrePedido(m);
+    else if(m.t==='recusada'&&VIS.previa&&VIS.previa.n===m.n)desfazPrevia('recusada');
   };
 }
 // pedido do anfitrião: abre a mesma janela da tela e manda a escolha de volta
