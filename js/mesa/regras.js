@@ -538,6 +538,12 @@ function startTurn(){
 function takeDraw(pi){
   const p=S.players[pi];
   if(humano(pi))S.mull=false;
+  // Morte súbita: quem precisa comprar é eliminado, mesmo com o monte congelado (não dá para só passar a vez)
+  if(S.death&&(S.weather==='blizzard'||curseIs('ice'))){
+    S.pending=0;S.pendingType=null;S.chal=null;
+    emit({t:'fx',g:'☠️',txt:`${J(pi)} não podia passar!`,cor:'#0d0a14',modo:'slam'});log(`${J(pi)} passou a vez na morte súbita e foi eliminado.`);
+    if(markOut(pi,'passou a vez na morte súbita','☠️'))return;endTurn();return;
+  }
   if(S.pending>0&&(S.weather==='blizzard'||curseIs('ice'))){
     const n=S.pending;S.pending=0;S.pendingType=null;S.chal=null;
     emit({t:'fx',g:S.weather==='blizzard'?'❄️':'🧊',txt:`${V(pi,'Você perde',J(pi)+' perde')} a vez (+${n} congelado)`,cor:'#5aa9d6',modo:'stamp'});emit({t:'selo',p:pi,ic:'⊘',cor:'var(--cr)'});

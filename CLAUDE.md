@@ -124,6 +124,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Se foi blefe, o desafiante segue jogando.
   - Se a jogada era legal, o desafiante perde a vez.
   - Perder a vez por penalidade não conta como "passar" para encerrar a Nevasca.
+  - Na Morte súbita, quem precisaria comprar com o monte congelado não passa: é eliminado (`takeDraw`).
 - **Compra:** depois de comprar, o jogador pode jogar **qualquer** carta jogável ou passar.
   - Compra e Passa passa a vez ao comprar.
   - Compra Rápida joga a carta comprada sozinha, mesmo que não combine (exceto a Bomba).

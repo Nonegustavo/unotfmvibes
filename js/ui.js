@@ -570,7 +570,7 @@ function seatStatus(i){
   if(fog)L.push({ic:'☁️',short:'☁️',name:'Neblina',txt:'quantidade de cartas ocultada até mudar o clima'});
   return L;
 }
-const OUT_INFO={'+99':['+99','comprou as cartas do +99'],'💣':['Bomba','comprou a Carta Bomba'],'🏋️':['Sobrecarga','passou de 10 cartas na mão'],'☠️':['Morte súbita','precisou comprar ou cometeu um erro durante a Morte súbita'],'🥔':['Batata','ficou 5 turnos com a Batata'],'🌵':['Maldição do espinho','comprou cartas com a maldição ativa']};
+const OUT_INFO={'+99':['+99','comprou as cartas do +99'],'💣':['Bomba','comprou a Carta Bomba'],'🏋️':['Sobrecarga','passou de 10 cartas na mão'],'☠️':['Morte súbita','precisou comprar, passou a vez ou cometeu um erro durante a Morte súbita'],'🥔':['Batata','ficou 5 turnos com a Batata'],'🌵':['Maldição do espinho','comprou cartas com a maldição ativa']};
 function seatInfoItems(i){
   const p=S.players[i];
   if(p.out){const ic=p.outIcon||'✖';const inf=OUT_INFO[ic]||['Limite de cartas',`passou de ${ic} cartas na mão`];return [{ic,name:inf[0],txt:inf[1]},...(TOUR?[tourItem(p.name)]:[])]}
