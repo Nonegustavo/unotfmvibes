@@ -28,6 +28,7 @@ function semear(semente){
   let x=semente>>>0;RNG.semente=x;
   const sm=()=>{x=(x+0x9e3779b9)|0;let z=x;z=Math.imul(z^(z>>>16),0x85ebca6b);z=Math.imul(z^(z>>>13),0xc2b2ae35);return (z^(z>>>16))>>>0};
   RNG.a=sm();RNG.b=sm();RNG.c=sm();RNG.d=sm();
+  IDS.a=sm();IDS.usados=new Set();
   for(let i=0;i<12;i++)rng();
 }
 // sfc32: rápido, com 128 bits de estado
@@ -35,6 +36,13 @@ function rng(){
   let{a,b,c,d}=RNG;const t=(((a+b)|0)+d)|0;
   RNG.d=(d+1)|0;RNG.a=b^(b>>>9);RNG.b=(c+(c<<3))|0;c=(c<<21)|(c>>>11);RNG.c=(c+t)|0;
   return (t>>>0)/4294967296;
+}
+/* Número de cada carta: sorteado (de 1 a 2^31) por um gerador próprio, que segue a semente mas não mexe no rng(), e
+   sem repetir na partida. Assim o número não dá pista de qual carta é (antes era a ordem de montagem do baralho) */
+const IDS={a:0,usados:new Set()};
+function novoId(){
+  let id;do{IDS.a=(IDS.a+0x6d2b79f5)|0;let t=Math.imul(IDS.a^(IDS.a>>>15),1|IDS.a);t=(t+Math.imul(t^(t>>>7),61|t))^t;id=((t^(t>>>14))>>>1)||1}while(IDS.usados.has(id));
+  IDS.usados.add(id);return id;
 }
 const novaSemente=()=>Number.isInteger(window.SEMENTE)?(window.SEMENTE++)>>>0:(Math.random()*4294967296)>>>0;
 semear((Math.random()*4294967296)>>>0);
@@ -229,7 +237,7 @@ if(!CFG.mode)CFG.mode=RULES.some(r=>r.k!=='poker'&&CFG[r.k])?'custom':'mix';
 function rulesForMode(){const r={...CFG};if(CFG.mode!=='custom'){RULES.forEach(x=>r[x.k]=false);if(CFG.mode==='mix')r.poker=true;r.bots=3;r.start=7}return r}
 let R=rulesForMode();
 let SCORE=load('unotfm-solo-score',{});
-let S=null,uid=0,TOUR=null,stormT=null;
+let S=null,TOUR=null,stormT=null;
 // quem está no jogo com menos pontos na mão (empate: menos cartas)
 function pointsLeader(){
   const pts=i=>S.players[i].hand.reduce((a,c)=>a+cardPoints(c),0);
@@ -243,7 +251,7 @@ const rand=a=>a[Math.floor(rng()*a.length)];
 // sorteio só visual (frases, dicas): não mexe na sequência do rng()
 const randVis=a=>a[Math.floor(Math.random()*a.length)];
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-const mk=(color,type,value=null)=>({id:uid++,color,type,value,rot:Math.random()*24-12});
+const mk=(color,type,value=null)=>({id:novoId(),color,type,value});
 // Carta especial em jogo: pela regra dela ou pela Bagunça (que tem todas, menos o Semáforo, já que não há números)
 const spOn=t=>R.mess?t!=='oddeven':!!R[SP[t].rule||t];
 function buildDeck(){
@@ -270,7 +278,7 @@ const noDraw=pi=>S.death||curseIs('thorn');
 function nextHand(pi){
   const p=S.players[pi];if(!p.hand2||!p.hand2.length)return false;
   p.hand=p.hand2;p.hand2=[];p.called=false;
-  if(pi===0){S.newIds=p.hand.map(c=>c.id);S.handFrom=$('deck').getBoundingClientRect()}else emit({t:'voa',de:'monte',para:pi,atraso:0});
+  emit({t:'recebe',p:pi,ids:p.hand.map(c=>c.id),de:'monte',maoNova:true});
   emit({t:'fx',g:'✋',txt:`${V(pi,'Você pega',J(pi)+' pega')} a segunda mão`,cor:'var(--accent)',modo:'slam'});log(`${J(pi)} terminou a primeira mão.`);
   return true;
 }
@@ -299,7 +307,7 @@ function texto(s,eu=S&&S.players[0].name){
 
 // registro da partida: a tela guarda as linhas (evento 'registro')
 function log(msg){emit({t:'registro',txt:msg})}
-const snap=c=>({type:c.type,color:c.color,value:c.value,chosen:c.chosen,orig:c.orig,rot:0});
+const snap=c=>({type:c.type,color:c.color,value:c.value,chosen:c.chosen,orig:c.orig});
 function toast(msg,bg){
   if(S&&S.turbo)return;
   const t=$('toast');t.textContent=msg;t.style.background=bg||'';t.style.color=bg?'#fff':'';

@@ -4,6 +4,7 @@
 // Uso: npm run test:cartas                     (compara com os resultados guardados)
 //      npm run test:cartas -- --gravar         (grava os resultados de agora, depois de uma mudança de propósito)
 //      npm run test:cartas -- --so=carta:dice  (só os cenários cujo nome contém o texto)
+//      npm run test:cartas -- --ignorar=eventos (compara sem essas partes; útil quando uma mudança troca os eventos de propósito)
 // Na sua vez, o teste joga a primeira carta jogável da mão (ou compra/passa) e resolve as janelas pelo autoResolve.
 import http from 'node:http';
 import fs from 'node:fs';
@@ -16,6 +17,7 @@ const ARQ = path.join(ROOT, 'tests', 'cartas-resultados.json');
 const args = process.argv.slice(2);
 const GRAVAR = args.includes('--gravar');
 const SO = (args.find(a => a.startsWith('--so=')) || '').slice(5);
+const IGNORAR = ((args.find(a => a.startsWith('--ignorar=')) || '').slice(10)).split(',').filter(Boolean);
 const PARALELO = 4;
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json' };
@@ -43,7 +45,7 @@ async function cenarioNaPagina(c) {
   TB.live.clear();
   MUTED = true;
   CFG = Object.assign({}, DEF, { mode: 'custom', poker: false, fx3d: false, fast: false, diff: c.dif || 'normal' }, c.regras);
-  R = rulesForMode(); TOUR = null; uid = 0;
+  R = rulesForMode(); TOUR = null;
   window.SEMENTE = c.semente;
   // o registro completo da partida (o do jogo guarda só as últimas linhas)
   const registro = [], logJogo = log;
@@ -187,7 +189,8 @@ if (GRAVAR) {
   console.log(`Gravados ${lista.length} cenários em ${path.relative(ROOT, ARQ)}.`);
 } else {
   for (const c of lista) {
-    const a = guardado[c.nome], b = resultados[c.nome];
+    const sem = o => o && Object.fromEntries(Object.entries(o).filter(([k]) => !IGNORAR.includes(k)));
+    const a = sem(guardado[c.nome]), b = sem(resultados[c.nome]);
     if (!a) { falhas++; console.log(`NOVO ${c.nome}: sem resultado guardado (rode com --gravar)`); continue; }
     if (JSON.stringify(a) === JSON.stringify(b)) continue;
     falhas++;

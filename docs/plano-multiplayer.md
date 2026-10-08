@@ -302,6 +302,10 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
 - **D. Estado visual separado (M)**
   - O que é só da tela sai do `S` e vai para um `V`, inclusive a inclinação das cartas na mesa.
   - O número das cartas passa a ser sorteado.
+  - **Feito:** o estado da tela foi para o `VIS` (`ui.js`), com o nome `VIS` porque `V` ficou com os textos da etapa C.
+    As regras mandam eventos (`recebe`, `compra`, `semVoo`, `origem`, `jogaDoMonte`, `anuncio`, `gira`…) e a tela decide o que
+    animar. A inclinação das cartas na mesa é da tela (`rotDe`). O número das cartas é sorteado (de 1 a 2^31, sem
+    repetir) por um gerador próprio que segue a semente. Estado e registro dos 173 cenários idênticos.
 - **E. Quem controla cada cadeira (G), a etapa mais arriscada**
   - Cada cadeira passa a ter um controlador: humano nesta tela, adversário do computador ou, mais tarde, pessoa em outro aparelho.
   - Os dois caminhos de jogada viram um só.

@@ -90,6 +90,19 @@ function ghost(from,to,delay){
 /* ---------- tela: eventos das regras ----------
    As regras avisam o que aconteceu com emit({t:...}) (engine.js), e a tela anima e toca os sons. Os lugares chegam
    como número da cadeira, 'mesa' ou 'monte'. Alguns eventos ainda devolvem algo às regras (duração, se o dado 3D rolou) */
+/* Estado só da tela, que não faz parte da partida (cada aparelho tem o seu): cartas que acabaram de chegar à sua mão e
+   de onde vieram, compras dos adversários a animar, de onde saiu a carta jogada, inclinação das cartas na mesa,
+   avisos de anúncio, faixa de regras, registro e histórico. Recomeça a cada partida (evento 'novaPartida') */
+const novoVis=()=>({newIds:[],botDraw:{},handFrom:null,animPlay:null,fastSrc:false,lastTop:null,morph:false,seatFlip:null,seatFollow:false,
+  wxNow:false,cntJump:false,pendingInfo:null,progScroll:0,freshRules:[],stripHold:false,annText:'',announcing:false,log:[],hist:null,histCur:null,rot:{}});
+let VIS=novoVis();
+// inclinação de uma carta na mesa: sorteada quando ela aparece na pilha
+const rotDe=c=>VIS.rot[c.id]??(VIS.rot[c.id]=Math.random()*24-12);
+// de onde sai a carta jogada: da sua mão ou do avatar do adversário
+function srcRect(pi,card){
+  const el=pi===0?document.querySelector(`#hand [data-id="${card.id}"]`):document.querySelector(`[data-seat="${pi}"] .av`);
+  return el?el.getBoundingClientRect():null;
+}
 const lugar=x=>typeof x==='number'?targetRect(x):x==='mesa'?discardRect():x==='monte'?$('deck').getBoundingClientRect():x;
 function TELA(ev){
   // no solo, esta tela é a do jogador 0: o que é só de outro jogador não aparece
@@ -101,13 +114,13 @@ function TELA(ev){
     case 'selo':return stampOn(ev.p,ev.ic,ev.cor);
     case 'som':return sfx(ev.k);
     case 'aviso':return toast(texto(ev.txt),ev.cor);
-    case 'registro':{const m=texto(ev.txt);S.log.unshift(m);S.log=S.log.slice(0,2);if(S.histCur)S.histCur.notes.push(m);return}
+    case 'registro':{const m=texto(ev.txt);VIS.log.unshift(m);VIS.log=VIS.log.slice(0,2);if(VIS.histCur)VIS.histCur.notes.push(m);return}
     // histórico das jogadas: cada carta jogada abre uma entrada; as linhas do registro entram nela até o fim da jogada
-    case 'histInicio':S.hist=[{by:null,card:ev.carta,notes:['Primeira carta da mesa.']}];S.histCur=null;return;
+    case 'histInicio':VIS.hist=[{by:null,card:ev.carta,notes:['Primeira carta da mesa.']}];VIS.histCur=null;return;
     case 'jogada':{
-      if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}
-      S.hist=S.hist||[];const he={by:ev.p,live:ev.carta,card:null,notes:[],side:ev.lado};S.hist.push(he);if(S.hist.length>12)S.hist.shift();S.histCur=he;return}
-    case 'fimJogada':if(S.histCur&&S.histCur.live){S.histCur.card=snap(S.histCur.live);S.histCur.live=null}S.histCur=null;return;
+      if(VIS.histCur&&VIS.histCur.live){VIS.histCur.card=snap(VIS.histCur.live);VIS.histCur.live=null}
+      VIS.hist=VIS.hist||[];const he={by:ev.p,live:ev.carta,card:null,notes:[],side:ev.lado};VIS.hist.push(he);if(VIS.hist.length>12)VIS.hist.shift();VIS.histCur=he;return}
+    case 'fimJogada':if(VIS.histCur&&VIS.histCur.live){VIS.histCur.card=snap(VIS.histCur.live);VIS.histCur.live=null}VIS.histCur=null;return;
     case 'voa':return ghost(lugar(ev.de),lugar(ev.para),ev.atraso);
     case '3d':return FX3D[ev.k](...(ev.onde!==undefined?[lugar(ev.onde)]:[]),...(ev.args||[]));
     case 'rei':return kingHalf();
@@ -133,15 +146,38 @@ function TELA(ev){
     case 'portal':return portalFx(ev.fase,ev.ms);
     case 'regra':return regraFx(ev);
     case 'infoRegra':return showRuleInfo(ev.k);
-    case 'cadeiras':S.seatFlip=Object.fromEntries([...document.querySelectorAll('#seatrow .seat')].map(e=>[e.dataset.name,e.getBoundingClientRect()]));return;
+    case 'cadeiras':VIS.seatFlip=Object.fromEntries([...document.querySelectorAll('#seatrow .seat')].map(e=>[e.dataset.name,e.getBoundingClientRect()]));return;
     case 'fechaJanelas':return closeOverlays();
+    // cartas chegando às mãos: na sua, entram marcadas como novas (e vêm de 'de'); nos outros, uma carta voa até a cadeira
+    case 'compra':if(ev.p===0)VIS.newIds.push(ev.id);else VIS.botDraw[ev.p]=(VIS.botDraw[ev.p]||0)+1;return;
+    case 'semVoo':if(ev.p===0)VIS.newIds=[];else delete VIS.botDraw[ev.p];return;
+    case 'recebe':
+      if(ev.p===0){VIS.newIds=ev.maoNova?[...ev.ids]:[...VIS.newIds,...ev.ids];if(ev.origem!==false)VIS.handFrom=lugar(ev.de);if(ev.voaProprio)ghost(lugar(ev.de),lugar(0),ev.atraso)}
+      else if(ev.voa!==false)ghost(lugar(ev.de),lugar(ev.p),ev.atraso);
+      return;
+    case 'distribuiu':VIS.lastTop=null;VIS.newIds=S.players[0].hand.map(c=>c.id);return;
+    // a carta comprada é jogada na hora: sai do monte, não da mão
+    case 'jogaDoMonte':VIS.fastSrc=true;VIS.newIds=VIS.newIds.filter(id=>id!==ev.id);if(VIS.botDraw[ev.p]){VIS.botDraw[ev.p]--;if(!VIS.botDraw[ev.p])delete VIS.botDraw[ev.p]}return;
+    case 'origem':
+      VIS.animPlay=ev.anunciada?null:(VIS.fastSrc?$('deck').getBoundingClientRect():srcRect(ev.p,ev.carta));VIS.fastSrc=false;
+      if(!ev.anunciada)VIS.rot[ev.carta.id]=Math.random()*24-12;
+      return;
+    case 'gira':VIS.morph=true;return;
+    case 'segueVez':VIS.seatFollow=true;return;
+    case 'contagemDireta':VIS.cntJump=true;return;
+    case 'redesenhaMesa':VIS.lastTop=null;return;
+    case 'regraFresca':VIS.freshRules.push(ev.k);return;
+    case 'seguraFaixa':VIS.stripHold=!RM;return;
+    case 'anuncio':VIS.announcing=true;VIS.annText=ev.txt;return;
+    case 'anuncioFim':VIS.announcing=false;return;
     case 'novaPartida':
+      VIS=novoVis();
       $('home').hidden=true;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
       $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';
       if(PORTAL){PORTAL.forEach(e=>e.remove());PORTAL=null}
       if(DADO){DADO.remove();DADO=null}
       return;
-    case 'trocaLado':$('hand').innerHTML='';$('fx').innerHTML='';return;
+    case 'trocaLado':$('hand').innerHTML='';$('fx').innerHTML='';VIS.wxNow=true;VIS.cntJump=true;VIS.lastTop=null;VIS.newIds=[];return;
     case 'fim':return telaFim(ev);
   }
   console.error('Evento desconhecido: '+ev.t);
@@ -289,7 +325,7 @@ function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
   const p=cur();
   if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
-  if(S.announcing&&S.annText)return texto(S.annText);
+  if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
   if(p.bot)return '';
   if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
@@ -401,7 +437,7 @@ function showSeatInfoOld(i,anchor){
 }
 /* Número de cartas nas cadeiras: anda uma unidade por vez até a quantidade real (a contagem inteira leva até ~0,7 s,
    então quanto mais cartas, mais rápido), pulsando verde ao diminuir e vermelho ao aumentar. Oculto (Neblina,
-   Camuflagem), em trocas de mão e no Portal (S.cntJump) o número muda direto, sem pulso */
+   Camuflagem), em trocas de mão e no Portal (VIS.cntJump) o número muda direto, sem pulso */
 const CNT={gen:null,shown:{},timer:{},step:{},flash:{}};
 // a cor verde/vermelha fica firme por CNT_HOLD ms depois do último passo e volta em CNT_FADE ms
 // (refeita a cada render, que recria as cadeiras, a partir do ponto em que estava)
@@ -414,7 +450,7 @@ function cntColor(el,i){
 }
 function cntShown(i,n,hidden){
   if(CNT.gen!==S.gen){Object.values(CNT.timer).forEach(clearTimeout);Object.assign(CNT,{gen:S.gen,shown:{},timer:{},step:{},flash:{}})}
-  if(CNT.shown[i]==null||hidden||RM||S.cntJump||S.phase==='over'){clearTimeout(CNT.timer[i]);CNT.timer[i]=null;delete CNT.flash[i];return CNT.shown[i]=n}
+  if(CNT.shown[i]==null||hidden||RM||VIS.cntJump||S.phase==='over'){clearTimeout(CNT.timer[i]);CNT.timer[i]=null;delete CNT.flash[i];return CNT.shown[i]=n}
   const left=Math.abs(n-CNT.shown[i]);
   if(left){const st=Math.max(25,Math.min(110,700/left));CNT.step[i]=CNT.timer[i]?Math.min(CNT.step[i],st):st;if(!CNT.timer[i])CNT.timer[i]=setTimeout(()=>cntTick(i),0)}
   return CNT.shown[i];
@@ -477,7 +513,7 @@ function renderRail(){
         return t.length?`<span class="tops">${t.map(x=>`<span class="tag top">${x}</span>`).join('')}</span>`:''})()}</div>`);
   });
   row.innerHTML=parts.join('');
-  S.cntJump=false;
+  VIS.cntJump=false;
   Object.keys(CNT.flash).forEach(i=>cntColor(row.querySelector(`[data-seat="${i}"] .cnt`),i));
   $('rail').setAttribute('aria-label',`Ordem de jogada, sentido ${ccw?'anti-horário':'horário'}`);
 }
@@ -522,14 +558,14 @@ function moveMarker(from,to){
 function render(){
   if(!S)return;
   // turbo (Terminar e descobrir vencedor): não desenha; só descarta os pedidos de animação de cada jogada
-  if(S.turbo){S.pendingInfo=null;S.seatFlip=null;S.seatFollow=false;S.morph=false;S.animPlay=null;S.wxNow=false;S.handFrom=null;S.newIds=[];S.botDraw={};return}
+  if(S.turbo){VIS.pendingInfo=null;VIS.seatFlip=null;VIS.seatFollow=false;VIS.morph=false;VIS.animPlay=null;VIS.wxNow=false;VIS.handFrom=null;VIS.newIds=[];VIS.botDraw={};return}
   const me=S.players[0];
   const railScroll=$('rail').scrollLeft;
   renderRail();$('rail').scrollLeft=railScroll;renderRuleStrip();
-  if(S.pendingInfo){const k=S.pendingInfo;S.pendingInfo=null;setTimeout(()=>showRuleInfo(k),120)}
-  if(S.seatFlip){const old=S.seatFlip;S.seatFlip=null;
+  if(VIS.pendingInfo){const k=VIS.pendingInfo;VIS.pendingInfo=null;setTimeout(()=>showRuleInfo(k),120)}
+  if(VIS.seatFlip){const old=VIS.seatFlip;VIS.seatFlip=null;
     // Dança das Cadeiras: se quem está com a vez mudou de lugar, o cursor vai junto com a cadeira (sem dar a volta pela borda)
-    const follow=S.seatFollow&&MK.turn!==null&&MK.turn!==S.turn&&S.phase!=='over';S.seatFollow=false;
+    const follow=VIS.seatFollow&&MK.turn!==null&&MK.turn!==S.turn&&S.phase!=='over';VIS.seatFollow=false;
     if(follow){++MK.ver;MK.until=0;placeMarker(S.turn,false);MK.turn=S.turn;scrollToSeat(S.turn)}
     if(!RM)document.querySelectorAll('#seatrow .seat').forEach(e=>{const o=old[e.dataset.name];if(!o)return;const n=e.getBoundingClientRect();const dx=o.left-n.left;if(Math.abs(dx)>2){const a=[{transform:`translateX(${dx}px)`},{transform:'none'}],t={duration:600,easing:'cubic-bezier(.3,.8,.3,1)'};e.animate(a,t);if(follow&&e.dataset.seat==S.turn)$('marker').animate(a,t)}})}
   const hw=$('handwrap');
@@ -569,15 +605,15 @@ function render(){
   // discard
   const t=topCard();const dis=$('discard');
   dis.style.setProperty('--ring',S.color?CVAR[S.color]:'transparent');
-  if(t&&S.lastTop!==t.id){
-    S.lastTop=t.id;
-    dis.innerHTML=S.discard.slice(-3).map(c=>`<div class="dc" style="--rot:${c.rot.toFixed(1)}deg"><div class="card c-${c.chosen||c.color}">${faceHTML(c)}</div></div>`).join('');
-    if(S.morph&&!RM){dis.lastElementChild.firstElementChild.animate([{transform:'rotateY(90deg) scale(1.15)'},{transform:'none'}],{duration:450,easing:'cubic-bezier(.2,.9,.3,1.2)'})}
-    else if(S.animPlay){const tc=S.discard[S.discard.length-1];flyClone(dis.lastElementChild.firstElementChild,S.animPlay,{rot:-25,dur:430,endRot:tc.rot||0,ease:'cubic-bezier(.2,.8,.3,1)'})}
-    S.morph=false;
+  if(t&&VIS.lastTop!==t.id){
+    VIS.lastTop=t.id;
+    dis.innerHTML=S.discard.slice(-3).map(c=>`<div class="dc" style="--rot:${rotDe(c).toFixed(1)}deg"><div class="card c-${c.chosen||c.color}">${faceHTML(c)}</div></div>`).join('');
+    if(VIS.morph&&!RM){dis.lastElementChild.firstElementChild.animate([{transform:'rotateY(90deg) scale(1.15)'},{transform:'none'}],{duration:450,easing:'cubic-bezier(.2,.9,.3,1.2)'})}
+    else if(VIS.animPlay){const tc=S.discard[S.discard.length-1];flyClone(dis.lastElementChild.firstElementChild,VIS.animPlay,{rot:-25,dur:430,endRot:rotDe(tc),ease:'cubic-bezier(.2,.8,.3,1)'})}
+    VIS.morph=false;
   }
-  S.animPlay=null;
-  const wxNow=S.wxNow;S.wxNow=false;
+  VIS.animPlay=null;
+  const wxNow=VIS.wxNow;VIS.wxNow=false;
   {const tb=document.querySelector('.table');if(wxNow)tb.classList.add('wxnow');tb.dataset.weather=S.weather||'';if(wxNow){void tb.offsetWidth;tb.classList.remove('wxnow')}}
   if(S.weather==='storm'&&S.phase!=='over'&&!RM&&!stormT){const g=S.gen;const tick=()=>{stormT=null;if(!S||S.gen!==g||S.weather!=='storm'||S.phase==='over')return;
       const t=document.querySelector('.table');if(!t.classList.contains('bolt')){t.classList.remove('flick');void t.offsetWidth;t.classList.add('flick')}
@@ -590,7 +626,7 @@ function render(){
      if(pe.dataset.v!==v||pe.hidden){pe.hidden=false;pe.innerHTML=`<b>+${v}</b><span>${lbl}</span>`;pe.classList.remove('bump');void pe.offsetWidth;if(!RM)pe.classList.add('bump');pe.dataset.v=v}
      else pe.querySelector('span').textContent=lbl}}
   $('status').textContent=statusText();
-  $('log').innerHTML=S.log.map(l=>`<div>${l}</div>`).join('');
+  $('log').innerHTML=VIS.log.map(l=>`<div>${l}</div>`).join('');
   // hand (keyed)
   const hand=$('hand');const turn=myTurn();
   hand.classList.toggle('myturn',turn);
@@ -625,14 +661,14 @@ function render(){
   });
   // animations for draws
   const deckR=deck.getBoundingClientRect();
-  const from=S.handFrom||deckR;S.handFrom=null;
-  S.newIds.forEach((id,k)=>flyClone(hand.querySelector(`[data-id="${id}"]`),from,{delay:k*(S.newIds.length>8?35:70),rot:-15}));
-  S.newIds=[];
-  Object.entries(S.botDraw).forEach(([pi,cnt])=>{
+  const from=VIS.handFrom||deckR;VIS.handFrom=null;
+  VIS.newIds.forEach((id,k)=>flyClone(hand.querySelector(`[data-id="${id}"]`),from,{delay:k*(VIS.newIds.length>8?35:70),rot:-15}));
+  VIS.newIds=[];
+  Object.entries(VIS.botDraw).forEach(([pi,cnt])=>{
     const av=document.querySelector(`[data-seat="${pi}"] .av`);const r=av&&av.getBoundingClientRect();
     for(let k=0;k<Math.min(cnt,4);k++)ghost(deckR,r,k*90);
   });
-  S.botDraw={};
+  VIS.botDraw={};
   // actions
   const main=$('drawBtn');
   if(S.phase==='combo'&&S.turn===0)main.textContent='Encerrar jogada';
@@ -787,8 +823,8 @@ function openActive(){
   $('activeOv').classList.add('show');$('closeActive').focus();
 }
 function openHistory(){
-  if(!S||!S.hist)return;
-  const list=S.hist.slice(-5).reverse().map(h=>{
+  if(!S||!VIS.hist)return;
+  const list=VIS.hist.slice(-5).reverse().map(h=>{
     const c=h.live?snap(h.live):h.card;if(!c)return '';
     const col=c.chosen||c.color;
     return `<div class="hrow ${S.other?(h.side==='b'?'side-b':'side-a'):''}"><div class="card c-${col}" style="--cw:2.75rem">${faceHTML(c)}</div><div class="hbody"><b>${h.by==null?'Mesa':h.by===0?'Você':S.players[h.by].name}${S.other&&h.side==='b'?' <span class="hside">🌀 outro lado</span>':''}</b>${h.notes.map(n=>`<span>${n}</span>`).join('')}</div></div>`}).join('');
@@ -908,7 +944,7 @@ document.addEventListener('pointerdown',e=>{
 });
 {const st=$('rulestrip');
   st.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){st.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false});
-  st.addEventListener('scroll',()=>{if(S&&Date.now()-(S.progScroll||0)<250)return;if($('notices').children.length){$('notices').innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))}});
+  st.addEventListener('scroll',()=>{if(S&&Date.now()-(VIS.progScroll||0)<250)return;if($('notices').children.length){$('notices').innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))}});
   let drag=null;
   st.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;drag={x:e.clientX,l:st.scrollLeft,moved:false}});
   addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x;if(Math.abs(dx)>4)drag.moved=true;st.scrollLeft=drag.l-dx});

@@ -160,19 +160,19 @@ function morphCard(card,prev){
 const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simon'];
 const needsAnn=(pi,card)=>card.type==='random'||card.type==='clone'||(pi!==0&&(isWildPick(card)||ASK_TYPES.includes(card.type)));
 function announce(pi,card,cont,wait){
-  const p=S.players[pi];const rect=S.fastSrc||srcRect(pi,card);S.fastSrc=null;
+  const p=S.players[pi];emit({t:'origem',p:pi,carta:card});
   p.hand=p.hand.filter(c=>c.id!==card.id);
-  card.rot=Math.random()*24-12;S.discard.push(card);S.ann=card;
+  S.discard.push(card);S.ann=card;
   if(p.bot&&p.hand.length===target())afterOneCard(pi);
-  S.animPlay=rect;S.busy=true;S.announcing=true;S.annText='';emit({t:'som',k:'play'});
+  S.busy=true;emit({t:'anuncio',txt:''});emit({t:'som',k:'play'});
   render();
   const g=S.gen;
-  const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;S.announcing=false;cont()};
+  const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;emit({t:'anuncioFim'});cont()};
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
     if(S.peace<=0&&(card.type==='clone'||card.type==='random')){
       const og=SP[card.type].g;
-      morphCard(card,S.discard[S.discard.length-2]);S.lastTop=null;S.morph=true;card.flipped=true;
+      morphCard(card,S.discard[S.discard.length-2]);emit({t:'redesenhaMesa'});emit({t:'gira'});card.flipped=true;
       emit({t:'fx',g:og,txt:`Virou ${card.color==='w'?label(card):cardName(card)}`,cor:CVAR[card.color]||'var(--accent)',modo:'stamp'});
       render();setTimeout(done,fastMode()?400:950);
     }else done();

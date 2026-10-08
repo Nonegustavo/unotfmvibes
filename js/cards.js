@@ -3,7 +3,7 @@
 const discardRect=()=>$('discard').getBoundingClientRect();
 function discardCard(i,c,k=0){
   const p=S.players[i];p.hand=p.hand.filter(x=>x!==c);
-  c.rot=Math.random()*24-12;S.discard.splice(S.discard.length-1,0,c);
+  S.discard.splice(S.discard.length-1,0,c);
   emit({t:'voa',de:i,para:'mesa',atraso:k*70});
 }
 function massCheck(){for(const i of alive())if(overloaded(i)&&markOut(i))return 'win';return 'done'}
@@ -27,7 +27,7 @@ function giftCard(pi,t){
   const p=S.players[pi];if(!p.hand.length||t==null||t<0)return 'done';
   const c=rand(p.hand);p.hand=p.hand.filter(x=>x!==c);
   S.players[t].hand.push(c);S.players[t].called=false;
-  if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else emit({t:'voa',de:pi,para:t,atraso:0});
+  emit({t:'recebe',p:t,ids:[c.id],de:pi});
   emit({t:'fx',g:'❤️‍🔥',txt:`${J(pi)} doou uma carta para ${V(t,'você',J(t))}`,cor:'var(--cg)',modo:'stamp'});
   log(`${J(pi)} doou uma carta para ${V(t,'você',J(t))}.`);
   if(massCheck()==='win')return 'win';
@@ -44,20 +44,19 @@ function wishSwap(pi,c){
   const p=S.players[pi];if(!p.hand.length||!c)return;
   const out=rand(p.hand);
   S.discard=S.discard.filter(x=>x!==c);
-  p.hand=p.hand.filter(x=>x!==out);out.rot=Math.random()*24-12;S.discard.splice(S.discard.length-1,0,out);
+  p.hand=p.hand.filter(x=>x!==out);S.discard.splice(S.discard.length-1,0,out);
   if(c.color==='w')c.chosen=null;
-  p.hand.push(c);if(pi===0){S.newIds.push(c.id);S.handFrom=discardRect()}
-  emit({t:'voa',de:'mesa',para:pi,atraso:0});
+  p.hand.push(c);emit({t:'recebe',p:pi,ids:[c.id],de:'mesa',voaProprio:true});
   emit({t:'fx',g:SP.wish.g,txt:`${J(pi)} pegou ${cardName(c)} da pilha`,cor:'var(--cy)',modo:'stamp'});
   log(`${J(pi)} trocou uma carta com a pilha.`);
 }
 function giveBatata(pi,card,t){
   if(t!=null&&t>=0)setTimeout(()=>emit({t:'3d',k:'steam',onde:t}),250);
   if(t==null||t<0)return;
-  S.discard=S.discard.filter(x=>x!==card);S.color=S.colBefore||S.color;S.lastTop=null;
+  S.discard=S.discard.filter(x=>x!==card);S.color=S.colBefore||S.color;emit({t:'redesenhaMesa'});
   if(card.baseColor==null)card.baseColor=card.color;card.color=rand(COLORS);card.chosen=null;
   S.players[t].hand.push(card);S.players[t].batata=0;S.players[t].called=false;
-  if(t===0){S.newIds.push(card.id);S.handFrom=discardRect()}else emit({t:'voa',de:'mesa',para:t,atraso:0});
+  emit({t:'recebe',p:t,ids:[card.id],de:'mesa'});
   emit({t:'selo',p:t,ic:'🥔',cor:'var(--cy)'});emit({t:'fx',g:'🥔',txt:`A batata foi para ${V(t,'você',J(t))}!`,cor:'var(--cy)',modo:'slam'});log(`${J(pi)} passou a batata para ${V(t,'você',J(t))}.`);
 }
 function diceSVG(n,sz='calc(var(--cw)*1.3)'){
@@ -74,9 +73,9 @@ function rollDice(pi,t,then,n0,cap){
   const wait=fastMode()?700:DICE_WAIT,show=wait+1000;
   if(cap){emit({t:'dadoLegenda',txt:`${V(t,'Você',J(t))}: ${txt}`,ms:show});emit({t:'pausa',ms:show})}
   else{emit({t:'fx',g:diceSVG(n),txt:`${V(t,'Você',J(t))}: ${txt}`,cor:'var(--accent)',modo:'slam',ms:show});emit({t:'som',k:'dice'})}log(`Dado de ${J(t)}: ${n} (${txt.toLowerCase()}).`);
-  S.annText=`Dado: ${n}. ${V(t,'Você',J(t))}: ${txt.toLowerCase()}`;S.announcing=true;render();
+  emit({t:'anuncio',txt:`Dado: ${n}. ${V(t,'Você',J(t))}: ${txt.toLowerCase()}`});render();
   const g=S.gen;
-  setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.announcing=false;const r=diceEffect(pi,t,n);if(r==='win')return;then()},wait);
+  setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;emit({t:'anuncioFim'});const r=diceEffect(pi,t,n);if(r==='win')return;then()},wait);
 }
 // dado pequeno rolando perto da cadeira do adversário; para no resultado e fica até o efeito acontecer
 function miniDie(pi,n,ms){
@@ -96,19 +95,19 @@ function miniDie(pi,n,ms){
 }
 function diceEffect(pi,t,n){
   const q=S.players[t];
-  if(n===1&&S.players[pi].hand.length){const c=rand(S.players[pi].hand);S.players[pi].hand=S.players[pi].hand.filter(x=>x!==c);q.hand.push(c);if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else emit({t:'voa',de:pi,para:t,atraso:0});if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}}
+  if(n===1&&S.players[pi].hand.length){const c=rand(S.players[pi].hand);S.players[pi].hand=S.players[pi].hand.filter(x=>x!==c);q.hand.push(c);emit({t:'recebe',p:t,ids:[c.id],de:pi});if(S.players[pi].hand.length===0&&!nextHand(pi)){endRound(pi);return 'win'}}
   if(n===2){const k=drawAmt(t,2);drawN(t,k);}
   if(n===3){let k=0;while(q.hand.length>3)discardCard(t,rand(q.hand),k++)}
   // 4: mostra um 4 (a carta continua na mão) ou compra 4
   if(n===4){const f=q.hand.find(c=>c.type==='num'&&c.value===4);if(f){emit({t:'mostra4',p:t,carta:f});log(`${J(t)} ${V(t,'mostra','mostrou')} um 4.`)}else{const k=drawAmt(t,4);drawN(t,k);}}
-  if(n===5){const others=alive().filter(i=>i!==t);const k=Math.min(5,q.hand.length-1);for(let j=0;j<k;j++){const c=rand(q.hand);const o=rand(others);q.hand=q.hand.filter(x=>x!==c);S.players[o].hand.push(c);S.players[o].called=false;if(o===0){S.newIds.push(c.id);S.handFrom=targetRect(t)}else emit({t:'voa',de:t,para:o,atraso:j*60})}}
+  if(n===5){const others=alive().filter(i=>i!==t);const k=Math.min(5,q.hand.length-1);for(let j=0;j<k;j++){const c=rand(q.hand);const o=rand(others);q.hand=q.hand.filter(x=>x!==c);S.players[o].hand.push(c);S.players[o].called=false;emit({t:'recebe',p:o,ids:[c.id],de:t,atraso:j*60})}}
   if(n===6){while(q.hand.length<6&&drawOne(t)){}}
   q.called=q.hand.length<=target()&&q.called;
   if(q.hand.length===0&&!nextHand(t)){endRound(t);return 'win'}
   return massCheck();
 }
 function resolveSimon(pi,card,ok,col){
-  S.lastTop=null;
+  emit({t:'redesenhaMesa'});
   if(ok){S.color=col;card.chosen=col;S.simon.push(col);emit({t:'brilho',cor:CVAR[col]});emit({t:'fx',g:'🧠',txt:S.simon.length>1?`Acertou! Sequência de ${S.simon.length}`:`Primeira cor: ${CNAME[col]}`,cor:CVAR[col],modo:'stamp'});log(`${J(pi)} acertou a sequência da Memória (${S.simon.length}).`);return 'done'}
   drawN(pi,1);const c=rand(COLORS);S.color=c;card.chosen=c;
   emit({t:'fx',g:'🧠',txt:'Errou a sequência! +1',cor:'var(--cr)',modo:'slam'});log(`${J(pi)} errou a sequência da Memória.`);return massCheck();
@@ -118,7 +117,7 @@ function stealWild(pi,t){
   const q=S.players[t];const w=q.hand.filter(c=>c.color==='w'&&c.type!=='bomb');
   if(!w.length){emit({t:'fx',g:'🧤',txt:`${V(t,'Você não tinha',J(t)+' não tinha')} curinga`,cor:'var(--muted)',modo:'stamp'});log(`${J(pi)} tentou roubar ${J(t)}, sem curingas.`);return 'done'}
   const c=rand(w);q.hand=q.hand.filter(x=>x!==c);S.players[pi].hand.push(c);S.players[pi].called=false;
-  if(pi===0){S.newIds.push(c.id);S.handFrom=targetRect(t)}else emit({t:'voa',de:t,para:pi,atraso:0});
+  emit({t:'recebe',p:pi,ids:[c.id],de:t});
   emit({t:'fx',g:'🧤',txt:`${J(pi)} roubou ${label(c)} de ${V(t,'você',J(t))}`,cor:'var(--cy)',modo:'slam'});log(`${J(pi)} roubou um curinga de ${J(t)}.`);
   if(q.hand.length===0&&!nextHand(t)){endRound(t);return 'win'}
   return massCheck();
@@ -405,7 +404,7 @@ function ruleOptions(n=2,pre){
 function addRule(pi,k,quiet,done){
   R[k]=true;if(k==='bg')applyBg();
   const by=pi==null?'o jogo':V(pi,'você',J(pi)); // quem adicionou, para cada um que vê (texto())
-  S.added.push({k,by});S.freshRules=[...(S.freshRules||[]),k];
+  S.added.push({k,by});emit({t:'regraFresca',k});
   S.ruleOrder=[...(S.ruleOrder||[]).filter(x=>x!==k),k]; // regra nova entra na ponta direita
   const cards=[];
   Object.entries(SP).forEach(([t,v])=>{if((v.rule||t)===k)v.deck.forEach(c=>cards.push(mk(c,t)))});
@@ -473,10 +472,10 @@ function renderRuleStrip(){
   const keys=ruleKeys();
   const sig=keys.join(',');const strip=$('rulestrip');
   if(strip.dataset.sig===sig)return;strip.dataset.sig=sig;
-  const fresh=S.freshRules||[];S.freshRules=[];
+  const fresh=VIS.freshRules||[];VIS.freshRules=[];
   strip.innerHTML=keys.map(k=>{const ic=ruleIcon(k);const txt=txtIcon(ic);
-    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''} ${S.stripHold?'pre':''}" data-k="${k}" aria-label="${RNAME[k]}">${ic}</button>`}).join('');
-  const f=strip.querySelector('.fresh');if(f){S.progScroll=Date.now();f.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'})}
+    return `<button class="ri ${txt?'txt':''} ${fresh.includes(k)?'fresh':''} ${VIS.stripHold?'pre':''}" data-k="${k}" aria-label="${RNAME[k]}">${ic}</button>`}).join('');
+  const f=strip.querySelector('.fresh');if(f){VIS.progScroll=Date.now();f.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'})}
   strip.querySelectorAll('.fresh').forEach(freshen);
 }
 // destaque de regra nova: some sozinho (e suave) depois de 6 s, mesmo sem tocar no ícone
@@ -485,7 +484,7 @@ function openPoker(){
   const list=S.added.map(a=>{const ic=ruleIcon(a.k);
     return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}">${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${texto(a.by)==='você'?'sua':'de '+texto(a.by)}</em></div><p>${ruleDesc(a.k)}${ruleListHtml(a.k)}</p></div></div>`}).join('');
   $('pokerList').innerHTML=list||'<p class="sub">Nenhuma regra disponível para escolher.</p>';
-  S.busy=true;S.freshRules=[];render();
+  S.busy=true;VIS.freshRules=[];render();
   $('pokerOv').classList.add('show');$('pokerGo').focus();
   $('pokerGo').onclick=()=>{
     const src=[...$('pokerList').querySelectorAll('.pk-ic')].map((el,j)=>({k:S.added[j].k,r:el.getBoundingClientRect(),fs:getComputedStyle(el).fontSize}));
@@ -496,7 +495,7 @@ function openPoker(){
 // Mix de Regras: os ícones escolhidos voam até a faixa e ficam centralizados sozinhos; depois os ícones das
 // outras regras entram um por vez na ponta direita, crescendo, e a fileira se recentraliza aos poucos. Só então as cartas são distribuídas
 function flyRules(src,done){
-  const g=S.gen,strip=$('rulestrip');S.stripHold=false;
+  const g=S.gen,strip=$('rulestrip');VIS.stripHold=false;
   const all=[...strip.querySelectorAll('.ri')];
   if(RM){all.forEach(el=>el.classList.remove('pre'));done();return}
   const chosen=src.map(s=>({s,tgt:strip.querySelector(`[data-k="${s.k}"]`)})).filter(x=>x.tgt);
@@ -548,7 +547,7 @@ function sequenceFx(list,step){
   go(0);return 'defer';
 }
 // as cartas compradas aparecem direto na mão, sem voar do monte
-function quietDraw(i){if(i===0)S.newIds=[];else delete S.botDraw[i]}
+function quietDraw(i){emit({t:'semVoo',p:i})}
 function flashStorm(){
   if(RM)return;const t=document.querySelector('.table');t.classList.remove('bolt','flick');void t.offsetWidth;t.classList.add('bolt');setTimeout(()=>t.classList.remove('bolt'),800);
 }
@@ -647,7 +646,7 @@ function applySpecial(pi,card){
       if(opp.length<2){emit({t:'fx',g:'🌪️',txt:'Nada para embaralhar',cor:col,modo:'stamp'});return 'done'}
       const sizes=opp.map(i=>S.players[i].hand.length);const pool=shuffle(opp.flatMap(i=>S.players[i].hand));
       opp.forEach(i=>emit({t:'voa',de:i,para:'mesa',atraso:0}));
-      opp.forEach((i,k)=>{const h=pool.splice(0,sizes[k]);S.players[i].hand=h;memReset(i);if(i===0){S.newIds=h.map(c=>c.id);S.handFrom=discardRect()}setTimeout(()=>emit({t:'voa',de:'mesa',para:i,atraso:0}),350)});
+      opp.forEach((i,k)=>{const h=pool.splice(0,sizes[k]);S.players[i].hand=h;memReset(i);emit({t:'recebe',p:i,ids:h.map(c=>c.id),de:'mesa',maoNova:true,voa:false});setTimeout(()=>emit({t:'voa',de:'mesa',para:i,atraso:0}),350)});
       graceCalls();emit({t:'fx',g:'🌪️',txt:'Mãos dos adversários embaralhadas',cor:col,modo:'slam'});log('Tornado embaralhou as mãos dos adversários.');return 'done'}
     case 'steal':return transmute(pi,col);
     case 'peace':{const n=alive().length*2+2;S.peace=n+1;emit({t:'fx',g:'🌼',txt:'Ações sem efeito por alguns turnos',cor:'var(--cg)',modo:'stamp'});log('Paz: cartas de ação sem efeito por alguns turnos.');return 'done'}
@@ -671,7 +670,7 @@ function applySpecial(pi,card){
       const n=1+Math.floor(rng()*6);
       // adversário rola: dado pequeno perto da cadeira dele; você rola: dado grande (3D ou 2D)
       const dado=emit({t:'dado',p:t,n,ms:fastMode()?450:1200}),mini=dado==='mini',d3=dado==='3d';
-      if(mini||d3){emit({t:'som',k:'dice'});emit({t:'pausa',ms:3000});S.annText=`${V(t,'Você rola',J(t)+' rola')} o dado…`;S.announcing=true;render()}
+      if(mini||d3){emit({t:'som',k:'dice'});emit({t:'pausa',ms:3000});emit({t:'anuncio',txt:`${V(t,'Você rola',J(t)+' rola')} o dado…`});render()}
       else emit({t:'fx',g:'🎲',txt:`${V(t,'Você rola',J(t)+' rola')} o dado…`,cor:'var(--accent)',modo:'roll',ms:1100});
       setTimeout(()=>{
         if(g!==S.gen||S.phase==='over')return;
@@ -685,7 +684,7 @@ function applySpecial(pi,card){
     case 'death':S.death=true;emit({t:'fx',g:'☠️',txt:'Morte súbita! Quem comprar ou errar é eliminado',cor:'#0d0a14',modo:'slam'});log('Morte súbita ativada.');return 'done';
     case 'share':{
       const copies=shuffle([...p.hand]).slice(0,10).map(c=>{const n=mk(c.color,c.type,c.value);n.extra=true;return n});
-      copies.forEach((c,k)=>{const t=rand(opp);if(t==null)return;S.players[t].hand.push(c);S.players[t].called=false;if(t===0){S.newIds.push(c.id);S.handFrom=targetRect(pi)}else emit({t:'voa',de:pi,para:t,atraso:k*50})});
+      copies.forEach((c,k)=>{const t=rand(opp);if(t==null)return;S.players[t].hand.push(c);S.players[t].called=false;emit({t:'recebe',p:t,ids:[c.id],de:pi,atraso:k*50})});
       emit({t:'fx',g:'🤲',txt:`${J(pi)} partilhou ${copies.length} cópia${copies.length===1?'':'s'}`,cor:col,modo:'slam'});log(`${J(pi)} deu ${copies.length} cópias das suas cartas.`);return massCheck()}
     case 'simon':
       if(pi===0)return 'ask';{
@@ -705,7 +704,7 @@ function applySpecial(pi,card){
       const put=(a,b)=>b.forEach((x,i)=>a[i]=x);put(S.players,mv(S.players));
       if(S.other)put(S.other.players,mv(S.other.players));
       if(S.mem)['lacks','lastCol'].forEach(k=>{const m=S.mem[k],o={...m};idx.forEach((i,k2)=>{if(m[from[k2]]!==undefined)o[i]=m[from[k2]];else delete o[i]});S.mem[k]=o});
-      if(pi!==0&&S.turn===pi){S.turn=idx[from.indexOf(pi)];S.seatFollow=S.turn!==pi}
+      if(pi!==0&&S.turn===pi){S.turn=idx[from.indexOf(pi)];if(S.turn!==pi)emit({t:'segueVez'})}
       emit({t:'fx',g:'🪑',txt:'Os adversários trocaram de lugar',cor:col,modo:'slam'});log('Dança: os adversários trocaram de lugar.');
       // espera um pouco com a vez ainda no lugar novo, para ficar claro quem se mexeu, antes de passar a vez
       if(canCombo(p,card)&&(R.stack||R.sequence))return 'done';
@@ -717,7 +716,7 @@ function applySpecial(pi,card){
       emit({t:'fx',g:'👁️',txt:'Todos mostram uma carta',cor:col,modo:'stamp'});log('Clarividência: todos mostraram uma carta.');return 'done';
     case 'treasure':{
       p.treasure=(p.treasure||0)+1;
-      if(p.treasure>=3){p.treasure=0;const c=mk(card.color,'chest');c.extra=true;p.hand.push(c);p.called=false;if(pi===0){S.newIds.push(c.id);S.handFrom=discardRect()}
+      if(p.treasure>=3){p.treasure=0;const c=mk(card.color,'chest');c.extra=true;p.hand.push(c);p.called=false;emit({t:'recebe',p:pi,ids:[c.id],de:'mesa',voa:false});
         emit({t:'fx',g:'💰',txt:`${J(pi)} achou a Carta do Tesouro!`,cor:'var(--cy)',modo:'slam'});log(`${J(pi)} recebeu a Carta do Tesouro.`)}
       else{emit({t:'fx',g:'🧭',txt:`Busca de ${V(pi,'você',J(pi))}: ${p.treasure}/3`,cor:col,modo:'stamp'})}
       return 'done'}
@@ -727,7 +726,7 @@ function applySpecial(pi,card){
     case 'theft':if(pi===0)return 'ask';{const o=opponents(pi);const t=o.length?(R.diff==='easy'?rand(o):fewest(pi,o,true)):rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>stealWild(pi,t))}
     case 'ban':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o3=shuffle([...p.hand]).slice(0,3),pk=rand(o3);return botDefer(pi,'down',o3,o3.indexOf(pk),()=>banType(pi,pk))}
     case 'box':
-      alive().forEach((i,k)=>{const c=mk('w','random');c.extra=true;S.players[i].hand.push(c);S.players[i].called=false;if(i===0){S.newIds.push(c.id)}else emit({t:'voa',de:'monte',para:i,atraso:k*60})});
+      alive().forEach((i,k)=>{const c=mk('w','random');c.extra=true;S.players[i].hand.push(c);S.players[i].called=false;emit({t:'recebe',p:i,ids:[c.id],de:'monte',atraso:k*60,origem:false})});
       emit({t:'fx',g:'📦',txt:'Todos ganham uma Carta Misteriosa',cor:col,modo:'slam'});log('Presente: todos ganharam uma Carta Misteriosa.');return massCheck();
     case 'confuse':p.confuseNext=true;emit({t:'fx',g:'🍄',txt:`${V(pi,'Você jogará',J(pi)+' jogará')} aleatoriamente na próxima vez`,cor:col,modo:'stamp'});log(`${J(pi)} ficará confuso.`);return 'done';
     case 'ink':{
@@ -786,8 +785,8 @@ function humanAskOpen(card){
 
 /* ---------- trade / carousel ---------- */
 function handTo(i,hand,fromIdx){
-  S.players[i].hand=hand;memReset(i);S.cntJump=true; // o número de cartas nas cadeiras muda direto, sem contagem
-  if(i===0){S.newIds=hand.map(c=>c.id);S.handFrom=targetRect(fromIdx)}
+  S.players[i].hand=hand;memReset(i);emit({t:'contagemDireta'}); // o número de cartas nas cadeiras muda direto, sem contagem
+  emit({t:'recebe',p:i,ids:hand.map(c=>c.id),de:fromIdx,maoNova:true,voa:false});
 }
 function graceCalls(){S.players.forEach(p=>{p.called=p.hand.length<=target()})}
 function swapHands(a,b){
