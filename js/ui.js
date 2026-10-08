@@ -721,8 +721,6 @@ function desenha(){
   }else if(S.turn!==0&&Date.now()>MK.until)placeMarker(S.turn,true);
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
   hw.classList.toggle('webbed',!!S.players[0].webbed&&S.phase!=='over');
-  {const sh=!!R.shiny&&!S.players[0].out&&S.phase!=='over'&&(S.players[0].colorida??colorful(S.players[0]));
-   if(sh&&!hw.classList.contains('shiny'))hw.style.animationDelay=shinyDelay();hw.classList.toggle('shiny',sh)}
   {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);
    const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️');
    const ms=$('mystat');ms.hidden=!st.length;ms.textContent=st.map(x=>x.short).join(' ');}
