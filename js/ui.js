@@ -625,7 +625,7 @@ function renderRail(){
     const badge=hidden?'?':said?'🛎️':near?`${v}/${lim}`:String(v);
     const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
-    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&(p.colorida??colorful(p))?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
+    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&(p.colorida??colorful(p))?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)};animation-delay:${shinyDelay()}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
       <div class="nm">${p.name}</div>
@@ -679,6 +679,8 @@ function moveMarker(from,to){
   },from!==0?420:0);
 }
 // desenha a partida como a tela mostra (com a prévia da última ação, se houver)
+// fase das faixas da Mão Colorida pelo relógio: a cadeira redesenhada continua de onde estava
+const shinyDelay=()=>-(performance.now()%7000).toFixed(0)+'ms';
 function render(){
   if(!S||!(VIS.previa||VIS.sineta)||S.turbo)return desenha();
   const real=S;S=comPrevia(real);
@@ -706,7 +708,8 @@ function desenha(){
   }else if(S.turn!==0&&Date.now()>MK.until)placeMarker(S.turn,true);
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
   hw.classList.toggle('webbed',!!S.players[0].webbed&&S.phase!=='over');
-  hw.classList.toggle('shiny',!!R.shiny&&!S.players[0].out&&S.phase!=='over'&&(S.players[0].colorida??colorful(S.players[0])));
+  {const sh=!!R.shiny&&!S.players[0].out&&S.phase!=='over'&&(S.players[0].colorida??colorful(S.players[0]));
+   if(sh&&!hw.classList.contains('shiny'))hw.style.animationDelay=shinyDelay();hw.classList.toggle('shiny',sh)}
   {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);
    const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️');
    const ms=$('mystat');ms.hidden=!st.length;ms.textContent=st.map(x=>x.short).join(' ');}

@@ -380,12 +380,16 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .handwrap.yourturn{background:linear-gradient(to top,color-mix(in srgb,var(--accent) 24%,transparent),transparent 90%)}
 /* Mão Colorida: faixas das quatro cores passando na diagonal, bem fracas, no fundo da cadeira ou da sua área de jogo.
    O deslocamento de 11.3137rem (8rem x raiz de 2) é exatamente um ciclo das faixas, então a animação emenda sem pulo */
-:root{--shinyA:16%}
-.seat.shiny,.handwrap.shiny{--shinyG:repeating-linear-gradient(135deg,color-mix(in srgb,var(--cr) var(--shinyA),transparent) 0,color-mix(in srgb,var(--cy) var(--shinyA),transparent) 2rem,color-mix(in srgb,var(--cg) var(--shinyA),transparent) 4rem,color-mix(in srgb,var(--cb) var(--shinyA),transparent) 6rem,color-mix(in srgb,var(--cr) var(--shinyA),transparent) 8rem);animation:shinyFlow 7s linear infinite}
+/* Mão Colorida: faixas diagonais que correm sem parar. O ladrilho tem o tamanho exato de um período do padrão
+   (8rem na diagonal = 11.3137rem na horizontal e na vertical), então as emendas não aparecem; a fase vem do relógio
+   (animation-delay posto pela tela), então redesenhar a cadeira não recomeça a animação */
+:root{--shinyA:24%;--shinyP:11.3137rem}
+.seat.shiny,.handwrap.shiny{--shinyG:repeating-linear-gradient(135deg,color-mix(in srgb,var(--cr) var(--shinyA),transparent) 0,color-mix(in srgb,var(--cy) var(--shinyA),transparent) 2rem,color-mix(in srgb,var(--cg) var(--shinyA),transparent) 4rem,color-mix(in srgb,var(--cb) var(--shinyA),transparent) 6rem,color-mix(in srgb,var(--cr) var(--shinyA),transparent) 8rem);animation:shinyFlow 7s linear infinite;background-size:var(--shinyP) var(--shinyP)}
 .seat.shiny{background-image:var(--shinyG)}
-.handwrap.shiny{--shinyA:11%;background-image:var(--shinyG)}
-.handwrap.shiny.yourturn{background-image:linear-gradient(to top,color-mix(in srgb,var(--accent) 24%,transparent),transparent 90%),var(--shinyG)}
-@keyframes shinyFlow{to{background-position:11.3137rem 0}}
+.handwrap.shiny{--shinyA:17%;background-image:var(--shinyG)}
+.handwrap.shiny.yourturn{background-image:linear-gradient(to top,color-mix(in srgb,var(--accent) 24%,transparent),transparent 90%),var(--shinyG);background-size:100% 100%,var(--shinyP) var(--shinyP);animation-name:shinyFlow2}
+@keyframes shinyFlow{from{background-position:0 0}to{background-position:var(--shinyP) 0}}
+@keyframes shinyFlow2{from{background-position:0 0,0 0}to{background-position:0 0,var(--shinyP) 0}}
 .handwrap.arrive::before{content:"";position:absolute;left:0;right:0;top:0;height:0.25rem;border-radius:0.25rem;background:var(--accent);box-shadow:0 0 0.875rem var(--accent);transform-origin:var(--sweep,right);animation:sweep .5s .25s ease-out backwards,fade 1.4s .75s forwards}
 @keyframes sweep{from{transform:scaleX(0)}}
 @keyframes fade{to{opacity:0}}
