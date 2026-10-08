@@ -24,6 +24,7 @@ js/mesa/                a mesa (as regras), que não usa nada da página e roda 
                         (newGame/dealAndStart), Portal, jogar/playCard, fim de turno, compras, eliminação, fim
   cartas.js             efeitos das cartas especiais (applySpecial), desafio, Carta da Regra, troca/carrossel e corte
   adversarios.js        IA dos adversários (inclui o Mestre) e o controlador deles (CONTROLES.bot)
+  visao.js              o que cada jogador pode saber (visao) e o giro das cadeiras (giraPara/giraDe, eventoPara)
 js/turbo.js             invólucro do setTimeout (TB) e o turbo (Terminar e descobrir vencedor)
 js/data.js              o que é da página nos dados: elementos ($), movimento reduzido, configuração salva (CFG),
                         rulesForMode(), textos do menu e dicas (TIPS), applyBg
@@ -32,6 +33,7 @@ js/arte.js              desenho das cartas: símbolos (SIMBOLOS, sim), face (fac
 js/effects.js           camada 3D com three.js (FX3D) e sons sintetizados com Web Audio (SND, sfx)
 js/cards.js             desenhos e janelas das cartas especiais (dado, Banimento, Mágica, cartas mostradas, faixa
                         de regras, Mix de Regras, balões)
+js/rede.js              rede de mentira entre duas abas (?rede=anfitriao / ?rede=convidado), CONTROLES.rede
 js/ui.js                tela: TELA (eventos), VIS, controlador da tela e pedidos, render(), janelas (cor, rastrear,
                         regras, status, histórico), configurações, ligação de eventos, instalação do PWA
 manifest.webmanifest    manifesto do PWA
@@ -45,7 +47,7 @@ docs/plano-multiplayer.md  plano aprovado do multiplayer (fases 0, 1 e 1.5, hosp
 
 Os arquivos JS são **scripts clássicos carregados em ordem** e compartilham o escopo global (não há módulos nem IIFE).
 - Não crie nomes globais que colidam com propriedades do `window`. Por isso a função da carta do topo se chama `topCard()`, já que `top` é reservado.
-- Código executado no carregamento só pode chamar funções de arquivos carregados antes. Ordem: `js/mesa/dados.js`, `regras.js`, `cartas.js`, `adversarios.js`, `js/turbo.js`, `data.js`, `arte.js`, `effects.js`, `cards.js`, `ui.js`.
+- Código executado no carregamento só pode chamar funções de arquivos carregados antes. Ordem: `js/mesa/dados.js`, `regras.js`, `cartas.js`, `adversarios.js`, `visao.js`, `js/turbo.js`, `data.js`, `arte.js`, `effects.js`, `cards.js`, `ui.js`, `rede.js`.
 - **A mesa não usa nada da página:** nada de `document`, `$`, `window`, `render()`, `CFG`, `RM`, `sfx`, `VIS` ou `who` em `js/mesa/`. Ela fala com a tela só por `emit` (`atualiza` redesenha; `cores` troca as cores do Portal) e recebe da página as opções em `OPCOES` (`semAnimacao`, `acelerada`, `controles`). O `npm run test:mesa` pega na hora qualquer uso da página que escapar.
 - O three.js vem do cdnjs (r128) com `defer`, e a fonte vem do Google Fonts. Se o three.js não carregar, o jogo usa os efeitos 2D.
 
@@ -64,6 +66,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - Teste automático: `npm test` (3 partidas) ou `npm test -- 10`; `--ver` abre o navegador visível (usa o Chrome/Edge instalado); `--vel=5` encurta as esperas do jogo em 5x para rodar mais rápido; `--regras=mess,weather` joga no modo Personalizado só com essas regras; `--semente=N` fixa os sorteios (cada partida mostra a semente dela, mas como o jogo corre em tempo real a partida pode se separar depois dos primeiros lances). O script `tests/smoke.mjs` sobe o próprio servidor, joga clicando em cartas `.card.ok`, Comprar, UNO e nas janelas de escolha, e falha se houver `pageerror` ou travamento (captura em `tests/travou-N.png`). Na primeira vez: `npm install` e `npx playwright install chromium`.
 - **Teste de cada carta:** `npm run test:cartas` (uns 15 s). Para cada carta especial (jogada por um adversário e por você), cada regra e algumas partidas inteiras, monta a situação com semente fixa, avança pelo relógio virtual do turbo e compara mãos, mesa, vez, marcas dos jogadores e o registro completo com `tests/cartas-resultados.json`. Na sua vez, o teste joga a primeira carta jogável e resolve as janelas pelo `autoResolve`. **Toda refatoração precisa manter esses resultados idênticos.** Quando a mudança no jogo é de propósito, confira as diferenças que ele mostra e grave de novo com `npm run test:cartas -- --gravar` (`--so=carta:dice` roda só os cenários com esse texto no nome).
 - **Mesa no Node:** `npm run test:mesa` (2000 partidas só com adversários em uns 4 s, com regras sorteadas; `-- 10000`, `--regras=mess,dice` ou `nenhuma`, `--semente=N`, `--dif=master`). Carrega `js/mesa/*.js` com o módulo `vm`, sem página, num relógio virtual; falha com erro ou partida travada e mostra estatísticas (vitórias por cadeira, regras com partidas mais longas e mais curtas).
+- **Ações e rede:** tudo o que a pessoa faz passa por `acao({t:...})` na tela, que chama `agir(pi,ação)` na mesa (jogar, principal, sineta, pegar, desafiar, trocarMao); a mesa confere se a ação vale. Na rede de mentira (`js/rede.js`), o anfitrião roda a mesa e manda ao convidado cada evento girado (`eventoPara`) com a visão dele (`visao`: sem mãos dos outros, monte, memória dos adversários, blefe do +4 nem semente); o convidado manda as ações e as respostas dos pedidos, que o anfitrião confere. **Rede de mentira:** `npm run test:rede` (duas abas jogando sozinhas; `-- 5`, `--regras=trade,simon` ou `mix`, `--ver`); para jogar à mão, abra `http://localhost:8000/?rede=anfitriao` e `?rede=convidado` em duas abas.
 - Mostruário: `npm run test:mostruario` (envia desenhos de teste, confere avisos e se as imagens continuam depois de recarregar; capturas em `tests/mostruario-*.png`).
 - Teste de rede local: `npm run test:lan` (anfitrião e dois convidados no Chromium, pelos códigos em texto; `--sem-camera` testa os endereços escondidos em nomes `.local`) e `npm run test:lan-camera` (lê os QR codes por uma câmera falsa).
 - Confira se não há `pageerror` e se a partida não trava. Uma boa verificação de travamento é ver se status, mão e cadeiras ficam mais de 15 s sem mudar.

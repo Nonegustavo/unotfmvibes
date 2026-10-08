@@ -340,6 +340,14 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
   - Duas abas conversam com a mesa por `BroadcastChannel`.
   - Toda mensagem é convertida em texto (JSON) e atrasada de propósito (100 a 300 ms). Assim aparecem os erros que só existiriam com rede de verdade, como objetos compartilhados por engano ou ordem de chegada.
   - **Conferir:** jogar as duas cadeiras à mão.
+  - **Feito:** `agir(pi, ação)` na mesa (jogar, principal, sineta, pegar, desafiar, trocar a mão), conferindo se a ação vale;
+    `js/mesa/visao.js` com `visao(pi)` (sem mãos dos outros, monte, memória dos adversários, blefe do +4 nem semente; Batata
+    e Mão Colorida vão prontas) e o giro das cadeiras; `js/rede.js` com anfitrião e convidado (`?rede=anfitriao` /
+    `?rede=convidado`) e `CONTROLES.rede`, que leva os pedidos à outra aba e confere as respostas (na Memória, confere os
+    toques). `npm run test:rede` joga as duas cadeiras sozinho pelas janelas e confere a mão do convidado contra a mesa e o
+    que ele recebe; `npm run test:mesa` confere a visão em milhares de partidas. A rede de mentira achou dois erros que
+    só apareceriam com rede: mensagens trocando de ordem (agora uma fila só) e a mesa ocupada depois do Rastrear respondido
+    pela rede. Falta jogar à mão as duas cadeiras.
 
 ---
 

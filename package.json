@@ -8,7 +8,8 @@
     "test:lan-camera": "node tests/lan-camera.mjs",
     "test:mostruario": "node tests/mostruario.mjs",
     "test:cartas": "node tests/cartas.mjs",
-    "test:mesa": "node tests/mesa.mjs"
+    "test:mesa": "node tests/mesa.mjs",
+    "test:rede": "node tests/rede.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

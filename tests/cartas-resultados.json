@@ -4860,6 +4860,8 @@
    "origem p=3 carta=b:num4 anunciada=false",
    "som k=bell",
    "aviso txt=🛎️ Drekkemaus tocou a sineta! cor=var(--cr)",
+   "som k=bell",
+   "aviso txt=🛎️ Você tocou a sineta! cor=var(--cr)",
    "som k=play",
    "origem p=0 carta=b:num1 anunciada=false"
   ]
@@ -5023,6 +5025,8 @@
    "somCompra",
    "compra p=3 id=168197945",
    "aviso txt=Drekkemaus foi pego sem tocar a sineta! +2 cor=var(--cy)",
+   "som k=bell",
+   "aviso txt=🛎️ Você tocou a sineta! cor=var(--cr)",
    "origem p=0 carta=b:skip",
    "anuncio txt=",
    "som k=play",
@@ -15973,6 +15977,8 @@
    "pausa ms=600",
    "brilho cor=var(--cb)",
    "3d k=sparks onde=mesa args=[var(--cb)]",
+   "som k=bell",
+   "aviso txt=🛎️ Você tocou a sineta! cor=var(--cr)",
    "somCompra",
    "compra p=0 id=721484906",
    "somCompra",

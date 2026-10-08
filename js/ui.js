@@ -1,33 +1,23 @@
 /* unotfm solo: jogador humano, renderização, janelas, configurações, ligações de eventos e PWA */
 /* ---------- human ---------- */
+// ações da pessoa desta tela: vão para a mesa (agir); no convidado da rede, vão para o anfitrião (acaoRemota)
+let acaoRemota=null;
+const acao=a=>acaoRemota?acaoRemota(a):agir(0,a);
 const myTurn=()=>S&&S.phase!=='over'&&S.turn===0&&!S.busy&&!S.auto&&!S.players[0].out;
 function humanClick(id,el){
   if(!S||S.phase==='over')return;
   const me=S.players[0];const card=me.hand.find(c=>c.id===id);if(!card)return;
-  if(!myTurn()){if(canJump(0,card))doJumpIn(0,card);return}
+  if(!myTurn()){if(canJump(0,card))acao({t:'jogar',id});return}
   if(!canPlay(me,card)){
     el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');sfx('error');
     return;
   }
-  jogar(0,card);
+  acao({t:'jogar',id});
 }
-function humanMain(){
-  if(!myTurn())return;
-  if(S.phase==='combo'||S.phase==='drawn'){endTurn();return}
-  takeDraw(0);
-}
-function humanUno(){
-  const me=S&&S.players[0];if(!me||me.called||S.phase==='over')return;
-  if(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0)){me.called=true;sfx('bell');log('Você tocou a sineta.');toast('🛎️ Você tocou a sineta!','var(--cr)');render()}
-}
-function humanCatch(i){const p=S.players[i];if(p.hand.length===target()&&!p.called&&S.phase!=='over')penalize(i,0)}
-function mulligan(){
-  if(!S.mull||S.phase==='over')return;
-  const me=S.players[0];const n=me.hand.length;
-  S.deck.unshift(...me.hand);shuffle(S.deck);me.hand=[];
-  drawN(0,n);S.mull=false;log('Você trocou sua mão.');toast('Mão nova!');
-  if(overloaded(0)&&markOut(0))return;render();
-}
+function humanMain(){if(myTurn())acao({t:'principal'})}
+function humanUno(){acao({t:'sineta'})}
+function humanCatch(i){acao({t:'pegar',alvo:i})}
+function mulligan(){acao({t:'trocarMao'})}
 
 /* ---------- animation helpers ---------- */
 function flyClone(target,from,o={}){
@@ -374,7 +364,7 @@ function seatStatus(i){
   const p=S.players[i],L=[];if(p.out)return L;
   if(TOUR&&i===0)L.push(tourItem('Você'));
   const n=p.hand.length;
-  const shiny=R.shiny&&colorful(p);
+  const shiny=R.shiny&&(p.colorida??colorful(p));
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
   if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
@@ -532,7 +522,7 @@ function renderRail(){
     const badge=hidden?'?':said?'🛎️':near?`${v}/${lim}`:String(v);
     const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
-    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&colorful(p)?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
+    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&(p.colorida??colorful(p))?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
       <div class="nm">${p.name}</div>
@@ -607,7 +597,7 @@ function render(){
   }else if(S.turn!==0&&Date.now()>MK.until)placeMarker(S.turn,true);
   hw.classList.toggle('yourturn',S.turn===0&&S.phase!=='over');
   hw.classList.toggle('webbed',!!S.players[0].webbed&&S.phase!=='over');
-  hw.classList.toggle('shiny',!!R.shiny&&!S.players[0].out&&S.phase!=='over'&&colorful(S.players[0]));
+  hw.classList.toggle('shiny',!!R.shiny&&!S.players[0].out&&S.phase!=='over'&&(S.players[0].colorida??colorful(S.players[0])));
   {const dz=S.phase!=='over'&&!S.players[0].out&&confused(0);$('hand').classList.toggle('dizzy',dz);
    const st=S.phase==='over'||S.players[0].out?[]:seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️');
    const ms=$('mystat');ms.hidden=!st.length;ms.textContent=st.map(x=>x.short).join(' ');}
@@ -742,7 +732,7 @@ function abrirPedido(pi,ped){
     if(!S.simon.length)openColors(col=>ped.responde(true,col),ped.carta);
     else openSimon(S.simon.length,taps=>{
       const ok=taps.length===S.simon.length&&taps.every((c,i)=>sameCol(c,S.simon[i]));
-      if(ok){S.busy=true;openColors(col=>ped.responde(true,col),ped.carta)}else ped.responde(false);
+      if(ok){S.busy=true;openColors(col=>ped.responde(true,col,taps),ped.carta)}else ped.responde(false,null,taps);
     });
   }
   if(!ped.mix&&!ped.ja&&S.auto&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
@@ -984,7 +974,7 @@ document.addEventListener('pointerdown',e=>{if(e.target.closest('.seat')&&!e.tar
 $('drawBtn').onclick=e=>S&&S.players[0].out&&S.phase!=='over'?turboStart():humanMain(e);
 $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
-$('chalBtn').onclick=()=>{if(myTurn()&&S.chal)doChallenge(0)};
+$('chalBtn').onclick=()=>{if(myTurn()&&S.chal)acao({t:'desafiar'})};
 $('openSettings').onclick=openSettings;
 // mesa: tocar abre o histórico; segurar 0,5 s mostra a descrição da carta do topo (e não abre o histórico)
 {let lp=null,fired=false;const dis=$('discard'),cancel=()=>{if(lp){clearTimeout(lp.t);lp=null}};

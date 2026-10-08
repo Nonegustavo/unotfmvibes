@@ -20,7 +20,7 @@ const LIMITE_VEZES = 3000; // depois disso a partida conta como "longa demais"
 
 // contexto vazio (sem window nem document): só a mesa e um relógio virtual
 const ctx = vm.createContext({ console });
-for (const f of ['dados', 'regras', 'cartas', 'adversarios']) {
+for (const f of ['dados', 'regras', 'cartas', 'adversarios', 'visao']) {
   const arq = path.join(ROOT, 'js', 'mesa', f + '.js');
   vm.runInContext(fs.readFileSync(arq, 'utf8'), ctx, { filename: arq });
 }
@@ -47,6 +47,17 @@ vm.runInContext(`
     for (let i = 0; i < n; i++) { const k = lista[Math.floor(sorte() * lista.length)]; if (!(CONFLICT[k] || []).some(x => r[x])) r[k] = true; }
     return r;
   }
+  // o que a visão de um jogador não pode trazer: cartas dos outros, monte (fora o topo com a Revelação), memória, blefe, semente
+  var VAZAMENTOS = [];
+  function vazou(v) {
+    const s = v.S, ruim = m => VAZAMENTOS.length < 20 && VAZAMENTOS.push(m);
+    s.players.forEach((q, i) => { if (i > 0) [...q.hand, ...(q.hand2 || [])].forEach(c => { if (!c.oculta && c.type !== 'batata') ruim('carta de outro jogador'); }); });
+    if (s.deck.filter(c => !c.oculta).length > (v.R.revelation ? 1 : 0)) ruim('carta do monte');
+    if (s.mem || s.semente !== undefined || s.fxUntil !== undefined) ruim('estado interno da mesa');
+    if (s.chal && 'bluff' in s.chal) ruim('blefe do +4');
+    if (s.other) s.other.players.forEach((q, i) => { if (i > 0) q.hand.forEach(c => { if (!c.oculta && c.type !== 'batata') ruim('carta do outro lado'); }); });
+    JSON.stringify(v); // a visão precisa virar texto
+  }
   function partida(semente, fixas, dif) {
     OPCOES.controles = ['bot', 'bot', 'bot', 'bot', 'bot', 'bot'];
     const modo = fixas ? null : sorte();
@@ -60,6 +71,7 @@ vm.runInContext(`
     while (S.phase !== 'over' && (S.vezes || 0) < ${LIMITE_VEZES}) {
       if (!proximo()) return { fim: 'travou', regras: Object.keys(ligadas).filter(k => ligadas[k]), vezes: S.vezes, passos, fase: S.phase, busy: S.busy, vez: S.turn };
       passos++;
+      if (passos % 97 === 0) vazou(visao(1 + passos % (S.players.length - 1)));
     }
     const venc = S.phase === 'over' ? S.players.findIndex(p => !p.out && p.hand.length === 0) : -1;
     return { fim: S.phase === 'over' ? 'fim' : 'longa', vezes: S.vezes, passos, tempo: AGORA, regras: Object.keys(R).filter(k => R[k] === true && RNAME[k]),
@@ -97,4 +109,6 @@ if (linhas.length) {
 const travadas = res.map((r, i) => [i, r]).filter(([, r]) => r.fim !== 'fim');
 for (const [i, r] of travadas.slice(0, 10)) console.log(`  ${r.fim.toUpperCase()} partida ${i} (semente ${SEMENTE * 100000 + i}): regras ${r.regras.join(',') || 'nenhuma'}, ${r.vezes} vezes${r.fase ? `, fase ${r.fase}, busy ${r.busy}, vez ${r.vez}` : ''}`);
 for (const e of erros.slice(0, 10)) console.log(`  ERRO partida ${e.partida} (semente ${SEMENTE * 100000 + e.partida}): ${e.erro}`);
-process.exit(erros.length || fins.travou ? 1 : 0);
+const vaz = vm.runInContext('VAZAMENTOS', ctx);
+if (vaz.length) console.log('VAZAMENTOS na visão: ' + [...new Set(vaz)].join(', '));
+process.exit(erros.length || fins.travou || vaz.length ? 1 : 0);

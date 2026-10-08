@@ -14,8 +14,11 @@ function emit(ev){
   if(ev.t==='pausa')hold(ev.ms);
   else if(ev.t==='fx'||ev.t==='tada')hold(ev.ms?ev.ms+200:950);
   if(espiaEventos)espiaEventos(ev);
+  for(const f of OUVINTES)f(ev);
   return TELA(ev);
 }
+// outros que recebem os eventos além da tela deste aparelho (a ponte com a rede, em js/rede.js)
+const OUVINTES=[];
 /* ---------- quem controla cada cadeira ----------
    Cada jogador tem um controlador (p.ctrl): 'tela' (a pessoa deste aparelho), 'bot' (adversário do computador) e, mais
    tarde, 'rede' (pessoa em outro aparelho). As regras não perguntam "é o jogador 0?": perguntam o tipo (deBot/humano)
@@ -158,8 +161,10 @@ function newGame(){
   }
   if(TOUR){TOUR.round++;['Você',...names].forEach(n=>TOUR.pts[n]=TOUR.pts[n]||0)}
   const ctl=i=>(OPCOES.controles&&OPCOES.controles[i])||(i===0?'tela':'bot');
-  const players=[{name:'Você',ctrl:ctl(0),hand:[],called:false,col:'var(--accent)'}];
-  names.forEach((n,k)=>players.push({name:n,ctrl:ctl(k+1),hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
+  // nomes das pessoas (no solo, "Você"); as cadeiras de adversários usam os nomes sorteados
+  const nome=(i,n)=>(OPCOES.nomes&&OPCOES.nomes[i])||n;
+  const players=[{name:nome(0,'Você'),ctrl:ctl(0),hand:[],called:false,col:'var(--accent)'}];
+  names.forEach((n,k)=>players.push({name:ctl(k+1)==='bot'?n:nome(k+1,n),ctrl:ctl(k+1),hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,busy:false,
      mull:R.mulligan,autoResolve:null,semente:RNG.semente};
@@ -581,6 +586,42 @@ function announce(pi,card,cont,wait){
       atualiza();agendar(done,fastMode()?400:950);
     }else done();
   },wait||(fastMode()?400:950));
+}
+/* ---------- ações de uma pessoa ----------
+   Tudo o que uma pessoa faz chega aqui, seja deste aparelho ou de outro: jogar uma carta (na vez ou cortando),
+   comprar/passar (botão principal), tocar a sineta, pegar quem esqueceu, desafiar o +4 e trocar a mão no início.
+   A mesa confere se a ação vale antes de fazer qualquer coisa e devolve se ela foi aceita */
+function agir(pi,a){
+  if(!S||S.phase==='over'||!a||!S.players[pi]||!humano(pi))return false;
+  const p=S.players[pi],naVez=S.turn===pi&&!S.busy&&!S.auto&&!p.out;
+  switch(a.t){
+    case 'jogar':{
+      const c=p.hand.find(x=>x.id===a.id);if(!c)return false;
+      if(!naVez){if(!canJump(pi,c))return false;doJumpIn(pi,c);return true}
+      if(!canPlay(p,c))return false;
+      jogar(pi,c);return true}
+    case 'principal':
+      if(!naVez)return false;
+      if(S.phase==='combo'||S.phase==='drawn'){endTurn();return true}
+      takeDraw(pi);return true;
+    case 'sineta':
+      if(p.called||p.out)return false;
+      if(!(p.hand.length===target()||(p.hand.length===target()+1&&S.turn===pi)))return false;
+      p.called=true;emit({t:'som',k:'bell'});log(`${J(pi)} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou a sineta!`,cor:'var(--cr)'});atualiza();return true;
+    case 'pegar':{
+      const q=S.players[a.alvo];if(!q||a.alvo===pi||p.out||q.hand.length!==target()||q.called)return false;
+      penalize(a.alvo,pi);return true}
+    case 'desafiar':
+      if(!naVez||!S.chal)return false;
+      doChallenge(pi);return true;
+    case 'trocarMao':{
+      if(!S.mull||p.out)return false;
+      const n=p.hand.length;
+      S.deck.unshift(...p.hand);shuffle(S.deck);p.hand=[];
+      drawN(pi,n);S.mull=false;log(V(pi,'Você trocou sua mão.',`${J(pi)} trocou de mão.`));emit({t:'aviso',txt:'Mão nova!',a:pi});
+      if(overloaded(pi)&&markOut(pi))return true;atualiza();return true}
+  }
+  return false;
 }
 /* ---------- jogar uma carta (pessoa ou adversário) ----------
    Cartas de ação pousam na mesa antes do efeito (announce). A pessoa vê o anúncio curto e escolhe a cor depois; o
