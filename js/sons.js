@@ -4,9 +4,9 @@
 
 // campainha de balcão de hotel: um toque metálico com parciais de cúpula, cada uma em dois osciladores levemente
 // desafinados (o "brilho" que oscila), e o clique do botão no começo
-const SOM_SINETA={tom:2200,duracao:1.6,brilho:.5,batimento:6,clique:.5,volume:1,variacao:3,intervalo:.18};
+const SOM_SINETA={tom:2720,duracao:1.6,brilho:1,batimento:0,clique:.75,volume:1.1,variacao:.5,intervalo:.2};
 // cubo de gelo caindo num copo seco: uns quiques cada vez mais curtos e fracos, cada um um tinido de vidro
-const SOM_GELO={tom:3200,quiques:3,intervalo:.11,queda:.6,tinido:.12,brilho:.5,volume:1};
+const SOM_GELO={tom:3200,quiques:1,intervalo:.11,queda:.6,tinido:.15,brilho:.5,volume:1};
 
 // um oscilador com ataque quase instantâneo e decaimento exponencial
 function somParcial(ctx,dest,f,vol,dur,t,cents=0,tipo='sine'){
