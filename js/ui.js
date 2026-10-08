@@ -691,7 +691,7 @@ function moveMarker(from,to){
 }
 // desenha a partida como a tela mostra (com a prévia da última ação, se houver)
 // fase das faixas da Mão Colorida pelo relógio: a cadeira redesenhada continua de onde estava
-const shinyDelay=()=>-(performance.now()%7000).toFixed(0)+'ms';
+const shinyDelay=()=>-(performance.now()%14000).toFixed(0)+'ms';
 // mesma condição do @media das telas grandes no fim do style.css
 const TELA_GRANDE=matchMedia('(min-width:900px) and (min-height:560px)');
 function render(){
