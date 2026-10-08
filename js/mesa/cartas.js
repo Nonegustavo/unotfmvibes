@@ -293,7 +293,7 @@ function quietDraw(i){emit({t:'semVoo',p:i})}
 function seloVoa(g,para,o={}){const sp=fastMode()?.4:1;emit({t:'seloVoa',g,para,de:o.de||null,troca:!!o.troca,atraso:o.atraso||550,sp});emit({t:'pausa',ms:(o.atraso||550)+(o.troca?1100:900)*sp})}
 // monte congelado (Nevasca ou maldição do Gelo): Chuva, Trovão e o raio da Tempestade não fazem ninguém comprar
 const congelado=()=>S.weather==='blizzard'||curseIs('ice');
-function avisoCongelado(){emit({t:'fx',g:'❄️',txt:'Monte congelado: ninguém compra',cor:'#5aa9d6',modo:'stamp'})}
+function avisoCongelado(){emit({t:'fx',g:'❄️',txt:'Monte congelado: ninguém compra',cor:'#5aa9d6',modo:'stamp',mudo:true});emit({t:'som',k:'gelo'})}
 // o adversário pensa: a tela mostra o balão com as opções piscando até parar na escolhida; a mesa só espera o tempo dele
 function botThink(pi,kind,list,pickIdx,done){
   const steps0=4+rng()*3;

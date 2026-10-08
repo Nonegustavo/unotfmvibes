@@ -393,7 +393,7 @@ function playCard(pi,card,chosen){
   if(card.color==='w'&&chosen)msg+=` → ${CNAME[chosen]}`;
   const on=!(S.peace>0);
   if(orig!==card.type&&!annc)emit({t:'selo',p:pi,ic:SP[orig].g,cor:'var(--accent)'});
-  if(!on&&card.type!=='num'){msg+=' (sem efeito: Paz)';emit({t:'fx',g:'🌼',txt:card.color==='w'?`Sem efeito: Paz. A cor continua ${CNAME[S.color]||'a mesma'}`:'Sem efeito: Paz',cor:'var(--cg)',modo:'stamp'})}
+  if(!on&&card.type!=='num'){msg+=' (sem efeito: Paz)';emit({t:'fx',g:'🌼',txt:card.color==='w'?`Sem efeito: Paz. A cor continua ${CNAME[S.color]||'a mesma'}`:'Sem efeito: Paz',cor:'var(--cg)',modo:'stamp',mudo:true})}
   if(on&&card.type==='skip'){S.skip=true;const v=nextIdx(pi,1);emit({t:'fx',g:'⊘',txt:V(v,'Você perdeu a vez',`${J(v)} perdeu a vez`),cor:'var(--cr)',modo:'stamp'});emit({t:'selo',p:v,ic:'⊘',cor:'var(--cr)'})}
   if(on&&card.type==='rev'){
     S.dir*=-1;emit({t:'sentido'});
@@ -546,7 +546,7 @@ function takeDraw(pi){
   }
   if(S.pending>0&&(S.weather==='blizzard'||curseIs('ice'))){
     const n=S.pending;S.pending=0;S.pendingType=null;S.chal=null;
-    emit({t:'fx',g:S.weather==='blizzard'?'❄️':'🧊',txt:`${V(pi,'Você perde',J(pi)+' perde')} a vez (+${n} congelado)`,cor:'#5aa9d6',modo:'stamp'});emit({t:'selo',p:pi,ic:'⊘',cor:'var(--cr)'});
+    emit({t:'fx',g:S.weather==='blizzard'?'❄️':'🧊',txt:`${V(pi,'Você perde',J(pi)+' perde')} a vez (+${n} congelado)`,cor:'#5aa9d6',modo:'stamp',mudo:true});emit({t:'som',k:'gelo'});emit({t:'selo',p:pi,ic:'⊘',cor:'var(--cr)'});
     log(`${J(pi)} perdeu a vez sem comprar (+${n} congelado).`);endTurn();return;
   }
   if(S.weather==='blizzard'){
@@ -558,7 +558,7 @@ function takeDraw(pi){
       S.weather=null;S.passes=0;
       emit({t:'fx',g:'🌤️',txt:'A nevasca acabou: todos passaram a vez',cor:'#5aa9d6',modo:'slam'});emit({t:'som',k:'sun'});
       log('Todos passaram a vez: a nevasca acabou.');
-    }else emit({t:'fx',g:'❄️',txt:`${V(pi,'Você passa',J(pi)+' passa')} (${S.passes}/${alive().length})`,cor:'#5aa9d6',modo:'stamp'});
+    }else{emit({t:'fx',g:'❄️',txt:`${V(pi,'Você passa',J(pi)+' passa')} (${S.passes}/${alive().length})`,cor:'#5aa9d6',modo:'stamp',mudo:true});emit({t:'som',k:'gelo'})}
     endTurn();return;
   }
   if(noDraw(pi)){
@@ -568,7 +568,7 @@ function takeDraw(pi){
   }
   if(curseIs('ice')){
     S.pending=0;S.pendingType=null;S.chal=null;
-    emit({t:'fx',g:'🧊',txt:`${J(pi)} não pode comprar e passa`,cor:'var(--cb)',modo:'stamp'});log(`${J(pi)} passou (gelo).`);endTurn();return;
+    emit({t:'fx',g:'🧊',txt:`${J(pi)} não pode comprar e passa`,cor:'var(--cb)',modo:'stamp',mudo:true});emit({t:'som',k:'gelo'});log(`${J(pi)} passou (gelo).`);endTurn();return;
   }
   if(S.pending>0){
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.chal=null;drawn99(pi,endTurn);return}

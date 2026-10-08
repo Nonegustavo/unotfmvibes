@@ -1,0 +1,23 @@
+/* unotfm: teste de sons. Usa as cores e botões do style.css; aqui só o layout da página */
+html.sons-teste{overflow:auto;height:auto}
+html.sons-teste body{display:block;height:auto;overflow:visible;padding:calc(env(safe-area-inset-top,0px) + 0.75rem) 1rem calc(env(safe-area-inset-bottom,0px) + 2rem)}
+.s-topo,.s-corpo{max-width:40rem;margin:0 auto}
+.s-voltar{color:var(--accent);text-decoration:none;font-weight:600;font-size:.95rem}
+.s-topo h1{font-size:1.6rem;margin:0.5rem 0 0.25rem}
+.s-sub{color:var(--muted);font-size:.92rem;margin:0 0 1rem}
+.s-corpo{display:grid;gap:1rem}
+.s-bloco{background:var(--panel);border:2px solid var(--line);border-radius:1.25rem;padding:1rem}
+.s-bloco h2{font-size:1.15rem;margin:0 0 0.75rem}
+.s-modelos{display:flex;flex-wrap:wrap;gap:0.375rem;margin-bottom:0.875rem}
+.s-modelos button{font:inherit;font-size:.82rem;font-weight:500;color:var(--ink);background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:0.3125rem 0.75rem;cursor:pointer}
+.s-modelos button:hover{border-color:var(--accent)}
+.s-controles{display:grid;gap:0.75rem}
+.s-ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0.25rem 0.75rem;align-items:center}
+.s-ctl label{font-weight:600;font-size:.92rem}
+.s-ctl output{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600;font-size:.9rem}
+.s-ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.s-ctl small{grid-column:1/-1;color:var(--muted);font-size:.78rem;margin-top:-0.125rem}
+.s-botoes{display:flex;gap:0.625rem;margin:1rem 0}
+.s-cfg-lb{display:block;font-weight:600;font-size:.9rem;margin-bottom:0.25rem}
+.s-cfg{width:100%;box-sizing:border-box;font:500 .82rem/1.4 ui-monospace,Consolas,monospace;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:0.75rem;padding:0.5rem 0.625rem;resize:vertical}
+.s-copiar{width:100%;margin-top:0.5rem}

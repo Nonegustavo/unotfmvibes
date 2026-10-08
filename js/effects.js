@@ -242,24 +242,16 @@ function noise(d,o={}){
   src.connect(flt);flt.connect(g);g.connect(MASTER);src.start(t);src.stop(t+d+.05);
 }
 const arp=(notes,step,o={})=>notes.forEach((n,i)=>tone(n,o.d||.18,{...o,at:(o.at||0)+i*step}));
-// um toque de sineta: parciais inarmônicas (som de metal) com decaimento longo e um clique curto do martelo
-function ding(f,at,k=1){
-  [[1,.13,1.1],[2.32,.05,.55],[4.25,.025,.3],[6.63,.012,.18]].forEach(([r,vol,d])=>tone(f*r,d,{at,vol:vol*k}));
-  noise(.012,{at,f:f*3,q:2,vol:.05*k,filter:'bandpass'});
-}
 const SND={
   play:()=>{noise(.06,{f:2500,vol:.12});tone(520,.08,{type:'triangle',to:720,vol:.14})},
   draw:()=>{noise(.1,{f:3000,fTo:1200,vol:.1,filter:'highpass'})},
   // carta arrastando no monte (a compra foi pedida e a carta ainda vai chegar)
   arrasta:()=>{noise(.16,{f:900,fTo:500,vol:.05,filter:'lowpass'})},
   turn:()=>arp([660,880],.09,{type:'sine',vol:.16,d:.22}),
-  // sineta de balcão: um toque com 1 carta, dois com a regra Duas! (no mesmo tom). O tom fica perto do agudo e varia
-  // um pouco a cada vez, junto com o intervalo e a força, para não cansar
-  bell:()=>{
-    const v=(a,b)=>a+Math.random()*(b-a),n=typeof target==='function'?target():1;
-    const f=1976*[.944,1,1.059][Math.floor(Math.random()*3)]*v(.99,1.01),vol=v(.85,1.1);
-    let at=0;for(let i=0;i<n;i++){ding(f,at,i?vol*v(.8,.95):vol);at+=v(.15,.21)}
-  },
+  // campainha de balcão (js/sons.js): um toque com 1 carta, dois com a regra Duas! (no mesmo tom); o tom varia um pouco
+  bell:()=>{const a=audio();if(a)campainha(a,MASTER,SOM_SINETA,0,typeof target==='function'?target():1)},
+  // tentativa de comprar com o monte congelado: um cubo de gelo caindo num copo seco
+  gelo:()=>{const a=audio();if(a)cuboGelo(a,MASTER,SOM_GELO)},
   caught:()=>{tone(320,.35,{type:'sawtooth',to:140,vol:.14})},
   skip:()=>{tone(240,.09,{type:'square',vol:.12});tone(180,.14,{type:'square',vol:.12,at:.11})},
   rev:()=>{tone(300,.22,{to:900,vol:.16});tone(900,.22,{to:300,vol:.12,at:.2});noise(.4,{f:800,fTo:3000,vol:.08})},

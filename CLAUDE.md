@@ -30,6 +30,8 @@ js/data.js              o que é da página nos dados: elementos ($), movimento 
                         rulesForMode(), textos do menu e dicas (TIPS), applyBg
 js/arte.js              desenho das cartas: símbolos (SIMBOLOS, sim), face (faceHTML), verso (versoHTML) e camadas
                         do baralho (ARTE, aplicarArte)
+js/sons.js              sons com parâmetros (campainha da sineta e gelo do monte congelado: SOM_SINETA, SOM_GELO),
+                        usados pelo jogo e pela página de testes
 js/effects.js           camada 3D com three.js (FX3D) e sons sintetizados com Web Audio (SND, sfx)
 js/cards.js             desenhos e janelas das cartas especiais (dado, Banimento, Mágica, cartas mostradas, faixa
                         de regras, Mix de Regras, balões)
@@ -47,12 +49,13 @@ icons/                  ícones do app
 lan-teste.html          prova de conceito da rede local (link em Configurações → Experimental), com
 css/lan-teste.css,      js/lan-teste.js e as bibliotecas de QR code em js/vendor/ (qrcode-generator e jsQR)
 mostruario.html         mostruário de cartas (Configurações → Experimental), com css/mostruario.css e js/mostruario.js
+sons-teste.html         teste de sons (Configurações → Experimental), com css/sons-teste.css e js/sons-teste.js
 docs/plano-multiplayer.md  plano aprovado do multiplayer (fases 0, 1 e 1.5, hospedagem, lojas)
 ```
 
 Os arquivos JS são **scripts clássicos carregados em ordem** e compartilham o escopo global (não há módulos nem IIFE).
 - Não crie nomes globais que colidam com propriedades do `window`. Por isso a função da carta do topo se chama `topCard()`, já que `top` é reservado.
-- Código executado no carregamento só pode chamar funções de arquivos carregados antes. Ordem: `js/mesa/dados.js`, `regras.js`, `cartas.js`, `adversarios.js`, `visao.js`, `js/turbo.js`, `data.js`, `arte.js`, `effects.js`, `cards.js`, `ui.js`, `rede.js`.
+- Código executado no carregamento só pode chamar funções de arquivos carregados antes. Ordem: `js/mesa/dados.js`, `regras.js`, `cartas.js`, `adversarios.js`, `visao.js`, `js/turbo.js`, `data.js`, `arte.js`, `sons.js`, `effects.js`, `cards.js`, `ui.js`, `rede.js`.
 - **A mesa não usa nada da página:** nada de `document`, `$`, `window`, `render()`, `CFG`, `RM`, `sfx`, `VIS` ou `who` em `js/mesa/`. Ela fala com a tela só por `emit` (`atualiza` redesenha; `cores` troca as cores do Portal) e recebe da página as opções em `OPCOES` (`semAnimacao`, `acelerada`, `controles`). O `npm run test:mesa` pega na hora qualquer uso da página que escapar.
 - O three.js vem do cdnjs (r128) com `defer`, e a fonte vem do Google Fonts. Se o three.js não carregar, o jogo usa os efeitos 2D.
 
@@ -91,7 +94,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Os desenhos são PNG de uma cor só usados como molde (`mask-image`) e pintados com a cor do texto da carta, então funcionam em qualquer baralho e no outro lado do Portal. O coringa desenhado é preenchido com as 4 cores; os combos juntam dois símbolos.
   - As camadas do baralho são variáveis do CSS (`--carta-camadas`, `--carta-mistura`, `--verso`, `--carta-borda`, `--sim-cor`, `--carta-raio`…) aplicadas pelo `aplicarArte()`; as cores valem só no lado normal. Sem nada definido, o visual é o de sempre (conferido pixel a pixel).
   - No jogo ainda não há desenhos; por enquanto eles só aparecem no mostruário, que guarda as imagens no aparelho (IndexedDB).
-- **Sineta 🛎️ no lugar de "UNO"** (marca da Mattel; o DOS também é). O botão `#unoBtn` mostra 🛎️, o som `bell` é um toque (dois com a regra Duas!, no mesmo tom), perto do agudo e com tom e intervalo um pouco sorteados, e a regra `dos` se chama "Duas!". Não use as palavras UNO nem DOS nos textos do jogo.
+- **Sineta 🛎️ no lugar de "UNO"** (marca da Mattel; o DOS também é). O botão `#unoBtn` mostra 🛎️, o som `bell` é uma campainha de balcão de hotel (`campainha` e `SOM_SINETA` em `js/sons.js`, ajustáveis na página de teste de sons), um toque (dois com a regra Duas!, no mesmo tom) com o tom um pouco sorteado, e a regra `dos` se chama "Duas!". Não use as palavras UNO nem DOS nos textos do jogo.
 
 - **Eventos (regras → tela):** as regras (`js/mesa/`) não desenham nem tocam som. Elas chamam `emit({t:'fx'|'selo'|'som'|'voa'|'3d'|'portal'|...})`, só com dados (lugares são número da cadeira, `'mesa'` ou `'monte'`; plateia em `a`, padrão todos), e a tela executa em `TELA(ev)` no `ui.js`. Efeito novo numa regra: crie um evento e trate-o no `TELA`, em vez de chamar `fx`, `sfx`, `ghost` ou mexer na página. Quando a regra espera uma animação, ela conta o próprio tempo (`setTimeout(…,anim(ms))`; `anim` é 0 no turbo e com movimento reduzido) e a tela só anima. Ainda sobram na regra: a renderização (`render()`), o estado visual guardado em `S` (`newIds`, `handFrom`…, etapa D), os pensamentos e janelas de escolha (etapa E) e algumas durações que vêm da tela (etapa F).
 - **Textos por quem vê:** as regras não sabem quem está olhando. Nos textos delas (registro, `fx`, avisos), use `J(pi)` para o nome do jogador (vira "Você" para ele mesmo) e `V(pi,'Você compra',J(pi)+' compra')` quando a frase muda; nunca `who()` nem `pi===0?…`. As marcas guardam o nome do jogador e a tela traduz com `texto(s)` (já feito no `TELA`, no registro, no `annText` e em quem adicionou cada regra). O registro e o histórico das jogadas são montados pela tela (eventos `registro`, `histInicio`, `jogada`, `fimJogada`). Evento só para um jogador: `a:pi` (no solo, a tela mostra só os de `a` 0 ou sem `a`).
@@ -140,7 +143,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
 - **Mão Colorida:** com a regra ativa, faixas das quatro cores passam na diagonal, bem fracas, no fundo da cadeira dos adversários (classe `shiny`, aparece também na Neblina e na Camuflagem). Na sua área de jogo não há faixas, só o selo 🌈.
 - **Tesouro:** quem joga descarta as cartas que sobraram, uma de cada vez, e só então vence. Na terceira Busca, a Carta do Tesouro aparece virada para cima no meio da mesa, para todos (evento `tesouro`), e vai para a mão de quem achou.
 - **Ícone que voa até os selos** (`seloVoa` na mesa, `seloVoaFx` na tela): Busca e Sorte vão para os selos de quem jogou; clima, maldição, Paz e Semáforo, para os selos da mesa. Até o ícone chegar, o selo novo fica fora do lugar (a área não se mexe) ou com o valor de antes (`VIS.seloVoa`, `comVoo`); ao chegar, ele abre espaço aos poucos e pula, e o Semáforo gira mostrando a troca. A Memória não tem selo na mesa.
-- **Monte congelado** (Nevasca ou maldição do Gelo, `congelado()`): Chuva, Trovão e o raio da Tempestade não fazem ninguém comprar e mostram "Monte congelado: ninguém compra".
+- **Monte congelado** (Nevasca ou maldição do Gelo, `congelado()`): Chuva, Trovão e o raio da Tempestade não fazem ninguém comprar e mostram "Monte congelado: ninguém compra". Toda tentativa de comprar com o monte congelado toca o som `gelo` (cubo de gelo num copo seco, `cuboGelo`), e não o do clima ou da maldição. A carta sem efeito pela Paz mostra o aviso sem som.
 - **Confusão:** as suas cartas balançam, cada uma num ritmo fixo (`--dzd`/`--dzt`, do número da carta), sem mudar de cor e sem recomeçar ao redesenhar.
 - **Escala:** o tamanho de tudo vem de `--u` (no `:root` do `style.css`), que vale 1px num celular de 390×800 e acompanha a largura e a altura da tela. `--cw` (largura da carta) e o `font-size` da raiz derivam dele, e as medidas do CSS estão em `rem`. Use `rem` (ou `var(--cw)`) em vez de `px` em medidas novas; `px` só para bordas finas (até 3px).
   Opção **Altura da mesa** (`CFG.compact`, padrão Compacta): em telas altas e estreitas (`max-aspect-ratio:10/19`) a mesa tem altura máxima de 430 `--u` e a sobra fica entre a barra do topo e as cadeiras. A classe `compact` no `<html>` é posta por `applyCompact()`; em outras proporções as Configurações avisam que a opção não muda nada.

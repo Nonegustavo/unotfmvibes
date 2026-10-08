@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="sons-teste">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teste de sons · unotfm</title>
+<meta name="description" content="Ajuste a campainha e o som do gelo do unotfm e copie a configuração.">
+<meta name="theme-color" content="#6a47cf">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/sons-teste.css">
+</head>
+<body>
+<header class="s-topo">
+  <a class="s-voltar" href="./">← Voltar ao jogo</a>
+  <h1>Teste de sons</h1>
+  <p class="s-sub">Mexa nos controles, toque para ouvir e, quando gostar, copie a configuração e me mande. Os ajustes ficam guardados neste aparelho.</p>
+</header>
+<main class="s-corpo">
+  <section class="s-bloco" id="blocoSineta">
+    <h2>🛎️ Campainha (sineta)</h2>
+    <div class="s-modelos" data-modelos></div>
+    <div class="s-controles" data-controles></div>
+    <div class="s-botoes"><button type="button" class="btn main" data-tocar="1">Tocar</button><button type="button" class="btn" data-tocar="2">Tocar duas vezes (Duas!)</button></div>
+    <label class="s-cfg-lb">Configuração</label>
+    <textarea class="s-cfg" readonly rows="4" data-cfg></textarea>
+    <button type="button" class="btn s-copiar" data-copiar>Copiar configuração</button>
+  </section>
+  <section class="s-bloco" id="blocoGelo">
+    <h2>🧊 Gelo no copo (monte congelado)</h2>
+    <div class="s-modelos" data-modelos></div>
+    <div class="s-controles" data-controles></div>
+    <div class="s-botoes"><button type="button" class="btn main" data-tocar="1">Tocar</button></div>
+    <label class="s-cfg-lb">Configuração</label>
+    <textarea class="s-cfg" readonly rows="4" data-cfg></textarea>
+    <button type="button" class="btn s-copiar" data-copiar>Copiar configuração</button>
+  </section>
+</main>
+<script src="js/sons.js"></script>
+<script src="js/sons-teste.js"></script>
+</body>
+</html>
