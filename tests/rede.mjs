@@ -45,6 +45,8 @@ const abre = async (modo) => {
 };
 const host = await abre('anfitriao');
 const conv = await abre('convidado');
+// conta os toques da sineta no convidado: o dele não pode tocar duas vezes (na prévia e na confirmação)
+await conv.evaluate(() => { const t0 = toast; window.__sinos = []; window.toast = (m, c) => { if (/Você tocou a sineta/.test(m)) window.__sinos.push(Date.now()); return t0(m, c); }; });
 
 // um passo de uma pessoa: resolve janelas, toca a sineta, joga uma carta jogável ou compra/passa
 const passo = p => p.evaluate(() => {
@@ -55,7 +57,8 @@ const passo = p => p.evaluate(() => {
   if (shown('pokerOv')) return click(document.getElementById('pokerGo')) && 'mix';
   for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps'], ['simonOv', 'simonBtns']])
     if (shown(ov)) { const b = [...document.querySelectorAll(`#${box} button, #${box} .card`)].filter(x => !x.disabled); return click(pick(b)) && ov; }
-  if (document.querySelectorAll('#hand .card').length === 2) document.getElementById('unoBtn')?.click();
+  // sineta: quem toca vê o botão marcado na hora
+  if (document.querySelectorAll('#hand .card').length === 2 && !S.players[0].called) { document.getElementById('unoBtn')?.click(); if (S.players[0].hand.length === 2 && (S.turn === 0 || S.players[0].hand.length === target()) && !VIS.sineta && !S.players[0].called) window.__sinetaLenta = (window.__sinetaLenta || 0) + 1; }
   const ok = [...document.querySelectorAll('#hand .card.ok')];
   // na vez, a carta tocada sai da mão na hora (resposta instantânea), antes de a mesa confirmar
   if (ok.length && Math.random() < .9) { const el = pick(ok), me = S.players[0], c = me.hand.find(x => x.id === +el.dataset.id), vez = myTurn() && c && canPlay(me, c); click(el); return vez && document.querySelector(`#hand [data-id="${el.dataset.id}"]`) ? 'lento' : 'jogar'; }
@@ -118,7 +121,8 @@ for (let g = 1; g <= PARTIDAS; g++) {
       const [m1, m2] = [await maoConvidado(), await maoNaMesa()];
       conferidas++;
       if (m1 !== m2) { await host.waitForTimeout(800); if ((await maoConvidado()) !== (await maoNaMesa())) divergencias++; }
-      let dif = await mesmaPartida(); if (dif.length) { await host.waitForTimeout(1000); dif = await mesmaPartida(); } for (const x of dif) problemas.push(`partida ${g}: ${x}`);
+      // os adversários não param de jogar: só conta se a diferença continuar em 3 conferências seguidas
+      let dif = await mesmaPartida(); for (let k = 0; k < 2 && dif.length; k++) { await host.waitForTimeout(900); dif = await mesmaPartida(); } for (const x of dif) problemas.push(`partida ${g}: ${x}`);
       for (const v of await vazamentos()) problemas.push(`partida ${g}: ${v}`);
     }
     const agora = await foto();
@@ -133,6 +137,10 @@ for (let g = 1; g <= PARTIDAS; g++) {
   console.log(`Partida ${g}/${PARTIDAS}: ${resultado} (${Math.round((Date.now() - t0) / 1000)} s, mão conferida ${conferidas} vezes, balão do convidado visto em ${balaoVisto} de ${janelas} janelas)`);
   if (resultado === 'TRAVOU') break;
 }
+const sino = await conv.evaluate(() => ({ lenta: window.__sinetaLenta || 0, duplos: window.__sinos.filter((t, i, l) => i && t - l[i - 1] < 1200).length, total: window.__sinos.length }));
+console.log(`Sineta do convidado: ${sino.total} avisos, ${sino.duplos} repetidos, ${sino.lenta} sem resposta na hora`);
+if (sino.duplos) problemas.push(`a sineta do convidado tocou duas vezes ${sino.duplos} vez(es)`);
+if (sino.lenta) problemas.push(`a sineta do convidado não respondeu na hora ${sino.lenta} vez(es)`);
 await browser.close(); server.close();
 const todos = [...new Set([...problemas, ...erros])];
 console.log(`\nPartidas: ${feitas}${REGRAS ? ' | Regras: ' + REGRAS : ''} | Problemas: ${todos.length}`);

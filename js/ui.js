@@ -14,6 +14,12 @@ const acao=a=>{
 function fazPrevia(a){
   if(!S||S.phase==='over')return null;
   const me=S.players[0];
+  // sineta: o som, o aviso e o botão marcado na hora (separada das outras prévias: dá para tocar e jogar em seguida)
+  if(a.t==='sineta'){
+    if(me.called||me.out||!(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0)))return null;
+    VIS.sineta={desde:Date.now()};setTimeout(()=>{if(VIS.sineta&&Date.now()-VIS.sineta.desde>=3900){VIS.sineta=null;render()}},4000);
+    sfx('bell');toast('🛎️ Você tocou a sineta!','var(--cr)');render();return null;
+  }
   if(a.t==='jogar'){
     const c=me.hand.find(x=>x.id===a.id);if(!c)return null;
     // a vez só passa na hora com número que não continua jogada (combo, Perfeccionista)
@@ -53,10 +59,11 @@ function desfazPrevia(como){
 }
 // a partida como a tela mostra: a da mesa com a prévia por cima (sem mudar a da mesa)
 function comPrevia(s){
-  const pv=VIS.previa;if(!pv)return s;
+  const pv=VIS.previa||{};if(!VIS.previa&&!VIS.sineta)return s;
   const v={...s};
+  if(VIS.sineta&&!s.players[0].called)v.players=s.players.map((q,i)=>i===0?{...q,called:true}:q);
   if(pv.t==='jogar'){
-    v.players=s.players.map((q,i)=>i===0?{...q,hand:q.hand.filter(c=>c.id!==pv.id)}:q);
+    v.players=(v.players||s.players).map((q,i)=>i===0?{...q,hand:q.hand.filter(c=>c.id!==pv.id)}:q);
     if(!s.discard.some(c=>c.id===pv.id))v.discard=[...s.discard,pv.carta];
     if(pv.carta.color!=='w')v.color=pv.carta.color;
   }
@@ -136,6 +143,8 @@ function TELA(ev){
   // no solo, esta tela é a do jogador 0: o que é só de outro jogador não aparece
   if(ev.a!=null&&ev.a!=='todos'&&ev.a!==0)return;
   if(ev.exceto===0)return;
+  // a confirmação da sineta de quem tocou não repete o som nem o aviso
+  if(VIS.sineta&&ev.p===0&&((ev.t==='som'&&ev.k==='bell')||ev.t==='aviso')){if(ev.t==='aviso')VIS.sineta=null;return}
   confirmaPrevia(ev);
   switch(ev.t){
     case 'pausa':return;
@@ -648,7 +657,7 @@ function moveMarker(from,to){
 }
 // desenha a partida como a tela mostra (com a prévia da última ação, se houver)
 function render(){
-  if(!S||!VIS.previa||S.turbo)return desenha();
+  if(!S||!(VIS.previa||VIS.sineta)||S.turbo)return desenha();
   const real=S;S=comPrevia(real);
   try{desenha()}finally{S=real}
 }

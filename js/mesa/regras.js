@@ -626,7 +626,8 @@ function agir(pi,a){
     case 'sineta':
       if(p.called||p.out)return false;
       if(!(p.hand.length===target()||(p.hand.length===target()+1&&S.turn===pi)))return false;
-      p.called=true;emit({t:'som',k:'bell'});log(`${J(pi)} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou a sineta!`,cor:'var(--cr)'});atualiza();return true;
+      // o som e o aviso dizem de quem são (p): quem tocou já ouviu e viu na hora, pela prévia da tela
+      p.called=true;emit({t:'som',k:'bell',p:pi});log(`${J(pi)} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou a sineta!`,cor:'var(--cr)',p:pi});atualiza();return true;
     case 'pegar':{
       const q=S.players[a.alvo];if(!q||a.alvo===pi||p.out||q.hand.length!==target()||q.called)return false;
       penalize(a.alvo,pi);return true}
