@@ -11,6 +11,20 @@ function emit(ev){
   if(espiaEventos)espiaEventos(ev);
   return TELA(ev);
 }
+/* ---------- quem controla cada cadeira ----------
+   Cada jogador tem um controlador (p.ctrl): 'tela' (a pessoa deste aparelho), 'bot' (adversário do computador) e, mais
+   tarde, 'rede' (pessoa em outro aparelho). As regras não perguntam "é o jogador 0?": perguntam o tipo (deBot/humano)
+   e, quando precisam de uma escolha, fazem um pedido a quem controla a cadeira (CONTROLES: o do bot em bots.js e o da
+   tela em ui.js). Pedido: {tipo:'cor'|'alvo'|'carta'|'regra'|'memoria', carta, responde(escolha), bot() com a escolha do
+   computador (que também decide se o tempo acabar), tela:{titulo, sub, opcoes()}}. pedir devolve 'defer' (a jogada
+   continua quando a resposta chegar) ou 'done' (o computador não tinha o que escolher) */
+const CONTROLES={};
+const ctrl=pi=>CONTROLES[S.players[pi].ctrl];
+const deBot=pi=>S.players[pi].ctrl==='bot';
+const humano=pi=>!deBot(pi);
+function pedir(pi,ped){return ctrl(pi).pedido(pi,ped)||'defer'}
+// a vez (ou a continuação dela, no combo e depois de comprar) é de pi: o adversário pensa e joga; a pessoa usa a tela
+function pedirJogada(pi,rapido){ctrl(pi).jogada(pi,rapido)}
 // tempo de uma animação que a regra espera: nada com movimento reduzido nem no turbo (que não espera o tempo real)
 const anim=ms=>RM||S.turbo?0:ms;
 /* ---------- deck ops ---------- */
@@ -65,7 +79,7 @@ function markOut(pi,reason,icon){
   p.outIcon=icon||(S.boom===pi?'💣':/morte súbita/.test(why)?'☠️':/espinho/.test(why)?'🌵':/batata/.test(why)?'🥔':(R.overload&&limit()<=10?'🏋️':String(limit())));
   if(S.boom===pi)S.boom=null;
   log(`${J(pi)} foi eliminado: ${why}.`);emit({t:'aviso',txt:`${J(pi)} foi eliminado!`,cor:'var(--cr)'});
-  if(pi===0){S.outWhy=why;S.spectate=true}
+  emit({t:'eliminado',p:pi,motivo:why,a:pi});if(S.players[pi].ctrl==='tela')S.spectate=true;
   const a=alive();
   if(a.length>1)emit({t:'aviso',a:pi,txt:'Você foi eliminado. Assistindo os adversários…',cor:'var(--cr)'});
   if(a.length===1||(R.team&&new Set(a.map(teamOf)).size===1)){endRound(a[0]);return true}
@@ -133,8 +147,8 @@ function newGame(){
     if(TOUR)TOUR.names=names;
   }
   if(TOUR){TOUR.round++;['Você',...names].forEach(n=>TOUR.pts[n]=TOUR.pts[n]||0)}
-  const players=[{name:'Você',bot:false,hand:[],called:false,col:'var(--accent)'}];
-  names.forEach(n=>players.push({name:n,bot:true,hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
+  const players=[{name:'Você',ctrl:'tela',hand:[],called:false,col:'var(--accent)'}];
+  names.forEach(n=>players.push({name:n,ctrl:'bot',hand:[],called:false,col:AVCOL[BOTNAMES.indexOf(n)]}));
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,busy:false,
      mull:R.mulligan,autoResolve:null,semente:RNG.semente};
@@ -146,8 +160,10 @@ function newGame(){
     const o=ruleOptions(3,true);
     // a faixa de regras fica vazia até o fim do Mix (flyRules)
     S.busy=true;emit({t:'seguraFaixa'});render();
-    const go=()=>{S.players.forEach((p,i)=>{if(i===0)return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=false;openPoker()};
-    if(o.length){openRuleChoice(o,k=>{addRule(0,k,true);go()},'Mix de Regras','Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.');return}
+    const go=()=>{S.players.forEach((p,i)=>{if(humano(i))return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});S.busy=false;emit({t:'mostraMix'})};
+    // por enquanto só existe uma pessoa (a da tela); com mais, os pedidos vão juntos
+    const eu=S.players.findIndex((p,i)=>humano(i));
+    if(o.length){pedir(eu,{tipo:'regra',mix:true,tela:{opcoes:()=>o,titulo:'Mix de Regras',sub:'Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.'},responde:k=>{addRule(eu,k,true);go()}});return}
     go();return;
   }
   dealAndStart();
@@ -304,7 +320,7 @@ function playCard(pi,card,chosen){
 function afterOneCard(pi){
   const p=S.players[pi];
   if(S.weather==='fog')return;
-  if(p.bot&&!p.called){p.called=rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){emit({t:'som',k:'bell'});log(`${J(pi)} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou a sineta!`,cor:'var(--cr)'})}}
+  if(deBot(pi)&&!p.called){p.called=rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){emit({t:'som',k:'bell'});log(`${J(pi)} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou a sineta!`,cor:'var(--cr)'})}}
   if(!p.called)scheduleCatch(pi);
 }
 function scheduleCatch(pi){
@@ -313,7 +329,7 @@ function scheduleCatch(pi){
     if(!S||g!==S.gen||S.phase==='over')return;
     const p=S.players[pi];
     if(S.weather==='fog'||p.out||p.hand.length!==target()||p.called)return;
-    const catchers=alive().filter(i=>i!==pi&&S.players[i].bot&&i!==partner(pi));
+    const catchers=alive().filter(i=>i!==pi&&deBot(i)&&i!==partner(pi));
     if(catchers.length&&rng()<d.catchP)penalize(pi,rand(catchers));
   },d.catchMs+rng()*500);
 }
@@ -392,13 +408,14 @@ function startTurn(){
     return;
   }
   render();
-  if(cur().bot)scheduleBot();
-  else if(confused(0))autoHuman();
+  // a pessoa confusa joga ao acaso (a mesa joga por ela); o adversário confuso joga ao acaso no botAct
+  if(humano(S.turn)&&confused(S.turn))autoHuman(S.turn);
+  else pedirJogada(S.turn);
   scheduleJumps();
 }
 function takeDraw(pi){
   const p=S.players[pi];
-  if(pi===0)S.mull=false;
+  if(humano(pi))S.mull=false;
   if(S.pending>0&&(S.weather==='blizzard'||curseIs('ice'))){
     const n=S.pending;S.pending=0;S.pendingType=null;S.chal=null;
     emit({t:'fx',g:S.weather==='blizzard'?'❄️':'🧊',txt:`${V(pi,'Você perde',J(pi)+' perde')} a vez (+${n} congelado)`,cor:'#5aa9d6',modo:'stamp'});emit({t:'selo',p:pi,ic:'⊘',cor:'var(--cr)'});
@@ -448,11 +465,9 @@ function takeDraw(pi){
       rest.filter(c=>c!==extra).forEach(c=>S.deck.unshift(c));
       give(pi,pick);if(extra)give(pi,extra);afterDraw(pi,pick,extra?2:1,wasCalled);
     };
-    if(p.bot){
-      const safe=opts.filter(c=>c.type!=='bomb');const good=safe.filter(c=>canPlay(p,c));
-      const pk=good.length?(R.diff==='easy'?rand(good):botChoose(p,good)):rand(safe.length?safe:opts);
-      S.busy=true;botThink(pi,'down',opts,opts.indexOf(pk),()=>{S.busy=false;finish(pk)});
-    }else{S.busy=true;render();openPick(opts,finish)}
+    pedir(pi,{tipo:'carta',ja:true,responde:finish,tela:{opcoes:()=>opts,titulo:'Rastrear',sub:'Escolha qual carta comprar.'},
+      bot:()=>{const safe=opts.filter(c=>c.type!=='bomb');const good=safe.filter(c=>canPlay(p,c));
+        return {e:good.length?(R.diff==='easy'?rand(good):botChoose(p,good)):rand(safe.length?safe:opts),lista:opts,ver:'down'}}});
     return;
   }
   if(S.color&&S.pending===0)memLack(pi,S.color);
@@ -488,7 +503,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   const fast=R.fastdraw&&drawn&&drawn.type!=='bomb'&&p.hand.includes(drawn);
   if(!fast&&(!drawn||R.insatisfaction)){endTurn();return}
   if(!fast&&R.satisfaction&&!p.hand.some(c=>canPlay(p,c))&&S.deck.length+S.discard.length>1){
-    S.phase='play';S.drawnId=drawn.id;S.tok++;render();if(p.bot)scheduleBot(true);return;
+    S.phase='play';S.drawnId=drawn.id;S.tok++;render();pedirJogada(pi,true);return;
   }
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
@@ -496,13 +511,14 @@ function afterDraw(pi,drawn,count,wasCalled){
     // quem já tinha tocado a sineta e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
     if(wasCalled&&p.hand.length-1<=target())p.called=true;
     emit({t:'jogaDoMonte',p:pi,id:drawn.id});
-    if(p.bot)botPlay(drawn);else humanPlay(drawn);return}
-  if(!p.bot&&!p.hand.some(c=>canPlay(p,c))){
+    jogar(pi,drawn);return}
+  // a pessoa que comprou e não tem o que jogar passa sozinha
+  if(humano(pi)&&!p.hand.some(c=>canPlay(p,c))){
     S.busy=true;S.tok++;render();const g=S.gen;
     setTimeout(()=>{if(g!==S.gen||S.phase!=='drawn'||S.turn!==pi)return;S.busy=false;endTurn()},700);return;
   }
   S.tok++;render();
-  if(p.bot)scheduleBot();
+  pedirJogada(pi);
 }
 /* ---------- Terminar e descobrir vencedor (turbo) ----------
    Depois que você é eliminado, joga o resto da partida sem esperas, sons nem efeitos 3D: os timers pendentes vão

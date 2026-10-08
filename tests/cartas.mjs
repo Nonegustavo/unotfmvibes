@@ -73,7 +73,7 @@ async function cenarioNaPagina(c) {
     const me = S.players[0];
     if (!me.called && me.hand.length === target() + 1) humanUno();
     const k = me.hand.find(x => canPlay(me, x));
-    if (k) humanPlay(k); else humanMain();
+    if (k) jogar(0, k); else humanMain();
     return true;
   }
   // sem timers e sem o que fazer na sua vez: dá um tempo ao navegador (animações que o Portal e a Chuva esperam)
@@ -108,7 +108,7 @@ async function cenarioNaPagina(c) {
     const carta = mk(cor, tipo);
     S.players[c.quem].hand.push(carta);
     S.tok++;
-    if (c.quem === 0) humanPlay(carta); else botPlay(carta);
+    jogar(c.quem, carta);
   }
   const fim = await avancar(TB.turns + c.turnos);
   // "Azul?"/"Verde?" (Azul e Verde) é sorteado só no texto, fora da semente

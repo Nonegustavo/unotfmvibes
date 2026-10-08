@@ -4,7 +4,7 @@
 function scheduleBot(quick){
   const g=S.gen,tok=S.tok;
   setTimeout(()=>{
-    if(g!==S.gen||tok!==S.tok||S.phase==='over'||!cur().bot||S.busy)return;
+    if(g!==S.gen||tok!==S.tok||S.phase==='over'||!deBot(S.turn)||S.busy)return;
     if(cur().out){endTurn();return}
     botAct();
   },quick?(fastMode()?120:300):fastMode()?Math.max(350+rng()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+rng()*700,(S.fxUntil||0)-Date.now()+400));
@@ -21,7 +21,7 @@ const lacksCol=(pi,c)=>!!(S.mem&&S.mem.lacks[pi]&&S.mem.lacks[pi].has(c));
    (conta como UNSEEN); o Mestre sabe, porque conta as jogadas. side é o lado do Portal (S ou S.other) */
 const UNSEEN=5;
 function handHidden(i,side=S){const q=side.players[i],n=q.hand.length,rr=side===S?R:side.R;return !q.out&&((rr.camouflage&&n!==1)||side.weather==='fog')}
-function seenLen(pi,i,side=S){const n=side.players[i].hand.length;return i===pi||(pi!==0&&R.diff==='master')||!handHidden(i,side)?n:UNSEEN}
+function seenLen(pi,i,side=S){const n=side.players[i].hand.length;return i===pi||(deBot(pi)&&R.diff==='master')||!handHidden(i,side)?n:UNSEEN}
 // quem tem menos (ou mais) cartas aos olhos de pi, sorteando entre os empatados
 function fewest(pi,list,most){const k=i=>seenLen(pi,i)*(most?-1:1);const m=Math.min(...list.map(k));return rand(list.filter(i=>k(i)===m))}
 function threats(){return alive().filter(i=>i!==S.turn&&i!==partner(S.turn)&&seenLen(S.turn,i)<=2)}
@@ -66,7 +66,7 @@ function masterChallenge(ch){
   return S.death?(ah>=6?.35:.1):(ah>=5?.4:.2);
 }
 function bestColor(hand){
-  if(R.diff==='master'&&S&&S.mem&&S.phase!=='over'&&cur()&&cur().bot)return masterColor(hand,S.turn);
+  if(R.diff==='master'&&S&&S.mem&&S.phase!=='over'&&cur()&&deBot(S.turn))return masterColor(hand,S.turn);
   const cc=colorCounts(hand);const m=Math.max(...Object.values(cc));
   if(R.diff==='easy'||m===0)return rand(COLORS);
   return rand(COLORS.filter(c=>cc[c]===m));
@@ -132,9 +132,9 @@ function botAct(){
     if(!opts.length){endTurn();return}
     const cc=colorCounts(p.hand);
     opts.sort((a,b)=>cc[a.color]-cc[b.color]);
-    botPlay(opts[0]);return;
+    jogar(pi,opts[0]);return;
   }
-  if(S.phase==='drawn'){const o=p.hand.filter(c=>canPlay(p,c,confused(pi)));if(o.length)botPlay(botChoose(p,o));else endTurn();return}
+  if(S.phase==='drawn'){const o=p.hand.filter(c=>canPlay(p,c,confused(pi)));if(o.length)jogar(pi,botChoose(p,o));else endTurn();return}
   const opts=p.hand.filter(c=>canPlay(p,c,confused(pi)));
   if(S.pending>0&&S.chal&&S.chal.by!==pi&&!opts.length){
     const ah=seenLen(pi,S.chal.by);let pr=R.diff==='master'?masterChallenge(S.chal):{easy:.15,normal:ah>=5?.35:.22,hard:ah>=5?.5:ah>=3?.3:.15}[R.diff];if(S.death&&R.diff!=='master')pr*=ah>=6?.8:.35;
@@ -143,7 +143,7 @@ function botAct(){
   }
   if(!opts.length){takeDraw(pi);return}
   if(S.phase==='combo'&&confused(pi)){endTurn();return}
-  botPlay(botChoose(p,opts));
+  jogar(pi,botChoose(p,opts));
 }
 function randomPool(){
   const ex=['random','clone','bomb','chest','d99','half','simon','batata'];
@@ -158,12 +158,11 @@ function morphCard(card,prev){
   else if(card.type==='random'){card.type=rand(randomPool());card.value=null;card.color=rand(COLORS)}
 }
 const ASK_TYPES=['trade','gift','web','wish','ban','theft','batata','rule','simon'];
-const needsAnn=(pi,card)=>card.type==='random'||card.type==='clone'||(pi!==0&&(isWildPick(card)||ASK_TYPES.includes(card.type)));
 function announce(pi,card,cont,wait){
   const p=S.players[pi];emit({t:'origem',p:pi,carta:card});
   p.hand=p.hand.filter(c=>c.id!==card.id);
   S.discard.push(card);S.ann=card;
-  if(p.bot&&p.hand.length===target())afterOneCard(pi);
+  if(deBot(pi)&&p.hand.length===target())afterOneCard(pi);
   S.busy=true;emit({t:'anuncio',txt:''});emit({t:'som',k:'play'});
   render();
   const g=S.gen;
@@ -178,19 +177,54 @@ function announce(pi,card,cont,wait){
     }else done();
   },wait||(fastMode()?400:950));
 }
-function botPlay(card){
-  const pi=S.turn;
-  if(needsAnn(pi,card)){announce(pi,card,()=>botPlayNow(card,pi));return}
-  if(card.type!=='num'){announce(pi,card,()=>botPlayNow(card,pi),fastMode()?250:480);return}
-  botPlayNow(card,pi);
+/* ---------- jogar uma carta (pessoa ou adversário) ----------
+   Cartas de ação pousam na mesa antes do efeito (announce). A pessoa vê o anúncio curto e escolhe a cor depois; o
+   adversário anuncia com mais calma as cartas em que vai pensar (cor, alvo). A última carta da pessoa vence direto,
+   sem escolher cor; na Paz o curinga não muda a cor */
+function jogar(pi,card){
+  const p=S.players[pi],h=humano(pi);
+  const ultima=h&&p.hand.length===1&&!(p.hand2&&p.hand2.length);
+  if(h)S.mull=false;
+  const vira=card.type==='clone'||card.type==='random';
+  // espera do anúncio: undefined é a padrão, null é sem anúncio
+  let espera;
+  if(h)espera=card.type==='num'?null:vira&&!ultima&&!(S.peace>0)?undefined:480;
+  else espera=vira||isWildPick(card)||ASK_TYPES.includes(card.type)?undefined:card.type!=='num'?(fastMode()?250:480):null;
+  const depois=()=>{
+    if(isWildPick(card)&&S.peace<=0&&!ultima){pedir(pi,{tipo:'cor',carta:card,responde:col=>termina(pi,card,col)});return}
+    if(h&&card.type!=='num')S.preLanded=card;
+    termina(pi,card,null);
+  };
+  if(espera===null)depois();else announce(pi,card,depois,espera);
 }
-function botPlayNow(card,pi0){
-  const pi=S.turn,p=cur();
-  const col=isWildPick(card)&&S.peace<=0?bestColor(p.hand.filter(c=>c.id!==card.id)):null;
-  const go=()=>{const r=playCard(pi,card,col);
-    if(r==='win'||r==='defer')return;
-    if(r==='combo'){S.tok++;render();scheduleBot();return}
-    endTurn()};
-  if(col&&!confused(pi)){const cols=COLORS.filter(c=>!(R.bg&&c==='g'));S.busy=true;botThink(pi,'color',cols,Math.max(0,cols.findIndex(c=>sameCol(c,col))),()=>{S.busy=false;go()});return}
-  go();
+function termina(pi,card,col){
+  S.busy=false;
+  const r=playCard(pi,card,col);
+  if(r==='win'||r==='defer')return;
+  if(r==='combo'){S.tok++;render();pedirJogada(pi);return}
+  endTurn();
 }
+/* ---------- controlador do adversário: pensa (balão) e responde aos pedidos ---------- */
+CONTROLES.bot={
+  jogada(pi,rapido){scheduleBot(rapido)},
+  pedido(pi,ped){
+    if(ped.tipo==='cor'){
+      const col=bestColor(S.players[pi].hand.filter(c=>c.id!==ped.carta.id));
+      if(confused(pi)){ped.responde(col);return}
+      const cols=COLORS.filter(c=>!(R.bg&&c==='g'));S.busy=true;
+      botThink(pi,'color',cols,Math.max(0,cols.findIndex(c=>sameCol(c,col))),()=>{S.busy=false;ped.responde(col)});return;
+    }
+    if(ped.tipo==='memoria'){
+      // acerta a sequência com chance que cai a cada cor (o Mestre quase sempre acerta)
+      const seq=[...S.simon];const ok=!seq.length||rng()<Math.pow({easy:.6,normal:.85,hard:.95,master:.98}[R.diff],seq.length);
+      const col=bestColor(S.players[pi].hand);S.busy=true;
+      const pickCol=()=>{const cols=COLORS.filter(c=>!(R.bg&&c==='g'));S.busy=true;botThink(pi,'color',cols,Math.max(0,cols.findIndex(c=>sameCol(c,col))),()=>ped.responde(true,col))};
+      if(!seq.length){pickCol();return}
+      botTypeSimon(pi,seq,ok,()=>{if(ok)pickCol();else ped.responde(false)});
+      return;
+    }
+    const b=ped.bot();if(!b)return 'done';
+    S.busy=true;
+    botThink(pi,b.ver,b.lista,b.lista.indexOf(b.e),()=>{S.busy=false;ped.responde(b.e)});
+  },
+};

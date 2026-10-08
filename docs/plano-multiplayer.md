@@ -312,6 +312,11 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
   - Todas as escolhas viram pedidos.
   - O que hoje é exclusivo do jogador 0 (troca de mão, Confusão, passar sozinho, pegar e tocar a sineta) passa a valer por tipo de controlador.
   - **Conferir:** testes de carta, `npm test` e jogar à mão cada carta com escolha.
+  - **Feito:** `p.ctrl` em cada jogador, `CONTROLES.bot` e `CONTROLES.tela`, `jogar`/`termina` no lugar de humanPlay,
+    finishHuman, botPlay e botPlayNow, e `pedir` para cor, alvo, carta (Desejo, Banimento, Rastrear), regra (Carta da Regra
+    e Mix) e Memória. As regras não usam mais `pi===0` nem `p.bot`. Estado e registro idênticos, menos a Clarividência
+    (de propósito: agora você também mostra uma carta, como todos). Testadas no navegador, com cliques, as janelas de
+    cada carta com escolha, Rastrear, Mix, Confusão e Corte.
 - **F. Relógio e pausas (M)**
   - Os `setTimeout` das regras passam a usar o relógio da mesa.
   - O Portal deixa de esperar a animação.

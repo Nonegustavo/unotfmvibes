@@ -9,29 +9,7 @@ function humanClick(id,el){
     el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');sfx('error');
     return;
   }
-  humanPlay(card);
-}
-function humanPlay(card){
-  S.mull=false;
-  // a última carta (com Duas Mãos, só a última da segunda mão) vence direto, sem escolhas
-  const me=S.players[0],last=me.hand.length===1&&!(me.hand2&&me.hand2.length);
-  if(last&&(isWildPick(card)||card.type==='clone'||card.type==='random')){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
-  if(S.peace>0&&card.color==='w'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
-  if(isWildPick(card)){announce(0,card,()=>{S.busy=true;render();openColors(col=>finishHuman(card,col),card)},480);return}
-  if(card.type==='clone'||card.type==='random'){
-    announce(0,card,()=>{if(isWildPick(card)){S.busy=true;render();openColors(col=>finishHuman(card,col),card)}else{S.preLanded=card;finishHuman(card,null)}});
-    return;
-  }
-  if(card.type!=='num'){announce(0,card,()=>{S.preLanded=card;finishHuman(card,null)},480);return}
-  finishHuman(card,null);
-}
-function finishHuman(card,col){
-  S.busy=false;
-  const r=playCard(0,card,col);
-  if(r==='win'||r==='defer')return;
-  if(r==='ask'){humanAsk(card);return}
-  if(r==='combo'){S.tok++;render();return}
-  endTurn();
+  jogar(0,card);
 }
 function humanMain(){
   if(!myTurn())return;
@@ -128,7 +106,8 @@ function TELA(ev){
     case 'brilho':return burst(ev.cor);
     case 'relampago':return flashStorm();
     case 'raio':return raioFx(ev.p,ev.ids);
-    case 'espia':return peek(ev.p,ev.carta);
+    // carta mostrada: a dos outros aparece abaixo da cadeira; a sua se destaca na mão
+    case 'espia':return ev.p===0?revealCard(0,ev.carta):peek(ev.p,ev.carta);
     case 'revela':return revealCard(ev.p,ev.carta);
     case 'some':return vanishCards(ev.p,ev.cartas,ev.sp);
     case 'magica':return ev.p===0?morphMine(ev.carta,ev.antes,ev.depois,ev.sp):showCards(ev.p,[ev.antes],'morph',ev.sp,[ev.depois]);
@@ -179,6 +158,8 @@ function TELA(ev){
       return;
     case 'trocaLado':$('hand').innerHTML='';$('fx').innerHTML='';VIS.wxNow=true;VIS.cntJump=true;VIS.lastTop=null;VIS.newIds=[];return;
     case 'fim':return telaFim(ev);
+    case 'eliminado':VIS.outWhy=ev.motivo;return;
+    case 'mostraMix':return openPoker();
   }
   console.error('Evento desconhecido: '+ev.t);
 }
@@ -257,7 +238,7 @@ function telaFim({pi,vencedores:winners,pts,tourMsg}){
   if(R.team&&pi>=0)title=winners.includes(0)?(pi===0?'Sua dupla venceu!':`Sua dupla venceu com ${S.players[pi].name}!`):`${S.players[winners[0]].name} e ${S.players[winners[1]].name} venceram`;
   if(S.timeWin&&pi>=0)title+=' por pontos';
   $('endTitle').textContent=title;
-  $('endSub').textContent=(pi>=0?`Pontos da rodada: ${pts}. `:`Você ${S.outWhy}. `)+'Vitórias acumuladas neste navegador:';
+  $('endSub').textContent=(pi>=0?`Pontos da rodada: ${pts}. `:`Você ${VIS.outWhy}. `)+'Vitórias acumuladas neste navegador:';
   if(TOUR){
     const goal=TOUR.mode==='tournament'?500:300;
     $('endSub').textContent=(tourMsg?tourMsg+' ':'')+`Rodada ${TOUR.round}. ${TOUR.mode==='tournament'?'Primeiro a 500 pontos vence.':'Quem chega a 300 pontos sai do torneio.'}`;
@@ -268,7 +249,7 @@ function telaFim({pi,vencedores:winners,pts,tourMsg}){
   $('againBtn').textContent='Nova rodada';
   const hp=p=>[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
   const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||((b.p.outAt||0)-(a.p.outAt||0))||(a.pts-b.pts)||(a.n-b.n));
-  $('endSub').textContent=(S.players[0].out?`Você ${S.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
+  $('endSub').textContent=(S.players[0].out?`Você ${VIS.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
   $('scoreTbl').innerHTML=rank.map((x,k)=>`<tr${x.i===0?' style="font-weight:700"':''}><td>${['🥇','🥈','🥉'][k]||`${k+1}º`} ${x.p.name}${x.p.out?' <span style="color:var(--muted)">(eliminado)</span>':` <span style="color:var(--muted)">(${x.n} carta${x.n===1?'':'s'})</span>`}</td><td>${x.p.out?'—':x.pts+' pts'}</td></tr>`).join('');
   $('endOv').classList.add('show');$('againBtn').focus();
 }
@@ -326,7 +307,7 @@ function statusText(){
   const p=cur();
   if(S.players[0].out)return 'Você foi eliminado. Assistindo os adversários…';
   if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
-  if(p.bot)return '';
+  if(deBot(S.turn))return '';
   if(S.busy)return ['colorOv','pickOv','swapOv','simonOv'].some(id=>$(id).classList.contains('show'))?'Escolha…':'';
   if(S.phase==='combo'){
     const parts=[];if(R.stack)parts.push(`outro ${S.comboValue}`);if(R.sequence)parts.push('continue a sequência');
@@ -687,6 +668,36 @@ function render(){
   $('chalBtn').hidden=!(turn&&S.phase==='play'&&S.pending>0&&S.chal&&S.chal.by!==0);
 }
 
+/* ---------- controlador da tela: a pessoa deste aparelho responde aos pedidos pelas janelas ----------
+   A jogada é pelos toques nas cartas e no botão principal (myTurn). Nos pedidos de carta especial, a janela abre logo
+   depois do anúncio (ou na hora, se a carta já pousou). Com a Confusão, a janela se resolve sozinha */
+CONTROLES.tela={
+  jogada(){},
+  pedido(pi,ped){
+    if(ped.tipo==='cor'){S.busy=true;render();openColors(col=>ped.responde(col),ped.carta);return}
+    if(ped.mix){abrirPedido(pi,ped);return}
+    S.busy=true;render();
+    if(ped.ja){abrirPedido(pi,ped);return}
+    const g=S.gen;
+    if(S.preLanded===ped.carta){S.preLanded=null;abrirPedido(pi,ped);return}
+    setTimeout(()=>{if(g===S.gen&&S.phase!=='over')abrirPedido(pi,ped)},480);
+  },
+};
+function abrirPedido(pi,ped){
+  const t=ped.tela||{};
+  if(ped.tipo==='alvo')openTarget(t.titulo,t.sub,t.opcoes(),ped.responde);
+  else if(ped.tipo==='carta')openPick(t.opcoes(),ped.responde,t.titulo,t.sub);
+  else if(ped.tipo==='regra'){const o=t.opcoes();if(!o.length)ped.responde(null);else openRuleChoice(o,ped.responde,t.titulo,t.sub)}
+  else if(ped.tipo==='memoria'){
+    // repetir as cores das Memórias anteriores; acertando (ou sendo a primeira), escolhe a próxima cor
+    if(!S.simon.length)openColors(col=>ped.responde(true,col),ped.carta);
+    else openSimon(S.simon.length,taps=>{
+      const ok=taps.length===S.simon.length&&taps.every((c,i)=>sameCol(c,S.simon[i]));
+      if(ok){S.busy=true;openColors(col=>ped.responde(true,col),ped.carta)}else ped.responde(false);
+    });
+  }
+  if(!ped.mix&&!ped.ja&&S.auto&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
+}
 /* ---------- overlays ---------- */
 function closeOverlays(){['colorOv','pickOv','swapOv','simonOv','pokerOv','histOv'].forEach(id=>$(id).classList.remove('show'));if(S)S.autoResolve=null}
 function placeLite(){const t=$('handwrap').getBoundingClientRect().top;document.documentElement.style.setProperty('--liteBottom',Math.max(80,innerHeight-t+4)+'px')}

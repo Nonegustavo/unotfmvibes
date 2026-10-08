@@ -169,7 +169,7 @@ function transmute(pi,col){
   log(`Mágica: ${picks.map(x=>`${label(x.before)} de ${J(x.i)} virou ${x.after.value}`).join(', ')}.`);
   setTimeout(()=>{
     if(g!==S.gen||S.phase==='over')return;
-    picks.forEach(x=>{if(x.i===0)emit({t:'magicaFim',carta:x.c,a:0})});
+    picks.forEach(x=>emit({t:'magicaFim',carta:x.c,a:x.i}));
     S.fxUntil=0;S.busy=false;render();endTurn();
   },Math.max(t,RM?300:0));
   return 'defer';
@@ -346,7 +346,7 @@ function challengeResolve(pi){
         log(`${J(pi)} comprou o restante acumulado: ${k2}.`);
         if(overloaded(pi)&&markOut(pi))return;endTurn();return;
       }
-      S.tok++;render();if(cur().bot)scheduleBot();
+      S.tok++;render();pedirJogada(S.turn);
     };
     if(S.death){
       emit({t:'fx',g:'⚔️',txt:`Blefe! ${V(c.by,'Você foi eliminado',J(c.by)+' foi eliminado')}`,cor:'var(--cg)',modo:'slam'});emit({t:'selo',p:c.by,ic:'⚔️',cor:'var(--cr)'});
@@ -374,25 +374,25 @@ function challengeResolve(pi){
     if(overloaded(pi)&&markOut(pi))return;endTurn();
   }
 }
-function autoHuman(){
+function autoHuman(pi){
   const g=S.gen,tok=S.tok;S.auto=true;render();
   emit({t:'aviso',txt:'Confuso! Jogada aleatória',cor:'var(--cy)'});
   setTimeout(()=>{
-    if(g!==S.gen||tok!==S.tok||S.turn!==0||S.phase==='over')return;
-    const me=S.players[0];const opts=me.hand.filter(c=>canPlay(me,c,true));
+    if(g!==S.gen||tok!==S.tok||S.turn!==pi||S.phase==='over')return;
+    const me=S.players[pi];const opts=me.hand.filter(c=>canPlay(me,c,true));
     if(!opts.length){
-      takeDraw(0);
+      takeDraw(pi);
       if(S.busy&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
-      else if(S.phase==='drawn'&&S.turn===0){const d=me.hand.find(c=>c.id===S.drawnId);if(d)autoPlay(d)}
+      else if(S.phase==='drawn'&&S.turn===pi){const d=me.hand.find(c=>c.id===S.drawnId);if(d)autoPlay(pi,d)}
       return;
     }
-    autoPlay(rand(opts));
+    autoPlay(pi,rand(opts));
   },1000);
 }
-function autoPlay(card){
-  finishHuman(card,isWildPick(card)?rand(COLORS):null);
+function autoPlay(pi,card){
+  termina(pi,card,isWildPick(card)?rand(COLORS):null);
   if(S.busy&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
-  else if(S.phase==='combo'&&S.turn===0)endTurn();
+  else if(S.phase==='combo'&&S.turn===pi)endTurn();
 }
 const CARD_RULES=()=>RULES.filter(r=>r.g==='Cartas especiais').map(r=>r.k);
 function ruleOptions(n=2,pre){
@@ -595,33 +595,39 @@ function botTypeSimon(pi,seq,ok,done){
   };
   setTimeout(step,300*sp);
 }
-function botDefer(pi,kind,list,pickIdx,effect){
-  S.busy=true;
-  botThink(pi,kind,list,pickIdx,()=>{S.busy=false;const r=effect();if(r==='win'||S.phase==='over')return;if(r==='defer')return;render();endTurn()});
-  return 'defer';
-}
+// depois da escolha de uma carta especial a vez passa, a não ser que o efeito continue ou a partida acabe
+function aposEscolha(r){if(r==='win'||r==='defer'||S.phase==='over')return;render();endTurn()}
+// pedido de uma carta especial (alvo, carta, regra): a escolha vai para o efeito
+function pedeEspecial(pi,card,tipo,tela,bot,efeito){return pedir(pi,{tipo,carta:card,tela,bot,responde:e=>{S.busy=false;aposEscolha(efeito(e,aposEscolha))}})}
+const outros=pi=>alive().filter(i=>i!==pi);
 function applySpecial(pi,card){
   const p=S.players[pi],T=card.type,col=CVAR[card.color]||'var(--accent)';
   const opp=alive().filter(i=>i!==pi);
   emit({t:'pausa',ms:1000});
   switch(T){
-    case 'trade':if(!opp.length)return 'done';if(pi===0)return 'ask';{const t=botSwapTarget(pi),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{swapHands(pi,t);return 'done'})}
+    case 'trade':if(!opp.length)return 'done';
+      return pedeEspecial(pi,card,'alvo',{titulo:'Trocar de mão com…',sub:'Escolha com quem trocar todas as cartas.',opcoes:()=>outros(pi)},
+        ()=>({e:botSwapTarget(pi),lista:outros(pi),ver:'player'}),t=>{swapHands(pi,t);return 'done'});
     case 'carousel':rotateHands();return 'done';
-    case 'gift':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o=opponents(pi);if(!o.length)return 'done';const t=R.diff==='easy'?rand(o):fewest(pi,o),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>giftCard(pi,t))}
-    case 'web':{if(pi===0)return 'ask';const t=botTarget(pi,true);if(t<0)return 'done';const l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{webOn(pi,t);return 'done'})}
-    case 'wish':if(!p.hand.length||S.discard.length<2)return 'done';if(pi===0)return 'ask';{
-      const opts=wishOptions();const best=opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0];return botDefer(pi,'up',opts,opts.indexOf(best),()=>{wishSwap(pi,best);return 'done'})}
+    case 'gift':if(!p.hand.length)return 'done';
+      return pedeEspecial(pi,card,'alvo',{titulo:'Doar uma carta para…',sub:'Uma carta aleatória da sua mão vai para quem você escolher.',opcoes:()=>outros(pi)},
+        ()=>{const o=opponents(pi);if(!o.length)return null;return {e:R.diff==='easy'?rand(o):fewest(pi,o),lista:outros(pi),ver:'player'}},t=>giftCard(pi,t));
+    case 'web':
+      return pedeEspecial(pi,card,'alvo',{titulo:'Prender na teia…',sub:'Quem você escolher perde a próxima vez.',opcoes:()=>outros(pi)},
+        ()=>{const t=botTarget(pi,true);return t<0?null:{e:t,lista:outros(pi),ver:'player'}},t=>{webOn(pi,t);return 'done'});
+    case 'wish':if(!p.hand.length||S.discard.length<2)return 'done';
+      return pedeEspecial(pi,card,'carta',{titulo:'Carta do Desejo',sub:'Escolha uma carta da pilha. Uma carta aleatória sua vai para a pilha no lugar.',opcoes:()=>wishOptions()},
+        ()=>{const opts=wishOptions();return {e:opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0],lista:opts,ver:'up'}},c=>{wishSwap(pi,c);return 'done'});
     case 'rain':{
       // um adversário por vez, no sentido do jogo: a carta cai do céu até ele
       const order=[];for(let i=nextIdx(pi,1);i!==pi&&!order.includes(i);i=nextIdx(i,1))if(opp.includes(i))order.push(i);
       log('Chuva: todos os adversários compram 1.');emit({t:'som',k:'rain'});
       return sequenceFx(order,(i,next,sp)=>{
-        if(i!==0){emit({t:'chuva',p:i,ms:560*sp});return setTimeout(()=>{drawN(i,1);quietDraw(i);render();setTimeout(next,160*sp)},anim(560*sp))}
-        // em você: a carta já entra na mão (escondida) e a chuva cai exatamente no lugar dela
-        const had=new Set(S.players[0].hand.map(c=>c.id));drawN(0,1);quietDraw(0);render();
-        const nc=S.players[0].hand.find(c=>!had.has(c.id));
-        emit({t:'chuva',p:0,id:nc&&nc.id,ms:560*sp});
-        setTimeout(()=>{emit({t:'chuvaFim',id:nc&&nc.id,a:0});render();setTimeout(next,160*sp)},anim(560*sp));
+        // a carta já entra na mão e a chuva cai até a cadeira (na mão de quem vê, exatamente no lugar da carta nova)
+        const had=new Set(S.players[i].hand.map(c=>c.id));drawN(i,1);quietDraw(i);render();
+        const nc=S.players[i].hand.find(c=>!had.has(c.id));
+        emit({t:'chuva',p:i,id:nc&&nc.id,ms:560*sp});
+        setTimeout(()=>{emit({t:'chuvaFim',id:nc&&nc.id,a:i});render();setTimeout(next,160*sp)},anim(560*sp));
       })}
     case 'thunder':{
       // 2 jogadores sorteados (pode ser quem jogou), cada um compra de 1 a 5; um por vez, as cartas aparecem de repente
@@ -650,7 +656,9 @@ function applySpecial(pi,card){
       graceCalls();emit({t:'fx',g:'🌪️',txt:'Mãos dos adversários embaralhadas',cor:col,modo:'slam'});log('Tornado embaralhou as mãos dos adversários.');return 'done'}
     case 'steal':return transmute(pi,col);
     case 'peace':{const n=alive().length*2+2;S.peace=n+1;emit({t:'fx',g:'🌼',txt:'Ações sem efeito por alguns turnos',cor:'var(--cg)',modo:'stamp'});log('Paz: cartas de ação sem efeito por alguns turnos.');return 'done'}
-    case 'batata':if(pi===0)return 'ask';{const b=botTarget(pi),t=b>=0?b:rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>{giveBatata(pi,card,t);return 'done'})}
+    case 'batata':
+      return pedeEspecial(pi,card,'alvo',{titulo:'Passar a batata para…',sub:'Quem ficar 5 turnos com ela é eliminado.',opcoes:()=>outros(pi)},
+        ()=>{const b=botTarget(pi);return {e:b>=0?b:rand(opp),lista:outros(pi),ver:'player'}},t=>{giveBatata(pi,card,t);return 'done'});
     case 'curse':{
       const keys=Object.keys(CURSES).filter(c=>!(R.mess&&c==='shoe')),k=rand(keys),g=S.gen,sp=fastMode()?.35:1;
       S.busy=true;emit({t:'pausa',ms:99999});
@@ -686,25 +694,17 @@ function applySpecial(pi,card){
       const copies=shuffle([...p.hand]).slice(0,10).map(c=>{const n=mk(c.color,c.type,c.value);n.extra=true;return n});
       copies.forEach((c,k)=>{const t=rand(opp);if(t==null)return;S.players[t].hand.push(c);S.players[t].called=false;emit({t:'recebe',p:t,ids:[c.id],de:pi,atraso:k*50})});
       emit({t:'fx',g:'🤲',txt:`${J(pi)} partilhou ${copies.length} cópia${copies.length===1?'':'s'}`,cor:col,modo:'slam'});log(`${J(pi)} deu ${copies.length} cópias das suas cartas.`);return massCheck()}
-    case 'simon':
-      if(pi===0)return 'ask';{
-        const seq=[...S.simon];const ok=!seq.length||rng()<Math.pow({easy:.6,normal:.85,hard:.95,master:.98}[R.diff],seq.length);
-        const col=bestColor(p.hand);S.busy=true;
-        const fin=r=>{S.busy=false;if(r==='win'||S.phase==='over')return;render();endTurn()};
-        const pickCol=()=>{const cols=COLORS.filter(c=>!(R.bg&&c==='g'));S.busy=true;botThink(pi,'color',cols,Math.max(0,cols.findIndex(c=>sameCol(c,col))),()=>fin(resolveSimon(pi,card,true,col)))};
-        if(!seq.length){pickCol();return 'defer'}
-        botTypeSimon(pi,seq,ok,()=>{if(ok)pickCol();else fin(resolveSimon(pi,card,false))});
-        return 'defer'}
+    case 'simon':return pedir(pi,{tipo:'memoria',carta:card,responde:(ok,c)=>{S.busy=false;aposEscolha(resolveSimon(pi,card,ok,c))}});
     case 'chair':{
       // adversário que joga também troca de lugar e leva a vez junto (a próxima vez é a do vizinho no lugar novo)
-      const idx=alive().filter(i=>i!==0);
+      const idx=alive().filter(i=>!humano(i));
       if(R.team||idx.length<2){emit({t:'fx',g:'🪑',txt:'Ninguém trocou de lugar',cor:col,modo:'stamp'});return 'done'}
       emit({t:'cadeiras'});
       const from=shuffle([...idx]),mv=(a,ix)=>{const o=[...a];idx.forEach((i,k)=>o[i]=a[from[k]]);return o};
       const put=(a,b)=>b.forEach((x,i)=>a[i]=x);put(S.players,mv(S.players));
       if(S.other)put(S.other.players,mv(S.other.players));
       if(S.mem)['lacks','lastCol'].forEach(k=>{const m=S.mem[k],o={...m};idx.forEach((i,k2)=>{if(m[from[k2]]!==undefined)o[i]=m[from[k2]];else delete o[i]});S.mem[k]=o});
-      if(pi!==0&&S.turn===pi){S.turn=idx[from.indexOf(pi)];if(S.turn!==pi)emit({t:'segueVez'})}
+      if(!humano(pi)&&S.turn===pi){S.turn=idx[from.indexOf(pi)];if(S.turn!==pi)emit({t:'segueVez'})}
       emit({t:'fx',g:'🪑',txt:'Os adversários trocaram de lugar',cor:col,modo:'slam'});log('Dança: os adversários trocaram de lugar.');
       // espera um pouco com a vez ainda no lugar novo, para ficar claro quem se mexeu, antes de passar a vez
       if(canCombo(p,card)&&(R.stack||R.sequence))return 'done';
@@ -712,7 +712,7 @@ function applySpecial(pi,card){
       setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()},fastMode()?500:1300);
       return 'defer'}
     case 'view':
-      opp.forEach(i=>{const q=S.players[i];if(q.hand.length&&i!==0)emit({t:'espia',p:i,carta:rand(q.hand)})});
+      opp.forEach(i=>{const q=S.players[i];if(q.hand.length)emit({t:'espia',p:i,carta:rand(q.hand)})});
       emit({t:'fx',g:'👁️',txt:'Todos mostram uma carta',cor:col,modo:'stamp'});log('Clarividência: todos mostraram uma carta.');return 'done';
     case 'treasure':{
       p.treasure=(p.treasure||0)+1;
@@ -723,8 +723,12 @@ function applySpecial(pi,card){
     case 'lock':
       opp.forEach(i=>{const free=shuffle(S.players[i].hand.filter(c=>!c.lock)).slice(0,2);free.forEach(c=>c.lock=true);if(free.length)emit({t:'selo',p:i,ic:'🔒',cor:col})});
       emit({t:'fx',g:'🔒',txt:'Duas cartas trancadas por jogador',cor:col,modo:'stamp'});log('Tranca: duas cartas de cada adversário trancadas.');return 'done';
-    case 'theft':if(pi===0)return 'ask';{const o=opponents(pi);const t=o.length?(R.diff==='easy'?rand(o):fewest(pi,o,true)):rand(opp),l=alive().filter(i=>i!==pi);return botDefer(pi,'player',l,l.indexOf(t),()=>stealWild(pi,t))}
-    case 'ban':if(!p.hand.length)return 'done';if(pi===0)return 'ask';{const o3=shuffle([...p.hand]).slice(0,3),pk=rand(o3);return botDefer(pi,'down',o3,o3.indexOf(pk),()=>banType(pi,pk))}
+    case 'theft':
+      return pedeEspecial(pi,card,'alvo',{titulo:'Roubar um curinga de…',sub:'Se ele tiver um curinga, ele vai para a sua mão.',opcoes:()=>outros(pi)},
+        ()=>{const o=opponents(pi);return {e:o.length?(R.diff==='easy'?rand(o):fewest(pi,o,true)):rand(opp),lista:outros(pi),ver:'player'}},t=>stealWild(pi,t));
+    case 'ban':if(!p.hand.length)return 'done';
+      return pedeEspecial(pi,card,'carta',{titulo:'Carta do Banimento',sub:'Escolha uma carta. Todas as cartas com o mesmo símbolo saem do jogo.',opcoes:()=>shuffle([...S.players[pi].hand]).slice(0,3)},
+        ()=>{const o3=shuffle([...p.hand]).slice(0,3);return {e:rand(o3),lista:o3,ver:'down'}},c=>banType(pi,c));
     case 'box':
       alive().forEach((i,k)=>{const c=mk('w','random');c.extra=true;S.players[i].hand.push(c);S.players[i].called=false;emit({t:'recebe',p:i,ids:[c.id],de:'monte',atraso:k*60,origem:false})});
       emit({t:'fx',g:'📦',txt:'Todos ganham uma Carta Misteriosa',cor:col,modo:'slam'});log('Presente: todos ganharam uma Carta Misteriosa.');return massCheck();
@@ -742,8 +746,9 @@ function applySpecial(pi,card){
     case 'rule':{
       const opts=ruleOptions(3);
       if(!opts.length){emit({t:'fx',g:'📜',txt:'Nenhuma regra nova disponível',cor:col,modo:'stamp'});return 'done'}
-      if(pi===0)return 'ask';
-      {const k=rand(opts);return botDefer(pi,'rule',opts,opts.indexOf(k),()=>{addRule(pi,k,false,()=>{render();endTurn()});return 'defer'})}}
+      // a pessoa vê 3 opções sorteadas de novo quando a janela abre
+      return pedeEspecial(pi,card,'regra',{opcoes:()=>ruleOptions(3)},()=>({e:rand(opts),lista:opts,ver:'rule'}),
+        (k,fim)=>{if(k==null)return 'done';addRule(pi,k,false,()=>fim('done'));return 'defer'})}
     case 'sun':case 'fog':case 'storm':case 'blizzard':{
       const w=WEATHER[T];S.weather=T;S.passes=0;if(T==='blizzard'){S.pending=0;S.pendingType=null;S.chal=null}
       emit({t:'fx',g:w.g,txt:`${w.n}: ${w.t}`,cor:w.c,modo:'slam'});log(`O clima mudou para ${w.n.toLowerCase()}.`);
@@ -754,33 +759,6 @@ function applySpecial(pi,card){
     case 'luck':p.luck=true;emit({t:'fx',g:'🍀',txt:V(pi,'Sua próxima compra será jogável',`Próxima compra de ${J(pi)} será jogável`),cor:'var(--cg)',modo:'stamp'});log(`${J(pi)} está com sorte.`);return 'done';
   }
   return 'done';
-}
-function humanAsk(card){
-  S.busy=true;render();const g=S.gen;
-  if(S.preLanded===card){S.preLanded=null;humanAskOpen(card);return}
-  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')humanAskOpen(card)},480);
-}
-function humanAskOpen(card){
-  const T=card.type;
-  const fin=r=>{if(r==='defer')return;S.busy=false;if(r==='win')return;endTurn()};
-  const others=alive().filter(i=>i!==0);
-  if(T==='trade')openTarget('Trocar de mão com…','Escolha com quem trocar todas as cartas.',others,t=>{swapHands(0,t);fin('done')});
-  else if(T==='gift')openTarget('Doar uma carta para…','Uma carta aleatória da sua mão vai para quem você escolher.',others,t=>fin(giftCard(0,t)));
-  else if(T==='web')openTarget('Prender na teia…','Quem você escolher perde a próxima vez.',others,t=>{webOn(0,t);fin('done')});
-  else if(T==='rule'){const o=ruleOptions(3);if(!o.length)fin('done');else openRuleChoice(o,k=>{addRule(0,k,false,()=>fin('done'))})}
-  else if(T==='batata')openTarget('Passar a batata para…','Quem ficar 5 turnos com ela é eliminado.',others,t=>{giveBatata(0,card,t);fin('done')});
-  else if(T==='theft')openTarget('Roubar um curinga de…','Se ele tiver um curinga, ele vai para a sua mão.',others,t=>fin(stealWild(0,t)));
-  else if(T==='ban')openPick(shuffle([...S.players[0].hand]).slice(0,3),c=>fin(banType(0,c)),'Carta do Banimento','Escolha uma carta. Todas as cartas com o mesmo símbolo saem do jogo.');
-  else if(T==='simon'){
-    if(!S.simon.length)openColors(col=>fin(resolveSimon(0,card,true,col)),card);
-    else openSimon(S.simon.length,taps=>{
-      const ok=taps.length===S.simon.length&&taps.every((c,i)=>sameCol(c,S.simon[i]));
-      if(ok){S.busy=true;openColors(col=>fin(resolveSimon(0,card,true,col)),card)}else fin(resolveSimon(0,card,false));
-    });
-  }
-  else if(T==='wish')openPick(wishOptions(),c=>{wishSwap(0,c);fin('done')},'Carta do Desejo','Escolha uma carta da pilha. Uma carta aleatória sua vai para a pilha no lugar.');
-  else fin('done');
-  if(S.auto&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
 }
 
 /* ---------- trade / carousel ---------- */
@@ -821,14 +799,15 @@ function canJump(pi,c){
 function doJumpIn(pi,card){
   S.tok++;
   S.turn=pi;S.extra=false;S.skip=false;
-  if(pi===0)S.mull=false;
+  if(humano(pi))S.mull=false;
   emit({t:'fx',g:'✂',txt:V(pi,'Você cortou!',`Corte de ${J(pi)}!`),cor:'var(--cy)',modo:'stamp'});
   log(`${J(pi)} cortou a vez!`);
   const go=()=>{
+    // a pessoa escolhe na hora (a carta já pousou na mesa)
+    if(humano(pi)&&ASK_TYPES.includes(card.type))S.preLanded=card;
     const r=playCard(pi,card,null);
     if(r==='win'||r==='defer')return;
-    if(r==='ask'){if(S.players[pi].bot){endTurn();return}S.preLanded=card;humanAsk(card);return}
-    if(r==='combo'){S.tok++;render();if(S.players[pi].bot)scheduleBot();return}
+    if(r==='combo'){S.tok++;render();pedirJogada(pi);return}
     endTurn();
   };
   if(card.type!=='num'){announce(pi,card,go,fastMode()?250:480);return}
@@ -837,9 +816,9 @@ function doJumpIn(pi,card){
 function scheduleJumps(){
   if(!R.jumpin||S.phase!=='play')return;
   const tok=S.tok,g=S.gen,p=DIFF[R.diff].jump;
-  const humanTurn=S.turn===0;
+  const humanTurn=humano(S.turn);
   alive().forEach(i=>{
-    if(i===S.turn||!S.players[i].bot)return;
+    if(i===S.turn||!deBot(i))return;
     const c=S.players[i].hand.find(x=>identical(x,topCard()));
     if(!c||rng()>p)return;
     setTimeout(()=>{
