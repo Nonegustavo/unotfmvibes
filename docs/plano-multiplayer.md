@@ -321,6 +321,11 @@ Tamanho de cada etapa: **P** (pequena), **M** (média), **G** (grande).
   - Os `setTimeout` das regras passam a usar o relógio da mesa.
   - O Portal deixa de esperar a animação.
   - **Conferir:** testes, turbo e Portal.
+  - **Feito:** `RELOGIO` e `agendar` no `engine.js` (39 esperas das regras trocadas); a hora das regras vem de
+    `RELOGIO.agora()`. Durações fixas calculadas pela mesa: Banimento (`tempoSome`), Mágica, dado (1450 ms para todos, e a
+    tela decide se mostra o dado pequeno, o 3D ou só o aviso), balão de pensar e Memória dos adversários (a tela anima com
+    `pensaFx`/`memoriaBotFx`) e o voo dos ícones do Mix (`comecaMix`). A pausa do `fx` saiu do desenho e foi para o `emit`.
+    Estado e registro dos 173 cenários idênticos.
 - **G. Mesa isolada (M)**
   - As regras passam para `js/mesa/` e não usam mais nada da página.
   - **Formato:** continuam scripts clássicos, para não mexer no resto do site. No Node, são carregados com o módulo `vm`, como num navegador. Um empacotador (esbuild) só entra se for preciso, na fase 3.

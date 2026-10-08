@@ -337,7 +337,7 @@ function sfxGlyph(g){
   const hit=map.find(([m])=>s.includes(m));sfx(hit?hit[1]:'special');
 }
 function fx(glyph,cap,color,kind,dur,mute){
-  hold(dur?dur+200:950);if(S&&S.turbo)return;if(!mute)sfxGlyph(glyph);
+  if(S&&S.turbo)return;if(!mute)sfxGlyph(glyph);
   $('fx').innerHTML=`<div class="fxin" style="--fxc:${color}${dur?`;animation-duration:${dur}ms`:''}"><div class="fxg k-${kind}" style="color:${color}">${glyph}</div>${cap?`<div class="fxcap">${cap}</div>`:''}</div>`;
 }
 function burst(color){

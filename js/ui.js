@@ -91,6 +91,11 @@ function TELA(ev){
     case 'tada':return fx('🎩',randVis(MAGIC),ev.cor,'stamp',ev.ms,true);
     case 'selo':return stampOn(ev.p,ev.ic,ev.cor);
     case 'som':return sfx(ev.k);
+    // som das cartas compradas: no máximo um a cada 70 ms
+    case 'somCompra':if(Date.now()-lastDrawSnd>70){lastDrawSnd=Date.now();sfx('draw')}return;
+    case 'pensa':return pensaFx(ev);
+    case 'memoriaBot':return memoriaBotFx(ev);
+    case 'voaMix':{const s=VIS.mixSrc||[];VIS.mixSrc=null;return flyRules(s)}
     case 'aviso':return toast(texto(ev.txt),ev.cor);
     case 'registro':{const m=texto(ev.txt);VIS.log.unshift(m);VIS.log=VIS.log.slice(0,2);if(VIS.histCur)VIS.histCur.notes.push(m);return}
     // histórico das jogadas: cada carta jogada abre uma entrada; as linhas do registro entram nela até o fim da jogada
@@ -116,9 +121,13 @@ function TELA(ev){
       if(ev.p!==0)return peek(ev.p,ev.carta);
       if(!RM)document.querySelector(`#hand [data-id="${ev.carta.id}"]`)?.animate([{transform:'none'},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)',offset:.2},{transform:LIFT,boxShadow:'0 0 0 3px var(--accent),0 0 1rem var(--accent)',offset:.8},{transform:'none'}],{duration:2000,easing:'ease-out'});
       return;
-    case 'dado':return dadoFx(ev.p,ev.n,ev.ms);
-    case 'dadoFim':if(DADO){DADO.remove();DADO=null}return;
-    case 'dadoLegenda':$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${ev.ms}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${texto(ev.txt)}</div></div>`;return;
+    case 'dado':return dadoFx(ev.p,ev.n,ev.ms,ev.txt);
+    case 'dadoFim':if(DADO){DADO.remove();DADO=null}VIS.dadoNaTela=false;return;
+    // resultado: com o dado na tela, só a legenda embaixo dele; sem o dado, o resultado grande
+    case 'dadoResultado':
+      if(VIS.dadoNaTela)$('fx').innerHTML=`<div class="fxin" style="--fxc:var(--accent);animation-duration:${ev.ms}ms;margin-top:calc(var(--cw)*1.9)"><div class="fxcap">${texto(ev.txt)}</div></div>`;
+      else{fx(diceSVG(ev.n),texto(ev.txt),'var(--accent)','slam',ev.ms);sfx('dice')}
+      return;
     case 'roleta':return roletaFx(ev);
     case 'chuva':return chuvaFx(ev.p,ev.ms,ev.id);
     case 'chuvaFim':{const e=ev.id!=null&&document.querySelector(`#hand [data-id="${ev.id}"]`);if(e)e.style.visibility='';return}
@@ -154,6 +163,7 @@ function TELA(ev){
       $('home').hidden=true;$('notices').innerHTML='';delete $('rulestrip').dataset.sig; // sem assinatura: a faixa sempre se redesenha, mesmo sem regras (Clássico)
       $('hand').innerHTML='';$('fx').innerHTML='';FX3D.reset();MK={turn:null,ver:MK.ver+1,until:0};$('discard').innerHTML='';
       if(PORTAL){PORTAL.forEach(e=>e.remove());PORTAL=null}
+      document.querySelectorAll('.think').forEach(e=>e.remove());
       if(DADO){DADO.remove();DADO=null}
       return;
     case 'trocaLado':$('hand').innerHTML='';$('fx').innerHTML='';VIS.wxNow=true;VIS.cntJump=true;VIS.lastTop=null;VIS.newIds=[];return;
@@ -163,11 +173,47 @@ function TELA(ev){
   }
   console.error('Evento desconhecido: '+ev.t);
 }
-// dado do adversário: pequeno, perto da cadeira; o seu: 3D (se houver). Devolve qual apareceu ('mini', '3d' ou nada)
+// dado: o de outro jogador, pequeno, perto da cadeira; o seu, 3D (se houver). Sem nenhum dos dois, só o aviso
 let DADO=null;
-function dadoFx(p,n,ms){
-  if(p!==0){DADO=miniDie(p,n,ms);return DADO?'mini':null}
-  return FX3D.available()&&FX3D.rollDie(n,(DICE_WAIT+800)/1000)?'3d':null;
+function dadoFx(p,n,ms,txt){
+  if(p!==0)DADO=miniDie(p,n,ms);
+  VIS.dadoNaTela=!!DADO||(p===0&&FX3D.available()&&FX3D.rollDie(n,(DICE_WAIT+800)/1000));
+  if(VIS.dadoNaTela){sfx('dice');VIS.announcing=true;VIS.annText=txt}
+  else fx('🎲',texto(txt),'var(--accent)','roll',1100);
+}
+// balão do adversário pensando: as opções piscam (passos) e param na escolhida
+function pensaFx({p:pi,tipo:kind,lista:list,escolha:pickIdx,passos,sp}){
+  const seat=document.querySelector(`[data-seat="${pi}"]`);
+  if(!seat||RM||S.turbo)return;
+  const g=S.gen,r=seat.getBoundingClientRect();
+  const el=document.createElement('div');el.className='think';el.innerHTML=`<span class="tdots">💭</span>${thinkItems(kind,list).join('')}`;
+  document.body.appendChild(el);
+  const w=el.offsetWidth;el.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+6)+'px';
+  const items=[...el.querySelectorAll('.ti')];let steps=passos;
+  const tick=()=>{
+    if(g!==S.gen){el.remove();return}
+    items.forEach(x=>x.classList.remove('hl'));
+    if(steps-->0){const j=items.length>1?(Math.random()*items.length|0):0;items[j].classList.add('hl');sfx('tick');setTimeout(tick,200*sp);return}
+    items[pickIdx]&&items[pickIdx].classList.add('pick');sfx('play');
+    setTimeout(()=>el.remove(),550*sp);
+  };
+  setTimeout(tick,250*sp);
+}
+// Memória do adversário: as cores aparecem uma a uma; se ele errar, a errada fica marcada
+function memoriaBotFx({p:pi,seq,erraEm,sp}){
+  const seat=document.querySelector(`[data-seat="${pi}"]`);
+  if(!seat||RM||S.turbo)return;
+  const g=S.gen,r=seat.getBoundingClientRect();
+  const el=document.createElement('div');el.className='think';el.innerHTML=`<span class="tdots">🧠</span>${seq.map(()=>'<span class="ti sq"></span>').join('')}`;
+  document.body.appendChild(el);const w=el.offsetWidth;el.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+6)+'px';
+  const items=[...el.querySelectorAll('.ti')];let i=0;
+  const step=()=>{
+    if(g!==S.gen){el.remove();return}
+    if(i===erraEm){items[i].classList.add('bad');items[i].textContent='✕';sfx('error');setTimeout(()=>el.remove(),700*sp);return}
+    if(i>=seq.length){setTimeout(()=>el.remove(),400*sp);return}
+    items[i].style.background=CVAR[seq[i]];items[i].classList.add('pick');sfx('tick');i++;setTimeout(step,380*sp);
+  };
+  setTimeout(step,300*sp);
 }
 // roleta da Maldição: começa num ícone qualquer e para no sorteado (ev.para)
 let ROLETA=null;

@@ -51,7 +51,7 @@ function wishSwap(pi,c){
   log(`${J(pi)} trocou uma carta com a pilha.`);
 }
 function giveBatata(pi,card,t){
-  if(t!=null&&t>=0)setTimeout(()=>emit({t:'3d',k:'steam',onde:t}),250);
+  if(t!=null&&t>=0)agendar(()=>emit({t:'3d',k:'steam',onde:t}),250);
   if(t==null||t<0)return;
   S.discard=S.discard.filter(x=>x!==card);S.color=S.colBefore||S.color;emit({t:'redesenhaMesa'});
   if(card.baseColor==null)card.baseColor=card.color;card.color=rand(COLORS);card.chosen=null;
@@ -67,15 +67,14 @@ function diceSVG(n,sz='calc(var(--cw)*1.3)'){
 // O resultado fica um tempo na tela antes de o efeito acontecer, e a legenda continua durante o efeito
 const DICE_WAIT=3000;
 const DICE_TXT=['Pega 1 carta do jogador anterior','Compra 2 cartas','Descarta até ficar com 3','Mostra um 4 ou compra 4','Distribui até 5 cartas','Compra até ficar com 6'];
-function rollDice(pi,t,then,n0,cap){
+function rollDice(pi,t,then,n0){
   const n=n0||1+Math.floor(rng()*6);
   const txt=DICE_TXT[n-1]+' e perde a vez';
   const wait=fastMode()?700:DICE_WAIT,show=wait+1000;
-  if(cap){emit({t:'dadoLegenda',txt:`${V(t,'Você',J(t))}: ${txt}`,ms:show});emit({t:'pausa',ms:show})}
-  else{emit({t:'fx',g:diceSVG(n),txt:`${V(t,'Você',J(t))}: ${txt}`,cor:'var(--accent)',modo:'slam',ms:show});emit({t:'som',k:'dice'})}log(`Dado de ${J(t)}: ${n} (${txt.toLowerCase()}).`);
+  emit({t:'dadoResultado',n,txt:`${V(t,'Você',J(t))}: ${txt}`,ms:show});emit({t:'pausa',ms:show});log(`Dado de ${J(t)}: ${n} (${txt.toLowerCase()}).`);
   emit({t:'anuncio',txt:`Dado: ${n}. ${V(t,'Você',J(t))}: ${txt.toLowerCase()}`});render();
   const g=S.gen;
-  setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;emit({t:'anuncioFim'});const r=diceEffect(pi,t,n);if(r==='win')return;then()},wait);
+  agendar(()=>{if(g!==S.gen||S.phase==='over')return;emit({t:'anuncioFim'});const r=diceEffect(pi,t,n);if(r==='win')return;then()},wait);
 }
 // dado pequeno rolando perto da cadeira do adversário; para no resultado e fica até o efeito acontecer
 function miniDie(pi,n,ms){
@@ -129,12 +128,12 @@ function banType(pi,c){
   const n=S.players[pi].hand.filter(m).length+others.reduce((a,x)=>a+x.cards.length,0)+S.deck.filter(m).length+S.discard.slice(0,-1).filter(m).length;
   emit({t:'fx',g:'✖️',txt:`${c.type==='num'?`Número ${c.value}`:label(c)} banido do jogo (${n} carta${n===1?'':'s'})`,cor:'var(--cr)',modo:'slam'});
   // quem jogou mostra e some primeiro; depois, juntos, os outros jogadores (o monte e a pilha perdem as cartas sem animação)
-  const t1=emit({t:'some',p:pi,cartas:S.players[pi].hand.filter(m),sp});
-  setTimeout(()=>{
+  const t1=tempoSome(S.players[pi].hand.filter(m).length,sp);emit({t:'some',p:pi,cartas:S.players[pi].hand.filter(m),sp});
+  agendar(()=>{
     if(g!==S.gen||S.phase==='over')return;
     let t2=0;
-    others.forEach(x=>{t2=Math.max(t2,emit({t:'some',p:x.i,cartas:x.cards,sp}))});
-    setTimeout(()=>{
+    others.forEach(x=>{t2=Math.max(t2,tempoSome(x.cards.length,sp));emit({t:'some',p:x.i,cartas:x.cards,sp})});
+    agendar(()=>{
       if(g!==S.gen||S.phase==='over')return;
       S.fxUntil=0;S.busy=false;
       if(banApply(pi,c,m,n)==='win')return;
@@ -143,6 +142,8 @@ function banType(pi,c){
   },t1);
   return 'defer';
 }
+// tempo de n cartas sumirem, uma de cada vez (vanishCards)
+const tempoSome=(n,sp)=>RM||!n?0:((n-1)*VANISH_GAP+DROP)*sp;
 function banApply(pi,c,m,n){
   const t=topCard();
   S.deck=S.deck.filter(x=>!m(x));S.discard=[...S.discard.slice(0,-1).filter(x=>!m(x)),t];
@@ -162,12 +163,13 @@ function transmute(pi,col){
   const g=S.gen,sp=fastMode()?.4:1;S.busy=true;emit({t:'pausa',ms:99999});
   picks.forEach(x=>{const c=x.c;x.before={...c};
     c.tm={type:c.type,color:c.color,value:c.value};c.type='num';c.value=Math.floor(rng()*10);if(c.color==='w')c.color=rand(COLORS);c.chosen=null;x.after={...c}});
-  let t=0;picks.forEach(x=>{t=Math.max(t,emit({t:'magica',p:x.i,carta:x.c,antes:x.before,depois:x.after,sp}))});
+  let t=0;picks.forEach(x=>{emit({t:'magica',p:x.i,carta:x.c,antes:x.before,depois:x.after,sp});
+    t=Math.max(t,RM?0:humano(x.i)?(SHOW_IN+SHOW_HOLD)*sp+PUF+(MORPH_HOLD+MINE_BACK)*sp:(SHOW_IN+SHOW_HOLD+MORPH_HOLD)*sp+PUF)});
   // todas as cartas se transformam juntas, no "puf" do único som (PUF ms depois de ele começar)
-  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')emit({t:'som',k:'transmute'})},RM?0:(SHOW_IN+SHOW_HOLD)*sp);
-  setTimeout(()=>{if(g===S.gen&&S.phase!=='over')emit({t:'tada',cor:col,ms:1800*sp})},RM?0:(SHOW_IN+SHOW_HOLD)*sp+PUF);
+  agendar(()=>{if(g===S.gen&&S.phase!=='over')emit({t:'som',k:'transmute'})},RM?0:(SHOW_IN+SHOW_HOLD)*sp);
+  agendar(()=>{if(g===S.gen&&S.phase!=='over')emit({t:'tada',cor:col,ms:1800*sp})},RM?0:(SHOW_IN+SHOW_HOLD)*sp+PUF);
   log(`Mágica: ${picks.map(x=>`${label(x.before)} de ${J(x.i)} virou ${x.after.value}`).join(', ')}.`);
-  setTimeout(()=>{
+  agendar(()=>{
     if(g!==S.gen||S.phase==='over')return;
     picks.forEach(x=>emit({t:'magicaFim',carta:x.c,a:x.i}));
     S.fxUntil=0;S.busy=false;render();endTurn();
@@ -324,13 +326,13 @@ function doChallenge(pi){
   S.busy=true;const g=S.gen;
   emit({t:'fx',g:'⚔️',txt:`${V(pi,'Você desafiou',J(pi)+' desafiou')} o +${c0.amt} de ${V(c0.by,'você',J(c0.by))}`,cor:'var(--accent)',modo:'stamp',ms:1300});
   log(`${J(pi)} desafiou o +${c0.amt} de ${J(c0.by)}.`);
-  setTimeout(()=>{
+  agendar(()=>{
     if(g!==S.gen||S.phase==='over')return;
     if(c0.bluff){
       const b=S.players[c0.by];const proof=b.hand.find(x=>x.color!=='w'&&sameCol(x.color,c0.col));
       emit({t:'fx',g:'🃏',txt:`Blefe! ${V(c0.by,'Você podia',J(c0.by)+' podia')} ter jogado ${proof?cardName(proof):'outra carta'}`,cor:'var(--cg)',modo:'stamp',ms:1500});
       emit({t:'revela',p:c0.by,carta:proof});
-      setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;challengeResolve(pi)},fastMode()?600:1500);
+      agendar(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;challengeResolve(pi)},fastMode()?600:1500);
     }else{S.busy=false;challengeResolve(pi)}
   },fastMode()?500:1300);
 }
@@ -377,12 +379,12 @@ function challengeResolve(pi){
 function autoHuman(pi){
   const g=S.gen,tok=S.tok;S.auto=true;render();
   emit({t:'aviso',txt:'Confuso! Jogada aleatória',cor:'var(--cy)'});
-  setTimeout(()=>{
+  agendar(()=>{
     if(g!==S.gen||tok!==S.tok||S.turn!==pi||S.phase==='over')return;
     const me=S.players[pi];const opts=me.hand.filter(c=>canPlay(me,c,true));
     if(!opts.length){
       takeDraw(pi);
-      if(S.busy&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
+      if(S.busy&&S.autoResolve)agendar(()=>S.autoResolve&&S.autoResolve(),800);
       else if(S.phase==='drawn'&&S.turn===pi){const d=me.hand.find(c=>c.id===S.drawnId);if(d)autoPlay(pi,d)}
       return;
     }
@@ -391,7 +393,7 @@ function autoHuman(pi){
 }
 function autoPlay(pi,card){
   termina(pi,card,isWildPick(card)?rand(COLORS):null);
-  if(S.busy&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
+  if(S.busy&&S.autoResolve)agendar(()=>S.autoResolve&&S.autoResolve(),800);
   else if(S.phase==='combo'&&S.turn===pi)endTurn();
 }
 const CARD_RULES=()=>RULES.filter(r=>r.g==='Cartas especiais').map(r=>r.k);
@@ -421,12 +423,12 @@ function ruleReveal(k,cards,done){
   const fin=()=>{if(g!==S.gen)return;emit({t:'regra',fase:'fim'});S.fxUntil=0;S.busy=false;render();emit({t:'infoRegra',k});if(done)done()};
   if(RM){render();fin();return}
   emit({t:'regra',fase:'mostra',k});
-  setTimeout(()=>{
+  agendar(()=>{
     if(g!==S.gen||S.phase==='over')return;
     render();
     // o ícone voa até a faixa (se ela estiver na tela) enquanto as cartas novas caem no monte
     const voa=emit({t:'regra',fase:'voa',k,cartas:cards.slice(0,6),sp});
-    setTimeout(fin,voa?anim(700*sp):700*sp);
+    agendar(fin,voa?anim(700*sp):700*sp);
   },1200*sp);
 }
 const RICON={stack:'📚',sequence:'🔢',neighbor:'↕️',hell:'🔥',jumpin:'✂️',perfection:'💯',clean:'🧼',nou:'↩️',satisfaction:'😤',insatisfaction:'👋',
@@ -484,17 +486,17 @@ function openPoker(){
   const list=S.added.map(a=>{const ic=ruleIcon(a.k);
     return `<div class="pk"><div class="pk-ic ${txtIcon(ic)?'txt':''}">${ic}</div><div class="pk-body"><div class="pk-head"><b>${RNAME[a.k]}</b><em class="new">${texto(a.by)==='você'?'sua':'de '+texto(a.by)}</em></div><p>${ruleDesc(a.k)}${ruleListHtml(a.k)}</p></div></div>`}).join('');
   $('pokerList').innerHTML=list||'<p class="sub">Nenhuma regra disponível para escolher.</p>';
-  S.busy=true;VIS.freshRules=[];render();
+  VIS.freshRules=[];render();
   $('pokerOv').classList.add('show');$('pokerGo').focus();
   $('pokerGo').onclick=()=>{
     const src=[...$('pokerList').querySelectorAll('.pk-ic')].map((el,j)=>({k:S.added[j].k,r:el.getBoundingClientRect(),fs:getComputedStyle(el).fontSize}));
     $('pokerOv').classList.remove('show');
-    flyRules(src,()=>{S.busy=false;dealAndStart()});
+    VIS.mixSrc=src;comecaMix();
   };
 }
 // Mix de Regras: os ícones escolhidos voam até a faixa e ficam centralizados sozinhos; depois os ícones das
 // outras regras entram um por vez na ponta direita, crescendo, e a fileira se recentraliza aos poucos. Só então as cartas são distribuídas
-function flyRules(src,done){
+function flyRules(src,done=()=>{}){
   const g=S.gen,strip=$('rulestrip');VIS.stripHold=false;
   const all=[...strip.querySelectorAll('.ri')];
   if(RM){all.forEach(el=>el.classList.remove('pre'));done();return}
@@ -560,40 +562,21 @@ function thinkItems(kind,list){
   if(kind==='up')return list.map(c=>`<span class="ti cd c-${c.chosen||c.color}"><b>${c.type==='num'?c.value:(SP[c.type]?SP[c.type].g:({skip:'⊘',rev:'⇄',d2:'+2',d4:'+4',wild:'✦'}[c.type]||''))}</b></span>`);
   return [];
 }
+// o adversário pensa: a tela mostra o balão com as opções piscando até parar na escolhida; a mesa só espera o tempo dele
 function botThink(pi,kind,list,pickIdx,done){
   const steps0=4+rng()*3;
-  const seat=document.querySelector(`[data-seat="${pi}"]`);
-  const g=S.gen;const sp=fastMode()?.4:1;
-  if(!seat||RM){setTimeout(()=>{if(g===S.gen)done()},300*sp);return}
-  const r=seat.getBoundingClientRect();
-  const el=document.createElement('div');el.className='think';el.innerHTML=`<span class="tdots">💭</span>${thinkItems(kind,list).join('')}`;
-  document.body.appendChild(el);
-  const w=el.offsetWidth;el.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+6)+'px';
-  const items=[...el.querySelectorAll('.ti')];let k=0,steps=Math.max(3,Math.round(steps0*sp));
-  const tick=()=>{
-    if(g!==S.gen){el.remove();return}
-    items.forEach(x=>x.classList.remove('hl'));
-    if(steps-->0){const j=items.length>1?(Math.random()*items.length|0):0;items[j].classList.add('hl');sfx('tick');setTimeout(tick,200*sp);return}
-    items[pickIdx]&&items[pickIdx].classList.add('pick');sfx('play');
-    setTimeout(()=>{el.remove();if(g===S.gen&&S.phase!=='over')done()},550*sp);
-  };
-  setTimeout(tick,250*sp);
+  const g=S.gen,sp=fastMode()?.4:1,passos=Math.max(3,Math.round(steps0*sp));
+  emit({t:'pensa',p:pi,tipo:kind,lista:list,escolha:pickIdx,passos,sp});
+  if(RM){agendar(()=>{if(g===S.gen)done()},300*sp);return}
+  agendar(()=>{if(g===S.gen&&S.phase!=='over')done()},(250+passos*200+550)*sp);
 }
+// Memória do adversário: repete as cores uma a uma; se for errar, para na cor errada (erraEm)
 function botTypeSimon(pi,seq,ok,done){
   const failAt=ok?-1:Math.floor(rng()*seq.length);
-  const seat=document.querySelector(`[data-seat="${pi}"]`);const g=S.gen;const sp=fastMode()?.4:1;
-  if(!seat||RM){setTimeout(()=>{if(g===S.gen)done()},300*sp);return}
-  const r=seat.getBoundingClientRect();
-  const el=document.createElement('div');el.className='think';el.innerHTML=`<span class="tdots">🧠</span>${seq.map(()=>'<span class="ti sq"></span>').join('')}`;
-  document.body.appendChild(el);const w=el.offsetWidth;el.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+'px';el.style.top=(r.bottom+6)+'px';
-  const items=[...el.querySelectorAll('.ti')];let i=0;
-  const step=()=>{
-    if(g!==S.gen){el.remove();return}
-    if(i===failAt){items[i].classList.add('bad');items[i].textContent='✕';sfx('error');setTimeout(()=>{el.remove();if(g===S.gen&&S.phase!=='over')done()},700*sp);return}
-    if(i>=seq.length){setTimeout(()=>{el.remove();if(g===S.gen&&S.phase!=='over')done()},400*sp);return}
-    items[i].style.background=CVAR[seq[i]];items[i].classList.add('pick');sfx('tick');i++;setTimeout(step,380*sp);
-  };
-  setTimeout(step,300*sp);
+  const g=S.gen,sp=fastMode()?.4:1;
+  emit({t:'memoriaBot',p:pi,seq,erraEm:failAt,sp});
+  if(RM){agendar(()=>{if(g===S.gen)done()},300*sp);return}
+  agendar(()=>{if(g===S.gen&&S.phase!=='over')done()},(failAt>=0?300+failAt*380+700:300+seq.length*380+400)*sp);
 }
 // depois da escolha de uma carta especial a vez passa, a não ser que o efeito continue ou a partida acabe
 function aposEscolha(r){if(r==='win'||r==='defer'||S.phase==='over')return;render();endTurn()}
@@ -627,14 +610,14 @@ function applySpecial(pi,card){
         const had=new Set(S.players[i].hand.map(c=>c.id));drawN(i,1);quietDraw(i);render();
         const nc=S.players[i].hand.find(c=>!had.has(c.id));
         emit({t:'chuva',p:i,id:nc&&nc.id,ms:560*sp});
-        setTimeout(()=>{emit({t:'chuvaFim',id:nc&&nc.id,a:i});render();setTimeout(next,160*sp)},anim(560*sp));
+        agendar(()=>{emit({t:'chuvaFim',id:nc&&nc.id,a:i});render();agendar(next,160*sp)},anim(560*sp));
       })}
     case 'thunder':{
       // 2 jogadores sorteados (pode ser quem jogou), cada um compra de 1 a 5; um por vez, as cartas aparecem de repente
       const vs=shuffle(alive()).slice(0,2);
       log(`Trovão atingiu ${vs.map(who).join(' e ')}.`);
       return sequenceFx(vs,(i,next,sp)=>{const n=1+Math.floor(rng()*5);
-        thunderDraw(i,n);render();setTimeout(next,950*sp)})}
+        thunderDraw(i,n);render();agendar(next,950*sp)})}
     case 'equality':{
       alive().forEach(i=>{const q=S.players[i];let k=0;while(q.hand.length>3)discardCard(i,rand(q.hand),k++);while(q.hand.length<3&&drawOne(i)){}});
       graceCalls();emit({t:'fx',g:'=',txt:'Todos ficam com 3 cartas',cor:col,modo:'stamp'});log('Igualdade: todos ficaram com 3 cartas.');
@@ -652,7 +635,7 @@ function applySpecial(pi,card){
       if(opp.length<2){emit({t:'fx',g:'🌪️',txt:'Nada para embaralhar',cor:col,modo:'stamp'});return 'done'}
       const sizes=opp.map(i=>S.players[i].hand.length);const pool=shuffle(opp.flatMap(i=>S.players[i].hand));
       opp.forEach(i=>emit({t:'voa',de:i,para:'mesa',atraso:0}));
-      opp.forEach((i,k)=>{const h=pool.splice(0,sizes[k]);S.players[i].hand=h;memReset(i);emit({t:'recebe',p:i,ids:h.map(c=>c.id),de:'mesa',maoNova:true,voa:false});setTimeout(()=>emit({t:'voa',de:'mesa',para:i,atraso:0}),350)});
+      opp.forEach((i,k)=>{const h=pool.splice(0,sizes[k]);S.players[i].hand=h;memReset(i);emit({t:'recebe',p:i,ids:h.map(c=>c.id),de:'mesa',maoNova:true,voa:false});agendar(()=>emit({t:'voa',de:'mesa',para:i,atraso:0}),350)});
       graceCalls();emit({t:'fx',g:'🌪️',txt:'Mãos dos adversários embaralhadas',cor:col,modo:'slam'});log('Tornado embaralhou as mãos dos adversários.');return 'done'}
     case 'steal':return transmute(pi,col);
     case 'peace':{const n=alive().length*2+2;S.peace=n+1;emit({t:'fx',g:'🌼',txt:'Ações sem efeito por alguns turnos',cor:'var(--cg)',modo:'stamp'});log('Paz: cartas de ação sem efeito por alguns turnos.');return 'done'}
@@ -664,28 +647,26 @@ function applySpecial(pi,card){
       S.busy=true;emit({t:'pausa',ms:99999});
       emit({t:'roleta',opcoes:keys.map(x=>CURSES[x].g)});
       const steps=[];let t=0;for(let j=0;j<16;j++){t+=(55+j*j*1.4)*sp;steps.push(t)}
-      steps.forEach((at,j)=>setTimeout(()=>{if(g!==S.gen)return;emit({t:'roleta',para:j===steps.length-1?CURSES[k].g:null})},at));
-      setTimeout(()=>{
+      steps.forEach((at,j)=>agendar(()=>{if(g!==S.gen)return;emit({t:'roleta',para:j===steps.length-1?CURSES[k].g:null})},at));
+      agendar(()=>{
         if(g!==S.gen||S.phase==='over')return;
         S.curse={k,left:CURSES[k].n*alive().length+2};emit({t:'3d',k:'aura',args:['#8b3fd1']});
         S.fxUntil=0;emit({t:'fx',g:CURSES[k].g,txt:`Maldição ${CURSES[k].nm}: ${CURSES[k].t}`,cor:'#6b2fa3',modo:'slam',ms:2600*sp});
         log(`Maldição ${CURSES[k].nm}: ${CURSES[k].t.toLowerCase()}.`);render();
-        setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()},2500*sp);
+        agendar(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()},2500*sp);
       },steps[steps.length-1]+250*sp);
       return 'defer'}
     case 'dice':{
       const t=nextIdx(pi,1),g=S.gen;S.busy=true;
       const n=1+Math.floor(rng()*6);
       // adversário rola: dado pequeno perto da cadeira dele; você rola: dado grande (3D ou 2D)
-      const dado=emit({t:'dado',p:t,n,ms:fastMode()?450:1200}),mini=dado==='mini',d3=dado==='3d';
-      if(mini||d3){emit({t:'som',k:'dice'});emit({t:'pausa',ms:3000});emit({t:'anuncio',txt:`${V(t,'Você rola',J(t)+' rola')} o dado…`});render()}
-      else emit({t:'fx',g:'🎲',txt:`${V(t,'Você rola',J(t)+' rola')} o dado…`,cor:'var(--accent)',modo:'roll',ms:1100});
-      setTimeout(()=>{
+      emit({t:'dado',p:t,n,ms:fastMode()?450:1200,txt:`${V(t,'Você rola',J(t)+' rola')} o dado…`});emit({t:'pausa',ms:3000});render();
+      agendar(()=>{
         if(g!==S.gen||S.phase==='over')return;
-        rollDice(pi,t,()=>{if(mini)emit({t:'dadoFim'});if(g!==S.gen||S.phase==='over')return;S.busy=false;
+        rollDice(pi,t,()=>{emit({t:'dadoFim'});if(g!==S.gen||S.phase==='over')return;S.busy=false;
           // quem rolou sempre perde a vez (se ainda estiver no jogo)
-          const q=S.players[t];if(!q.out&&!q.thorned){S.skip=true;emit({t:'selo',p:t,ic:'⊘',cor:'var(--cr)'})}render();if(S.phase!=='over')endTurn()},n,!!(mini||d3));
-      },fastMode()?500:(mini?1350:d3?1450:900));
+          const q=S.players[t];if(!q.out&&!q.thorned){S.skip=true;emit({t:'selo',p:t,ic:'⊘',cor:'var(--cr)'})}render();if(S.phase!=='over')endTurn()},n);
+      },fastMode()?500:1450);
       return 'defer'}
     case 'oddeven':S.traffic=S.traffic==='odd'?'even':S.traffic==='even'?'odd':rand(['odd','even']);
       emit({t:'fx',g:'🚦',txt:`Proibido vencer com cartas ${S.traffic==='odd'?'ímpares':'pares'}`,cor:col,modo:'stamp'});log(`Semáforo: proibido vencer com ${S.traffic==='odd'?'ímpares':'pares'}.`);return 'done';
@@ -709,7 +690,7 @@ function applySpecial(pi,card){
       // espera um pouco com a vez ainda no lugar novo, para ficar claro quem se mexeu, antes de passar a vez
       if(canCombo(p,card)&&(R.stack||R.sequence))return 'done';
       const g=S.gen;S.busy=true;render();
-      setTimeout(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()},fastMode()?500:1300);
+      agendar(()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;render();endTurn()},fastMode()?500:1300);
       return 'defer'}
     case 'view':
       opp.forEach(i=>{const q=S.players[i];if(q.hand.length)emit({t:'espia',p:i,carta:rand(q.hand)})});
@@ -821,7 +802,7 @@ function scheduleJumps(){
     if(i===S.turn||!deBot(i))return;
     const c=S.players[i].hand.find(x=>identical(x,topCard()));
     if(!c||rng()>p)return;
-    setTimeout(()=>{
+    agendar(()=>{
       if(g!==S.gen||tok!==S.tok||S.phase!=='play'||S.busy)return;
       if(!S.players[i].hand.includes(c)||!identical(c,topCard()))return;
       doJumpIn(i,c);

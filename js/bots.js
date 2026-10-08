@@ -3,11 +3,11 @@
 // quick: compra seguida (Compra Implacável), sem o tempo de pensar de uma jogada
 function scheduleBot(quick){
   const g=S.gen,tok=S.tok;
-  setTimeout(()=>{
+  agendar(()=>{
     if(g!==S.gen||tok!==S.tok||S.phase==='over'||!deBot(S.turn)||S.busy)return;
     if(cur().out){endTurn();return}
     botAct();
-  },quick?(fastMode()?120:300):fastMode()?Math.max(350+rng()*250,Math.min(700,(S.fxUntil||0)-Date.now())):Math.max(1400+rng()*700,(S.fxUntil||0)-Date.now()+400));
+  },quick?(fastMode()?120:300):fastMode()?Math.max(350+rng()*250,Math.min(700,(S.fxUntil||0)-RELOGIO.agora())):Math.max(1400+rng()*700,(S.fxUntil||0)-RELOGIO.agora()+400));
 }
 function colorCounts(hand){const o={r:0,y:0,g:0,b:0};hand.forEach(c=>{if(c.color!=='w')o[c.color]++});return o}
 /* ---------- Mestre: memória e decisões ---------- */
@@ -167,13 +167,13 @@ function announce(pi,card,cont,wait){
   render();
   const g=S.gen;
   const done=()=>{if(g!==S.gen||S.phase==='over')return;S.busy=false;emit({t:'anuncioFim'});cont()};
-  setTimeout(()=>{
+  agendar(()=>{
     if(g!==S.gen||S.phase==='over')return;
     if(S.peace<=0&&(card.type==='clone'||card.type==='random')){
       const og=SP[card.type].g;
       morphCard(card,S.discard[S.discard.length-2]);emit({t:'redesenhaMesa'});emit({t:'gira'});card.flipped=true;
       emit({t:'fx',g:og,txt:`Virou ${card.color==='w'?label(card):cardName(card)}`,cor:CVAR[card.color]||'var(--accent)',modo:'stamp'});
-      render();setTimeout(done,fastMode()?400:950);
+      render();agendar(done,fastMode()?400:950);
     }else done();
   },wait||(fastMode()?400:950));
 }

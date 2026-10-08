@@ -315,4 +315,4 @@ function toast(msg,bg){
 }
 
 const ARROWS='<svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"><path d="M100 22A78 78 0 0 1 168 139" marker-end="url(#ah2)"/><path d="M100 178A78 78 0 0 1 32 61" marker-end="url(#ah2)"/></g><defs><marker id="ah2" viewBox="0 0 10 10" refX="4" refY="5" markerWidth="2.4" markerHeight="2.4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs></svg>';
-function hold(ms){S.fxUntil=Math.max(S.fxUntil||0,Date.now()+ms)}
+function hold(ms){S.fxUntil=Math.max(S.fxUntil||0,RELOGIO.agora()+ms)}
