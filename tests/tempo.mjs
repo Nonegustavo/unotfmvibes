@@ -74,9 +74,27 @@ try {
     await host.evaluate(() => document.getElementById('pokerGo').click());
     await host.waitForTimeout(500);
     confere(await host.evaluate(() => !S.discard.length), 'com só o anfitrião tendo fechado, a partida ainda não começou');
+    confere(await host.evaluate(() => VIS.mixVoou && !!document.querySelector('.rulefly, #rulestrip .ri.fresh')), 'os ícones do anfitrião voaram para a faixa assim que ele fechou');
+    confere(await a.evaluate(() => !VIS.mixVoou && document.getElementById('pokerOv').classList.contains('show')), 'a lista da Ana continua aberta (os ícones dela ainda não voaram)');
     for (const p of [a, b]) await p.evaluate(() => document.getElementById('pokerGo').click());
     confere(await espera(host, () => S.discard.length > 0), 'todos fecharam: as cartas foram distribuídas');
 
+  }
+
+  /* ---------- 1b. a lista do Mix fica aberta até o tempo acabar ---------- */
+  {
+    await novoCtx({ mode: 'mix' });
+    const host = await aparelho('anfitrião', '?rede=anfitriao&tempo=rapido');
+    const f = await aparelho('Fábio', '?rede=convidado&nome=F%C3%A1bio');
+    for (let k = 0; k < 80; k++) {
+      for (const p of [host, f]) await p.evaluate(() => { if (document.getElementById('swapOv').classList.contains('show')) document.querySelector('#swaps button')?.click(); });
+      if (await f.evaluate(() => document.getElementById('pokerOv').classList.contains('show'))) break;
+      await host.waitForTimeout(150);
+    }
+    await host.evaluate(() => document.getElementById('pokerGo').click());
+    const comecou = await espera(host, () => S.discard.length > 0, null, 8000);
+    confere(comecou, 'o tempo do Mix acabou com a lista do Fábio aberta: a partida começou');
+    confere(await espera(f, () => VIS.mixVoou && !document.getElementById('pokerOv').classList.contains('show'), null, 3000), 'a lista dele fechou sozinha e os ícones voaram');
   }
 
   /* ---------- 2. tempo para jogar ---------- */

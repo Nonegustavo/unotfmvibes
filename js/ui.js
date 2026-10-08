@@ -161,7 +161,8 @@ function TELA(ev){
     case 'relogioFim':if(ev.p===0)tempoBarra(0);return;
     case 'ausente':return;
     case 'memoriaBot':return memoriaBotFx(ev);
-    case 'voaMix':{const s=VIS.mixSrc||[];VIS.mixSrc=null;return flyRules(s)}
+    // começo da partida do Mix: quem ainda estava com a lista aberta (o tempo acabou) também vê os ícones voarem
+    case 'voaMix':return fechaListaMix();
     case 'aviso':return toast(texto(ev.txt),ev.cor);
     case 'registro':{const m=texto(ev.txt);VIS.log.unshift(m);VIS.log=VIS.log.slice(0,2);if(VIS.histCur)VIS.histCur.notes.push(m);return}
     // histórico das jogadas: cada carta jogada abre uma entrada; as linhas do registro entram nela até o fim da jogada

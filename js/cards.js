@@ -212,11 +212,18 @@ function openPoker(){
   VIS.freshRules=[];render();
   $('pokerOv').classList.add('show');$('pokerGo').focus();
   $('pokerGo').onclick=()=>{
-    const src=[...$('pokerList').querySelectorAll('.pk-ic')].map((el,j)=>({k:S.added[j].k,r:el.getBoundingClientRect(),fs:getComputedStyle(el).fontSize}));
-    $('pokerOv').classList.remove('show');
-    VIS.mixSrc=src;acao({t:'fecharMix'});
+    // os ícones voam para a faixa assim que esta pessoa fecha a lista; as cartas saem quando todas fecharem
+    fechaListaMix();acao({t:'fecharMix'});
     if(S.mixFaltam&&S.mixFaltam.length)toast('Esperando os outros fecharem a lista…');
   };
+}
+// fecha a lista do Mix desta tela e manda os ícones para a faixa (uma vez só)
+function fechaListaMix(){
+  if(VIS.mixVoou)return;VIS.mixVoou=true;
+  const aberta=$('pokerOv').classList.contains('show');
+  const src=aberta?[...$('pokerList').querySelectorAll('.pk-ic')].map((el,j)=>({k:S.added[j].k,r:el.getBoundingClientRect(),fs:getComputedStyle(el).fontSize})):[];
+  $('pokerOv').classList.remove('show');
+  flyRules(src);
 }
 // Mix de Regras: os ícones escolhidos voam até a faixa e ficam centralizados sozinhos; depois os ícones das
 // outras regras entram um por vez na ponta direita, crescendo, e a fileira se recentraliza aos poucos. Só então as cartas são distribuídas
