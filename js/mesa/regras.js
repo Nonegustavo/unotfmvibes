@@ -72,14 +72,14 @@ function esgotouJogada(pi){
   if(S.phase==='over'||S.turn!==pi||!humano(pi))return;
   if(S.busy){agendar(()=>esgotouJogada(pi),300);return}
   const p=S.players[pi];p.esgotou=(p.esgotou||0)+1;
-  log(`O tempo de ${J(pi)} acabou: o computador jogou.`);
+  log(`O tempo de ${J(pi)} acabou: um bot jogou.`);
   assume(pi);S.tok++;botAct();
 }
 // queda: o computador joga pela pessoa (e responde o que estiver aberto); a volta devolve a cadeira na vez dela
 function caiu(pi){
   const p=S.players[pi];if(!p||p.caiu||p.out)return;
   p.caiu=true;tiraRelogio(pi);assume(pi);
-  emit({t:'aviso',txt:`📵 ${J(pi)} caiu: o computador joga até ele voltar`});log(`${J(pi)} caiu.`);
+  emit({t:'aviso',txt:`📵 ${J(pi)} caiu: um bot joga até ele voltar`});log(`${J(pi)} caiu.`);
   if(ABERTOS[pi])decidePor(pi);
   else if(S.turn===pi&&!S.busy&&S.phase!=='over'){S.tok++;pedirJogada(pi)}
   atualiza();

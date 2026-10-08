@@ -64,7 +64,7 @@ if (WEBRTC) {
   }
 }
 // conta os avisos da sineta de cada convidado: o dele não pode tocar duas vezes (na prévia e na confirmação)
-for (const c of convs) await c.evaluate(() => { const t0 = toast; window.__sinos = []; window.toast = (m, cor) => { if (/Você tocou a sineta/.test(m)) window.__sinos.push(Date.now()); return t0(m, cor); }; });
+for (const c of convs) await c.evaluate(() => { const t0 = toast; window.__sinos = []; window.__sinosDe = []; window.toast = (m, cor) => { if (/Você tocou a sineta/.test(m)) { window.__sinos.push(Date.now()); window.__sinosDe.push({ t: Date.now(), de: new Error().stack.split(/\n/).slice(2, 6).join(' < '), mao: S.players[0].hand.length, vez: S.turn, called: S.players[0].called, sineta: !!VIS.sineta }); } return t0(m, cor); }; });
 
 // um passo de uma pessoa: resolve janelas, toca a sineta, joga uma carta jogável ou compra/passa
 const passo = p => p.evaluate(() => {
@@ -173,6 +173,7 @@ for (let g = 1; g <= PARTIDAS; g++) {
 }
 for (const c of convs) {
   const sino = await c.evaluate(() => ({ lenta: window.__sinetaLenta || 0, duplos: window.__sinos.filter((t, i, l) => i && t - l[i - 1] < 1200).length, total: window.__sinos.length }));
+  if (sino.duplos) console.log(JSON.stringify(await c.evaluate(() => window.__sinosDe.filter((x, i, l) => (i && x.t - l[i - 1].t < 1200) || (l[i + 1] && l[i + 1].t - x.t < 1200))), null, 1));
   if (sino.duplos) problemas.push(`a sineta de ${c.nome} tocou duas vezes ${sino.duplos} vez(es)`);
   if (sino.lenta) problemas.push(`a sineta de ${c.nome} não respondeu na hora ${sino.lenta} vez(es)`);
 }

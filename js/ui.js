@@ -273,13 +273,21 @@ function pensaFx({p:pi,tipo:kind,lista:list,escolha:pickIdx,passos,sp,aberto}){
   BALOES[pi]={el,escolheu:i=>{clearTimeout(t);marca(i)},fim:()=>{clearTimeout(t);el.remove();delete BALOES[pi]}};
 }
 function pensouFim({p,escolha}){if(BALOES[p])BALOES[p].escolheu(escolha)}
-// barra do tempo para jogar (ms 0: some)
+/* barra do tempo para jogar (ms 0: some). Só aparece quando falta a metade do tempo: entra crescendo da esquerda e,
+   cheia, representa essa metade, que vai encolhendo até o fim */
+let TEMPO_T=null;
 function tempoBarra(ms){
-  let el=$('tempoBar');
-  if(!el){el=document.createElement('div');el.id='tempoBar';el.className='tempo';el.innerHTML='<b></b>';$('handwrap').appendChild(el)}
-  const b=el.firstElementChild;b.getAnimations().forEach(a=>a.cancel());
-  el.hidden=!ms;if(!ms)return;
-  b.animate([{transform:'scaleX(1)',background:'#8b7bff'},{transform:'scaleX(.35)',background:'#ffd24d',offset:.65},{transform:'scaleX(0)',background:'#ff5a52'}],{duration:ms,easing:'linear',fill:'forwards'});
+  const el=$('tempoBar'),b=el.firstElementChild;
+  clearTimeout(TEMPO_T);b.getAnimations().forEach(a=>a.cancel());el.hidden=true;
+  if(!ms)return;
+  const metade=ms/2,cresce=Math.min(350,metade);
+  TEMPO_T=setTimeout(()=>{
+    el.hidden=false;
+    b.animate([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:cresce,easing:'ease-out',fill:'forwards'});
+    TEMPO_T=setTimeout(()=>{
+      b.animate([{transform:'scaleX(1)',background:'#8b7bff'},{transform:'scaleX(.5)',background:'#ffd24d',offset:.5},{transform:'scaleX(0)',background:'#ff5a52'}],{duration:metade,easing:'linear',fill:'forwards'});
+    },cresce);
+  },metade-cresce);
 }
 // Memória do adversário: as cores aparecem uma a uma; se ele errar, a errada fica marcada
 function memoriaBotFx({p:pi,seq,erraEm,sp}){
@@ -458,8 +466,8 @@ function seatStatus(i){
   const n=p.hand.length;
   const shiny=R.shiny&&(p.colorida??colorful(p));
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
-  if(p.caiu)L.push({ic:'📵',short:'📵',name:'Caiu',txt:'a conexão caiu; o computador joga até ele voltar'});
-  else if(p.ctrlReal)L.push({ic:'🤖',short:'🤖',name:'Computador',txt:i===0?'o seu tempo acabou e o computador está jogando por você. Toque numa carta ou em Comprar para voltar':'o tempo dele acabou; o computador joga até ele voltar'});
+  if(p.caiu)L.push({ic:'📵',short:'📵',name:'Caiu',txt:'a conexão caiu; um bot joga até ele voltar'});
+  else if(p.ctrlReal)L.push({ic:'🤖',short:'🤖',name:'Bot',txt:i===0?'o seu tempo acabou e um bot está jogando por você. Toque numa carta ou em Comprar para voltar':'o tempo dele acabou; um bot joga até ele voltar'});
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
   if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
   if(p.treasure)L.push({ic:'🧭',short:`🧭${p.treasure}`,name:'Busca',txt:`jogou ${p.treasure}/3, na terceira ganha a Carta do Tesouro`});

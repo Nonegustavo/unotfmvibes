@@ -8,7 +8,7 @@ Hospedado no GitHub Pages e instalável como app (PWA).
 
 - **Confirme o entendimento antes de mudanças grandes ou ambíguas.** Liste o que entendeu, item por item, e aponte o que falta decidir, com uma sugestão para cada ponto. Só implemente depois do "pode aplicar". Correções pequenas e claras podem ser feitas direto.
 - Escreva em **português do Brasil**, tanto as respostas quanto os textos do jogo.
-- Na interface, chame os bots de **"adversários"**. A palavra "bot" não aparece para o jogador.
+- No jogo solo, chame os bots de **"adversários"** (a palavra "bot" não aparece). No multiplayer (sala, jogo com amigos), quem é controlado pelo computador pode ser chamado de **"bot"**, para separar das pessoas.
 - Depois de alterar, **teste** (veja abaixo) e diga claramente o que foi conferido e o que não deu para conferir.
 - Faça commit com mensagem em português descrevendo a mudança. Só faça push depois da confirmação, a não ser que eu peça para enviar direto.
 

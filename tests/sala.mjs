@@ -50,7 +50,10 @@ try {
     const c = await abre(nome);
     await c.click('#homeAmigos'); await c.fill('#salaNome', nome); await c.click('#salaEntrar');
     // convite: o anfitrião mostra o QR code (o teste pega o código, como se a câmera lesse)
-    await host.click('#salaConvidar');
+    // a Bia pelo botão de convidar; o Caio tocando no primeiro bot da lista (ele senta naquele lugar)
+    let lugarBot = null;
+    if (nome === 'Bia') await host.click('#salaConvidar');
+    else { lugarBot = await host.evaluate(() => { const l = document.querySelector('#salaLugares li[data-convidar]'); return +l.dataset.convidar; }); await host.click(`#salaLugares li[data-convidar="${lugarBot}"] .nm`); }
     await host.waitForFunction(() => !!SALA.convite, null, { timeout: 15000 });
     if (!convidados.length) await foto(host, 'anfitriao-convite');
     const convite = await host.evaluate(() => SALA.convite);
@@ -61,6 +64,7 @@ try {
     await host.evaluate(() => { document.querySelector('#salaConvite details').open = true; }); await host.fill('#salaColar', resposta); await host.click('#salaUsarColado');
     await c.waitForSelector('#salaDentro:not([hidden])', { timeout: 15000 });
     confere(true, `${nome} entrou na sala`);
+    if (lugarBot != null) { await host.waitForTimeout(300); confere(await host.evaluate(l => SALA.lugares[l] && SALA.lugares[l].nome === 'Caio', lugarBot), `convidado pelo bot do lugar ${lugarBot}, o Caio sentou nele`); }
     convidados.push(c);
   }
   await host.waitForFunction(() => document.querySelectorAll('#salaLugares li:not(.bot)').length === 3, null, { timeout: 5000 });

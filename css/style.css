@@ -592,7 +592,8 @@ body>.handwrap{grid-row:5}body>.actions{grid-row:6}
 .minidie svg{width:100%!important;height:100%!important}
 
 /* ---------- jogar com amigos (sala) ---------- */
-.tempo{position:absolute;left:1.125rem;right:1.125rem;top:-0.5rem;height:0.3125rem;border-radius:999px;background:var(--line);overflow:hidden;z-index:6}
+/* barra do tempo para jogar: na linha da mesa, logo acima das setas de baixo */
+body>.tempo{grid-row:4;grid-column:1;align-self:end;position:relative;z-index:25;height:0.3125rem;margin:0 1.125rem calc(var(--cw0)*.083 + var(--cw0)*.233 + 0.375rem);border-radius:999px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden;pointer-events:none}
 .tempo[hidden]{display:none}
 .tempo b{display:block;height:100%;transform-origin:left;border-radius:999px}
 .sem-sinal{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 3.25rem);transform:translateX(-50%);z-index:29;background:var(--cr);color:#fff;border-radius:999px;padding:0.375rem 0.875rem;font-weight:600;font-size:.85rem;box-shadow:0 0.25rem 1rem rgba(0,0,0,.4)}
@@ -607,6 +608,8 @@ body>.handwrap{grid-row:5}body>.actions{grid-row:6}
 .sala-lugares li .tg{font-size:.75rem;font-weight:500;color:var(--muted)}
 .sala-lugares li .tg.ok{color:#5fd38d}
 .sala-lugares li.bot{color:var(--muted);font-weight:500}
+.sala-lugares li.convida{cursor:pointer}
+.sala-lugares li.convida .tg{color:var(--accent)}
 .sala-lugares li button{flex:0 0 auto;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:0.5rem;width:2rem;height:2rem;font-size:.9rem;padding:0}
 .sala-lugares li button:disabled{opacity:.3}
 .sala-check{display:flex;align-items:center;gap:0.5rem;font-size:.9rem;margin:0 0 1rem}

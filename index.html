@@ -52,6 +52,7 @@
 </main>
 <!-- setas do sentido: fora da mesa para ficarem na frente dos climas (inclusive das partículas 3D) -->
 <div class="chevs" id="chevs" aria-hidden="true"><i class="chev ctop"></i><i class="chev cbot"></i></div>
+<div class="tempo" id="tempoBar" hidden aria-hidden="true"><b></b></div>
 <section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><button type="button" class="tag stat mystat" id="mystat" hidden></button><div class="hand" id="hand" aria-label="Sua mão"></div></section>
 <nav class="actions">
   <button class="btn mull" id="mullBtn" hidden>Trocar mão</button>
@@ -139,7 +140,7 @@
     </div>
     <div id="salaAnfitriao" hidden>
       <p class="legend">A tela fica acesa enquanto a sala estiver aberta. Se você sair do jogo ou bloquear a tela, a partida para para todos.</p>
-      <div class="field"><div class="lb">Lugares na mesa</div><div class="seg" id="salaLugaresSeg"></div><p class="legend">Os lugares vazios ficam com adversários do computador.</p></div>
+      <div class="field"><div class="lb">Lugares na mesa</div><div class="seg" id="salaLugaresSeg"></div><p class="legend">Os lugares vazios ficam com bots. Toque num bot para convidar alguém para o lugar dele.</p></div>
       <ul class="sala-lugares" id="salaLugares"></ul>
       <label class="sala-check"><input type="checkbox" id="salaSortear"> Sortear os lugares a cada partida</label>
       <div class="field"><div class="lb">Tempo para jogar</div><div class="seg" id="salaTempoSeg"></div><p class="legend" id="salaTempoLegenda"></p></div>
