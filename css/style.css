@@ -4,7 +4,7 @@
   --cr:#e0433a; --cy:#f0b21f; --cg:#2c9a57; --cb:#2b6bd6; --ck:#1d1829; --cgray:#8e8a98;
   /* escala única: 1 --u = 1px num celular de 390×800; cresce e diminui com a largura e a altura da tela */
   --u:clamp(.75px,min(calc(100vw/390),calc(100dvh/800)),1.3px);
-  --cw0:calc(60*var(--u));--cw:var(--cw0);
+  --cw0:calc(60*var(--u));--cw:var(--cw0);--cwMao:var(--cw0);
   font-size:calc(16*var(--u));
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
@@ -474,11 +474,11 @@ button.card:disabled,.deckbtn.off{cursor:default}
 .btn.mull{flex:0 0 auto}
 .btn:disabled{opacity:.4;cursor:default}
 /* botões da mesa: os da vez centralizados, a sineta (só o emoji) no canto direito, ao alcance do polegar */
-body>.mesabtns{grid-row:4;grid-column:1;align-self:end;position:relative;z-index:25;height:var(--bandH);margin-bottom:var(--chevH);display:flex;align-items:center;justify-content:center;padding:0 4rem;pointer-events:none;justify-self:center;width:100%}
+body>.mesabtns{grid-row:4;grid-column:1;align-self:end;position:relative;z-index:25;height:var(--bandH);margin-bottom:var(--chevH);display:flex;align-items:center;justify-content:center;padding:0 4.25rem;pointer-events:none;justify-self:center;width:100%;max-width:calc(7*var(--cwMao) + 36px + 1rem)}
 .mb-meio{display:flex;gap:0.5rem;justify-content:center;min-width:0;max-width:100%}
 .mb-meio .btn{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;padding:0.375rem 1rem;font-size:.95rem;border-radius:999px;white-space:nowrap;box-shadow:0 3px 0 rgba(0,0,0,.22)}
-/* a faixa é centrada e vai, no máximo, até a ponta da última carta da mão (largura posta por posSino), então a sineta não fica longe */
-.sino{position:absolute;right:0.5rem;bottom:0;height:2.875rem;aspect-ratio:1;display:grid;place-items:center;padding:0;background:none;border:none;font-size:2.4rem;line-height:1;pointer-events:auto;transition:opacity .2s,filter .2s}
+/* a faixa é centrada e vai, no máximo, até a ponta de uma mão de 7 cartas (7 cartas e 6 espaços de 6px), então a sineta não fica longe */
+.sino{position:absolute;right:0.5rem;bottom:0;height:3.25rem;aspect-ratio:1;display:grid;place-items:center;padding:0;background:none;border:none;font-size:2.8rem;line-height:1;pointer-events:auto;transition:opacity .2s,filter .2s}
 .sino:disabled{opacity:.3;filter:grayscale(.7);cursor:default}
 .sino.lit{animation:pulse 1s infinite;filter:drop-shadow(0 0 0.5rem var(--cr))}
 /* espaço embaixo da mão, do tamanho que tinham os botões; a barra do tempo fica no alto dele */
@@ -532,26 +532,15 @@ body>.handwrap{padding-bottom:1.5rem}
 .rule[hidden],.group[hidden]{display:none}
 /* telas grandes (computador): coluna central maior, mesmo arranjo do celular */
 @media (min-width:900px) and (min-height:560px){
-  :root{--u:clamp(.7px,min(calc(100dvh/1000),calc(100vw/1222)),1.3px);--cw0:calc(104*var(--u))}
-  .rail,.rulestrip{width:min(62.5rem,100%);margin-left:auto;margin-right:auto}
-  .seat{max-width:10.75rem;padding:0.5625rem 0.5rem 0.5rem;border-radius:1rem}
-  .seat .av{width:2.5rem;height:2.5rem;font-size:1.1rem}
-  .seat .nm{font-size:1rem}
-  .fan{height:2.75rem}
-  .fan i{width:1.1875rem;height:1.75rem;margin-left:-0.5938rem}
-  .fan .cnt{top:1.4375rem;font-size:2.5rem}
-  .fan .cnt.said{top:1.875rem;font-size:1.2rem}
-  .tag{font-size:.78rem}
-  .tag.stat{font-size:.8rem}
-  .marker{border-radius:1.1875rem}
-
-  .status{font-size:1.15rem}
-  .hand{max-width:62.5rem;margin:0 auto}
-  body>.handwrap{padding-bottom:1.75rem}
-  .btn{font-size:1.08rem;padding:0.875rem 0.75rem}
-  .mb-meio .btn{font-size:1rem;padding:0.4375rem 1.25rem}
-  .sino{font-size:2.7rem;height:3.25rem}
-  .notices{width:min(92vw,28.75rem)}
+  /* textos, ícones e selos do tamanho que teriam num celular da mesma altura (16px a cada 800px): 20 --u daqui */
+  :root{--u:clamp(.55px,min(calc(100dvh/1000),calc(100vw/1222)),1.3px);--cw0:calc(104*var(--u));font-size:calc(20*var(--u));--cwMao:calc(86*var(--u))}
+  /* as cartas da mão um pouco menores que as 104 --u da mesa, para sobrar altura para a mesa com os textos maiores */
+  .handwrap{--cw:var(--cwMao)}
+  /* com a raiz 1,25x maior, os tamanhos do celular já ficam maiores aqui: só as larguras das colunas mudam (62,5rem de antes = 50rem) */
+  .rail,.rulestrip{width:min(50rem,100%);margin-left:auto;margin-right:auto}
+  .seat{max-width:8.6rem}
+  .hand{max-width:50rem;margin:0 auto}
+  .notices{width:min(92vw,23rem)}
 }
 .w-snow i{animation-play-state:paused}
 .table[data-weather="blizzard"] .w-snow i{animation-play-state:running}

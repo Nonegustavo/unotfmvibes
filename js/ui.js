@@ -828,14 +828,6 @@ function desenha(){
   $('unoBtn').classList.toggle('lit',unoOk&&me.hand.length===target());
   $('mullBtn').hidden=!(S.mull&&S.phase!=='over');
   $('chalBtn').hidden=!(turn&&S.phase==='play'&&S.pending>0&&S.chal&&S.chal.by!==0);
-  posSino();
-}
-// a faixa dos botões da mesa (e a sineta, no canto dela) vai até a ponta da última carta da mão, com uma largura mínima para os botões do meio
-function posSino(){
-  const b=$('mesaBtns'),cs=$('hand').querySelectorAll('.card'),meio=innerWidth/2,rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
-  if(!cs.length){b.style.maxWidth='';return}
-  const fim=cs[cs.length-1].getBoundingClientRect().right;
-  b.style.maxWidth=Math.round(2*Math.max(fim-meio+0.5*rem,13*rem))+'px';
 }
 
 /* ---------- controlador da tela: a pessoa deste aparelho responde aos pedidos pelas janelas ----------
