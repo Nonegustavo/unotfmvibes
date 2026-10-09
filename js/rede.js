@@ -8,11 +8,16 @@
    - de mentira, entre abas do mesmo navegador (BroadcastChannel), com cada mensagem atrasada de 100 a 300 ms, como numa
      partida online: ?rede=anfitriao (com ?convidados=N, padrão 1) e ?rede=convidado;
    - WebRTC pela rede local (js/lan.js), com o convite e a resposta trocados em QR codes: redeConvidar, redeResposta e
-     redeEntrar (nos testes, ?rede=lan-anfitriao e ?rede=lan-convidado).
+     redeEntrar (nos testes, ?rede=lan-anfitriao e ?rede=lan-convidado);
+   - WebSocket com o servidor das salas online (servidor/servidor.mjs): a página é um convidado do servidor, que roda a
+     mesa e o anfitrião (js/sala.js cuida de entrar, voltar e da sala).
    Sem ?rede, nada daqui roda. */
 const REDE_MODO=new URLSearchParams(location.search).get('rede');
 // no convidado: a ligação com o anfitrião (anfitriao) e a sala (aoSala); no anfitrião, as pessoas ficam em ANF.ligacoes
-const REDE={papel:null,ultimoSinal:0,anfitriao:null,pendente:null,seq:0,canal:null,eu:null,aoSala:null,
+// servidor das salas online: no site publicado (https), o do Fly.io; aberto pelo computador ou pela rede local (http),
+// o do próprio computador (npm run servidor). ?servidor= troca (nos testes)
+const SERVIDOR=new URLSearchParams(location.search).get('servidor')||(location.protocol==='https:'?'wss://mesa-tfm.fly.dev':`ws://${location.hostname||'localhost'}:8787`);
+const REDE={papel:null,ultimoSinal:0,anfitriao:null,pendente:null,seq:0,canal:null,eu:null,aoSala:null,aoVisao:null,online:false,
   conectado:false,enviadas:0,recebidas:0,ultimas:[]}; // contadores: para os testes
 // faixa no topo com o estado da rede: só nas abas de teste (?rede=…); na sala, as telas dela mostram o estado
 function redeAviso(txt){
@@ -59,6 +64,15 @@ function ligacaoWebRTC(pc,dc){
   l.enviar=m=>{if(dc.readyState==='open'){l.enviouEm=realNow();if(m.t!=='oi')REDE.enviadas++;try{dc.send(JSON.stringify(m))}catch(x){}}};
   return l;
 }
+// WebSocket com o servidor das salas online
+function ligacaoWS(url){
+  const ws=new WebSocket(url),l={tipo:'ws',ws,aberta:false,aoReceber:null,aoAbrir:null,aoFechar:null};
+  ws.onopen=()=>{l.aberta=true;if(l.aoAbrir)l.aoAbrir()};
+  ws.onclose=e=>{l.aberta=false;if(l.aoFechar)l.aoFechar(e)};
+  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}if(l.aoReceber)l.aoReceber(m)};
+  l.enviar=m=>{if(ws.readyState===1){l.enviouEm=realNow();if(m.t!=='oi')REDE.enviadas++;ws.send(JSON.stringify(m))}};
+  return l;
+}
 
 /* ---------- anfitrião: roda a mesa (js/mesa/anfitriao.js) ---------- */
 // Sinal: cada lado manda um "oi" a cada 2 s. O anfitrião confere quem ficou mudo (anfSinal); o convidado, se o
@@ -76,7 +90,7 @@ function redeSinal(){
 function redeSemSinal(sem){
   let el=document.getElementById('semSinal');
   if(!el){el=document.createElement('div');el.id='semSinal';el.className='sem-sinal';el.hidden=true;document.body.appendChild(el)}
-  el.textContent=REDE.anfitriao&&!REDE.anfitriao.aberta?'📵 A conexão com o anfitrião caiu. Para voltar, saia e entre com um convite novo.':'📵 Sem sinal do anfitrião…';
+  el.textContent=REDE.online?'📵 Sem conexão com o servidor. Tentando de novo…':REDE.anfitriao&&!REDE.anfitriao.aberta?'📵 A conexão com o anfitrião caiu. Para voltar, saia e entre com um convite novo.':'📵 Sem sinal do anfitrião…';
   el.hidden=!sem;
 }
 function redeAnfitriao(){
@@ -126,12 +140,13 @@ function redeLigaAnfitriao(l){
     REDE.recebidas++;REDE.ultimas=[...REDE.ultimas.slice(-5),m.t+':'+(m.ev?m.ev.t:'')];
     if(!REDE.conectado){REDE.conectado=true;redeAviso('Convidado: conectado ao anfitrião')}
     if(m.t==='versao'){redeAviso('Atualize o jogo: o anfitrião está com outra versão');if(REDE.aoSala)REDE.aoSala({t:'versao'});return}
-    if(m.t==='sala'){if(REDE.aoSala)REDE.aoSala(m);return}
+    if(['sala','entrou','erro','removido'].includes(m.t)){if(REDE.aoSala)REDE.aoSala(m);return}
     if(m.visao){
       // a visão substitui a partida inteira; o que a tela guardou nela (janela aberta) continua
       const auto=S&&S.autoResolve,pre=S&&S.preLanded;
       S=m.visao.S;R=m.visao.R;TOUR=m.visao.TOUR;
       if(auto)S.autoResolve=auto;if(pre)S.preLanded=pre;
+      if(REDE.aoVisao)REDE.aoVisao();
     }
     // partida nova: a sala e o placar da anterior fecham
     if(m.t==='evento'&&m.ev.t==='novaPartida'){$('salaOv').classList.remove('show');$('endOv').classList.remove('show')}

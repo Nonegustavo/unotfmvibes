@@ -638,6 +638,14 @@ body>.handwrap{grid-row:5}
 #salaResposta[hidden],#salaLerConvite[hidden],#salaDentro[hidden]{display:none}
 .sala-sem summary{cursor:pointer;color:var(--muted);font-size:.85rem}
 .sala-sem[open]{display:flex;flex-direction:column;gap:0.5rem}
+.sala-codigo{display:flex;gap:0.5rem;margin-top:0.625rem}
+.sala-codigo .sala-input{flex:1;text-transform:uppercase;letter-spacing:.3em;font-weight:700;text-align:center}
+.sala-codigo .btn{flex:0 0 auto}
+.sala-online{background:var(--bg);border-radius:1rem;padding:0.75rem;margin-bottom:0.875rem;display:flex;flex-direction:column;gap:0.5rem}
+.sala-cod{display:flex;align-items:baseline;justify-content:space-between;gap:0.5rem}
+.sala-cod b{font-size:2rem;letter-spacing:.25em;font-weight:800;color:var(--accent)}
+.sala-link{word-break:break-all;margin:0}
+.sala-online[hidden],.sala-codigo[hidden]{display:none}
 .sala-estado{min-height:1.2em;font-size:.88rem;margin:0.25rem 0 0.75rem;color:var(--muted)}
 .sala-estado.ok{color:#5fd38d}
 .sala-estado.erro{color:#ff8a84}

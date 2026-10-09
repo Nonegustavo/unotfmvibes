@@ -140,7 +140,7 @@ function confere(m) {
   }
   return null;
 }
-const nomeLimpo = n => String(n == null ? '' : n).replace(/[\u0000-\u001f\u007f\u2028\u2029\ue000-\ue004]/g, '').trim().slice(0, 16);
+const nomeLimpo = n => String(n == null ? '' : n).replace(/[\u0000-\u001f\u007f\u2028\u2029\ue000-\ue004<>&"'`]/g, '').trim().slice(0, 16);
 
 function aoConectar(ws, ip) {
   let sala = null, l = null, avisos = 0, fichas = LIM.porSegundo * 2, ultimo = Date.now();

@@ -127,8 +127,9 @@ function classeEnd(a){
 }
 
 /* ---------- QR code ---------- */
-function desenharQR(cv,texto){
-  const qr=qrcode(0,'M');qr.addData(texto,'Alphanumeric');qr.make();
+// modo: 'Alphanumeric' (os códigos de conexão, em Base45) ou 'Byte' (um link)
+function desenharQR(cv,texto,modo='Alphanumeric'){
+  const qr=qrcode(0,'M');qr.addData(texto,modo);qr.make();
   const n=qr.getModuleCount(),mz=4,tot=n+mz*2;
   const css=Math.max(3,Math.floor(Math.min(320,innerWidth-80)/tot)),dpr=Math.min(3,devicePixelRatio||1),px=Math.round(css*dpr);
   cv.width=cv.height=px*tot;cv.style.width=cv.style.height=css*tot+'px';

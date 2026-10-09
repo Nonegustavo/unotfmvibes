@@ -134,13 +134,25 @@
   <div class="sheet sala">
     <h2 id="salaTitulo">Jogar com amigos</h2>
     <div id="salaInicio">
-      <p class="sub">Todos na mesma Wi-Fi. Um aparelho cria a sala, e os outros entram lendo um QR code. Não precisa de internet.</p>
       <div class="field"><label class="lb" for="salaNome">Seu nome</label><input class="sala-input" id="salaNome" maxlength="16" autocomplete="nickname" placeholder="Como os outros vão te ver"></div>
-      <div class="row2"><button type="button" class="btn main" id="salaCriar">Criar sala</button><button type="button" class="btn" id="salaEntrar">Entrar numa sala</button></div>
+      <div class="field"><div class="lb">Pela internet</div><p class="legend">De qualquer lugar: quem cria a sala manda o link ou o código para os outros.</p>
+        <div class="row2"><button type="button" class="btn main" id="salaCriarOnline">Criar sala</button><button type="button" class="btn" id="salaEntrarOnline">Entrar com código</button></div>
+        <div class="sala-codigo" id="salaCodigoBox" hidden><input class="sala-input" id="salaCodigo" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código" aria-label="Código da sala"><button type="button" class="btn main" id="salaUsarCodigo">Entrar</button></div>
+      </div>
+      <p class="sala-estado" id="salaEstadoInicio"></p>
+      <div class="field"><div class="lb">Na mesma Wi-Fi</div><p class="legend">Sem internet: um aparelho cria a sala, e os outros entram lendo um QR code.</p>
+        <div class="row2"><button type="button" class="btn" id="salaCriar">Criar sala</button><button type="button" class="btn" id="salaEntrar">Entrar numa sala</button></div>
+      </div>
+    </div>
+    <div class="sala-online" id="salaOnlineBox" hidden>
+      <div class="sala-cod"><span class="lb">Código da sala</span><b id="salaCodigoTxt"></b></div>
+      <p class="legend sala-link" id="salaLink"></p>
+      <div class="row2"><button type="button" class="btn main" id="salaCompartilhar">Compartilhar o link</button><button type="button" class="btn" id="salaCopiarLink">Copiar o link</button></div>
+      <details class="sala-sem"><summary>QR code do link</summary><canvas id="salaQRLink" class="sala-qr"></canvas></details>
     </div>
     <div id="salaAnfitriao" hidden>
-      <p class="legend">A tela fica acesa enquanto a sala estiver aberta. Se você sair do jogo ou bloquear a tela, a partida para para todos.</p>
-      <div class="field"><div class="lb">Lugares na mesa</div><div class="seg" id="salaLugaresSeg"></div><p class="legend">Os lugares vazios ficam com bots. Toque num bot para convidar alguém para o lugar dele.</p></div>
+      <p class="legend" id="salaAviso"></p>
+      <div class="field"><div class="lb">Lugares na mesa</div><div class="seg" id="salaLugaresSeg"></div><p class="legend" id="salaLugaresLegenda"></p></div>
       <ul class="sala-lugares" id="salaLugares"></ul>
       <label class="sala-check"><input type="checkbox" id="salaSortear"> Sortear os lugares a cada partida</label>
       <div class="field"><div class="lb">Tempo para jogar</div><div class="seg" id="salaTempoSeg"></div><p class="legend" id="salaTempoLegenda"></p></div>

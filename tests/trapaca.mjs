@@ -64,11 +64,11 @@ try {
   dono.manda({ t: 'criar', nome: 'Dono', versao: VERSAO, cfg: { mode: 'custom', trade: true } });
   const codigo = (await dono.espera(m => m && m.t === 'entrou')).codigo;
   const ana = await conecta(srv.url);
-  ana.manda({ t: 'entrar', codigo, nome: controle + 'Ana' + marcador + 'Silva', versao: VERSAO });
+  ana.manda({ t: 'entrar', codigo, nome: controle + 'Ana' + marcador + 'Sil<va>', versao: VERSAO });
   const anaChave = (await ana.espera(m => m && m.t === 'entrou')).chave;
   await espera(300);
   const nomes = () => (ultima(dono, 'sala') || { lugares: [] }).lugares.filter(x => x.nome).map(x => x.nome);
-  confere(nomes().includes('AnaSilva'), `nome sem caracteres de controle nem marcadores (${nomes().join(', ')})`);
+  confere(nomes().includes('AnaSilva'), `nome sem caracteres de controle, marcadores nem de HTML (${nomes().join(', ')})`);
   // regras malformadas: só o que existe e sem conflitos
   dono.manda({ t: 'comando', c: 'regras', cfg: { mode: 'zzz', diff: 'deus', start: 999, combo: 'x' } });
   await espera(300);

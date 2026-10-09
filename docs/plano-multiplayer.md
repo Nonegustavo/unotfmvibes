@@ -753,6 +753,17 @@ Cada etapa termina com os testes passando e um commit próprio, como nas fases 0
     por um instante a visão de outra cadeira (a mão de outra pessoa). Agora a cadeira só muda no primeiro evento da
     partida nova.
   - `npm run test:trapaca`: as 24 tentativas do cliente trapaceiro foram recusadas, com a partida seguindo.
+- **Etapa 3, telas (feita em 09/10/2026):** o 👥 tem "Pela internet" (criar sala, entrar com código) e "Na mesma Wi-Fi".
+  - Quem cria vê o código grande, o link, "Compartilhar o link" (o menu de compartilhar do celular), "Copiar o link"
+    e o QR code do link. O dono tem as opções da sala da rede local e também tira pessoas (✕).
+  - Abrir o link (`?sala=CÓDIGO`) abre o 👥 com o código preenchido; a pessoa escreve o nome e entra.
+  - A chave fica no aparelho: ao recarregar a página, abrir o jogo de novo ou perder a conexão, ele volta sozinho para
+    a mesma cadeira (tenta de novo com espera crescente). Quem foi tirado, ou se a sala acabou, fica sabendo.
+  - Se o dono sair, quem vira dono passa a ver os botões de dono (e o aviso "Agora você é o dono da sala").
+  - Os nomes perdem os caracteres de HTML (`< > & " '`), no anfitrião e no servidor, porque aparecem nas telas dos outros.
+  - `npm run test:sala-online` faz tudo isso pelas telas, com o servidor no computador.
+  - Para jogar nos celulares antes da etapa 4: no computador, `npm run servidor` com `DEV=1` e o jogo servido pela
+    rede local (`python -m http.server 8000`); nos celulares, `http://<endereço do computador>:8000`.
 
 ### 9.6 Decisões (aprovadas em 09/10/2026, com as sugestões)
 

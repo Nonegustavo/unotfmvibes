@@ -130,7 +130,7 @@ function anfDoConvidado(l,m){
       anfMudou();return;
     }
     l.meuId=m.id;
-    const novo=!l.nome;l.nome=String(m.nome||'').slice(0,16)||`Convidado ${ANF.ligacoes.indexOf(l)+1}`;
+    const novo=!l.nome;l.nome=String(m.nome||'').replace(/[<>&"'`]/g,'').trim().slice(0,16)||`Convidado ${ANF.ligacoes.indexOf(l)+1}`;
     // nomes repetidos ganham um número (os textos do jogo usam o nome para saber quem é "Você")
     const usados=[OPCOES.meuNome||'Anfitrião',...ANF.ligacoes.filter(x=>x!==l&&x.nome).map(x=>x.nome)];
     if(novo&&usados.includes(l.nome)){let k=2;while(usados.includes(l.nome+' '+k))k++;l.nome=l.nome+' '+k}
