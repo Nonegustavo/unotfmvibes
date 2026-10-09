@@ -770,8 +770,16 @@ Cada etapa termina com os testes passando e um commit próprio, como nas fases 0
   - Se o dono sair, quem vira dono passa a ver os botões de dono (e o aviso "Agora você é o dono da sala").
   - Os nomes perdem os caracteres de HTML (`< > & " '`), no anfitrião e no servidor, porque aparecem nas telas dos outros.
   - `npm run test:sala-online` faz tudo isso pelas telas, com o servidor no computador.
-  - Para jogar nos celulares antes da etapa 4: no computador, `npm run servidor` com `DEV=1` e o jogo servido pela
+  - Para jogar nos celulares sem o servidor publicado: no computador, `npm run servidor` com `DEV=1` e o jogo servido pela
     rede local (`python -m http.server 8000`); nos celulares, `http://<endereço do computador>:8000`.
+- **Etapa 4, publicar (no ar em 09/10/2026, no período de teste do Fly.io):** o servidor está em
+  `https://mesa-tfm.fly.dev` (São Paulo, uma máquina de 256 MB), e o site publicado já usa ele.
+  - `npm run test:sala-online -- --site=https://nonegustavo.github.io/unotfmvibes/` passou pela internet, com o site e
+    o servidor publicados (criar, entrar pelo link e pelo código, partida, recarregar e voltar, tirar, dono saindo).
+  - **Limite do período de teste:** cada máquina para sozinha depois de 5 minutos ligada (as salas abertas se perdem),
+    e o teste acaba em 7 dias ou 2 horas de máquina, o que vier primeiro. Para partidas de verdade, é preciso pôr um
+    cartão na conta (o teste acaba e a cobrança começa: cerca de 2 dólares por mês, menos com a máquina desligando sem uso).
+  - Falta: jogar com amigos em redes diferentes (Wi-Fi de casas diferentes e 4G), depois do cartão.
 
 ### 9.6 Decisões (aprovadas em 09/10/2026, com as sugestões)
 

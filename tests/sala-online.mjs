@@ -7,6 +7,7 @@
 // - O dono tira o Caio da sala e depois sai: o posto de dono passa para a Bia, que vê os botões de dono.
 // Tira capturas (tests/sala-online-*.png).
 // Uso: npm run test:sala-online   (--ver abre o navegador visível)
+//      npm run test:sala-online -- --site=https://nonegustavo.github.io/unotfmvibes/   (o site e o servidor publicados)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,6 +16,7 @@ import { ROOT } from './robo.mjs';
 import { sobeServidor } from './servidor-teste.mjs';
 
 const HEADED = process.argv.includes('--ver');
+const SITE = (process.argv.find(a => a.startsWith('--site=')) || '').slice(7); // com o site publicado, o servidor é o dele
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json' };
 const web = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -25,8 +27,8 @@ const web = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 await new Promise(r => web.listen(0, '127.0.0.1', r));
-const srv = await sobeServidor({ velocidade: 3 });
-const BASE = `http://127.0.0.1:${web.address().port}/?servidor=${encodeURIComponent(srv.url)}`;
+const srv = SITE ? { para: async () => {} } : await sobeServidor({ velocidade: 3 });
+const BASE = SITE ? SITE.replace(/\/?$/, '/') + '?x=1' : `http://127.0.0.1:${web.address().port}/?servidor=${encodeURIComponent(srv.url)}`;
 const browser = await chromium.launch(HEADED ? { headless: false, channel: 'chrome' } : {});
 const erros = [];
 const falhou = m => { console.error('FALHOU: ' + m); process.exitCode = 1; };
