@@ -26,7 +26,8 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const BASE = `http://127.0.0.1:${server.address().port}/`;
+// a sala na mesma Wi-Fi fica escondida no 👥: aparece com ?wifi=1
+const BASE = `http://127.0.0.1:${server.address().port}/?wifi=1`;
 const regras = () => { try { localStorage.setItem('unotfm-solo-cfg', JSON.stringify({ mode: 'custom', poker: false, trade: true, gift: true })); } catch (e) {} };
 const navegadores = [];
 const lanca = args => chromium.launch({ ...(HEADED ? { headless: false, channel: 'chrome' } : {}), args }).then(b => (navegadores.push(b), b));

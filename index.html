@@ -66,7 +66,7 @@
 <div class="home" id="home">
   <div class="home-fan" id="homeFan" aria-hidden="true"></div>
   <div class="home-logo">unotfm <small>solo</small></div>
-  <div class="home-btns"><button type="button" class="btn main" id="homePlay">Jogar</button><button type="button" class="btn" id="homeAmigos" aria-label="Jogar com amigos">👥</button><button type="button" class="btn" id="homeCfg" aria-label="Configurações">⚙️</button></div>
+  <div class="home-btns"><button type="button" class="btn main" id="homePlay">Modo solo</button><button type="button" class="btn main" id="homeAmigos">Multiplayer</button><button type="button" class="btn" id="homeCfg">Opções</button></div>
 </div>
 <div class="ov" id="settingsOv" role="dialog" aria-modal="true" aria-labelledby="stTitle">
   <div class="sheet">
@@ -118,7 +118,6 @@
     <div class="field"><div class="lb">Altura da mesa</div><div class="seg" data-key="compact"></div><p class="legend">Compacta: aproxima os adversários da mesa em telas altas e estreitas.</p><p class="legend warn" id="compactWarn" hidden>Nesta tela a mesa já fica compacta; a opção não muda nada agora.</p></div>
     <div class="field"><div class="lb">Efeitos 3D</div><div class="seg" data-key="fx3d"></div><p class="legend">Dado 3D, partículas dos climas, explosões e confete. Desligue se o celular ficar lento.</p></div>
     <div class="field" id="installField" hidden><div class="lb">App</div><button type="button" class="btn" id="installCfg" style="width:100%">📲 Instalar o unotfm neste aparelho</button></div>
-    <div class="field"><div class="lb">Experimental</div><a class="btn" href="mostruario.html" style="display:block;text-align:center;text-decoration:none;color:inherit">🎨 Mostruário de cartas</a><p class="legend">Todas as cartas, com espaço para experimentar seus desenhos de símbolos e de baralho.</p><a class="btn" href="sons-teste.html" style="display:block;text-align:center;text-decoration:none;color:inherit;margin-top:0.625rem">🔊 Teste de sons</a><p class="legend">Ajuste a campainha e o gelo no monte congelado e copie a configuração.</p></div>
     <div class="row2" style="margin-top:6px"><button class="btn main" id="cfgClose">Voltar</button></div></div>
 </div>
 <div class="ov" id="iosOv" role="dialog" aria-modal="true" aria-labelledby="iosTitle">
@@ -136,19 +135,19 @@
     <div id="salaInicio">
       <div class="field"><label class="lb" for="salaNome">Seu nome</label><input class="sala-input" id="salaNome" maxlength="16" autocomplete="nickname" placeholder="Como os outros vão te ver"></div>
       <div class="field"><div class="lb">Pela internet</div><p class="legend">De qualquer lugar: quem cria a sala manda o link ou o código para os outros.</p>
-        <div class="row2"><button type="button" class="btn main" id="salaCriarOnline">Criar sala</button><button type="button" class="btn" id="salaEntrarOnline">Entrar com código</button></div>
+        <div class="row2"><button type="button" class="btn main" id="salaCriarOnline">Criar sala</button><button type="button" class="btn main" id="salaEntrarOnline">Entrar com código</button></div>
         <div class="sala-codigo" id="salaCodigoBox" hidden><input class="sala-input" id="salaCodigo" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código" aria-label="Código da sala"><button type="button" class="btn main" id="salaUsarCodigo">Entrar</button></div>
       </div>
       <p class="sala-estado" id="salaEstadoInicio"></p>
-      <div class="field"><div class="lb">Na mesma Wi-Fi</div><p class="legend">Sem internet: um aparelho cria a sala, e os outros entram lendo um QR code.</p>
+      <div class="field" id="salaWifi" hidden><div class="lb">Na mesma Wi-Fi</div><p class="legend">Sem internet: um aparelho cria a sala, e os outros entram lendo um QR code.</p>
         <div class="row2"><button type="button" class="btn" id="salaCriar">Criar sala</button><button type="button" class="btn" id="salaEntrar">Entrar numa sala</button></div>
       </div>
     </div>
+    <div id="salaCriando" class="sala-criando" hidden><div class="sala-roda" aria-hidden="true"></div><p class="sub" id="salaCriandoTxt">Criando a sala…</p></div>
     <div class="sala-online" id="salaOnlineBox" hidden>
       <div class="sala-cod"><span class="lb">Código da sala</span><b id="salaCodigoTxt"></b></div>
       <p class="legend sala-link" id="salaLink"></p>
       <div class="row2"><button type="button" class="btn main" id="salaCompartilhar">Compartilhar o link</button><button type="button" class="btn" id="salaCopiarLink">Copiar o link</button></div>
-      <details class="sala-sem"><summary>QR code do link</summary><canvas id="salaQRLink" class="sala-qr"></canvas></details>
     </div>
     <div id="salaAnfitriao" hidden>
       <p class="legend" id="salaAviso"></p>
@@ -156,7 +155,7 @@
       <ul class="sala-lugares" id="salaLugares"></ul>
       <label class="sala-check"><input type="checkbox" id="salaSortear"> Sortear os lugares a cada partida</label>
       <div class="field"><div class="lb">Tempo para jogar</div><div class="seg" id="salaTempoSeg"></div><p class="legend" id="salaTempoLegenda"></p></div>
-      <div class="field"><div class="lb">Regras</div><p class="legend" id="salaRegrasTxt"></p><button type="button" class="btn" id="salaRegras">Mudar modo e regras</button></div>
+      <div class="field"><div class="lb">Regras</div><p class="legend" id="salaRegrasTxt"></p><button type="button" class="btn" id="salaRegras">Mudar modo e regras</button><ul class="sala-regras" id="salaRegrasLista"></ul></div>
       <div class="sala-convite" id="salaConvite" hidden>
         <p class="sub">Peça para quem vai entrar tocar em <b>Entrar numa sala</b> e ler este QR code. Depois, leia o QR code que aparecer no aparelho dele.</p>
         <canvas id="salaQR" class="sala-qr"></canvas>
@@ -181,6 +180,7 @@
         <p class="sub" id="salaDentroTxt"></p>
         <ul class="sala-lugares" id="salaLugaresConv"></ul>
         <p class="legend" id="salaRegrasConv"></p>
+        <ul class="sala-regras" id="salaRegrasListaConv"></ul>
         <button type="button" class="btn main" id="salaPronto">Estou pronto</button>
       </div>
       <p class="sala-estado" id="salaEstadoConv"></p>

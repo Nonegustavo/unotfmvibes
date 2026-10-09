@@ -598,9 +598,8 @@ body>.handwrap{grid-row:5}
 @keyframes homeFloat{0%,100%{translate:0 0}50%{translate:0 -0.4rem}}
 .home-logo{font-weight:700;font-size:2.8rem;letter-spacing:-.02em;line-height:1}
 .home-logo small{font-size:1.1rem;font-weight:600;color:var(--accent);margin-left:.2rem}
-.home-btns{display:flex;gap:0.625rem;width:min(20rem,100%)}
-.home-btns .btn.main{flex:1;font-size:1.15rem}
-.home-btns .btn:not(.main){flex:0 0 3.5rem}
+.home-btns{display:flex;flex-direction:column;gap:0.625rem;width:min(16rem,100%)}
+.home-btns .btn{font-size:1.15rem}
 /* Banimento e Mágica: cartas mostradas perto da cadeira (como na Clarividência) ou na mão */
 .showc{position:fixed;z-index:27;pointer-events:none;display:flex;align-items:center;gap:0.1875rem}
 .showc .card{flex:none}
@@ -625,7 +624,6 @@ body>.handwrap{grid-row:5}
 .tempo b{display:block;height:100%;transform-origin:left;border-radius:999px}
 .sem-sinal{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 3.25rem);transform:translateX(-50%);z-index:29;background:var(--cr);color:#fff;border-radius:999px;padding:0.375rem 0.875rem;font-weight:600;font-size:.85rem;box-shadow:0 0.25rem 1rem rgba(0,0,0,.4)}
 .sem-sinal[hidden]{display:none}
-.home-btns .btn#homeAmigos{flex:0 0 3.5rem}
 .sala-input{width:100%;box-sizing:border-box;background:var(--bg);color:var(--ink);border:2px solid var(--line);border-radius:0.75rem;padding:0.625rem 0.75rem;font:inherit}
 .sala-input:focus{outline:none;border-color:var(--accent)}
 .sala-lugares{list-style:none;margin:0 0 0.75rem;padding:0;display:flex;flex-direction:column;gap:0.375rem}
@@ -654,7 +652,12 @@ body>.handwrap{grid-row:5}
 .sala-cod{display:flex;align-items:baseline;justify-content:space-between;gap:0.5rem}
 .sala-cod b{font-size:2rem;letter-spacing:.25em;font-weight:800;color:var(--accent)}
 .sala-link{word-break:break-all;margin:0}
-.sala-online[hidden],.sala-codigo[hidden]{display:none}
+.sala-online[hidden],.sala-codigo[hidden],.sala-criando[hidden]{display:none}
+.sala-criando{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:2rem 0}
+.sala-roda{width:2.5rem;height:2.5rem;border-radius:50%;border:0.25rem solid var(--line);border-top-color:var(--accent);animation:salaRoda .9s linear infinite}
+@keyframes salaRoda{to{transform:rotate(360deg)}}
+.sala-regras{list-style:none;margin:0.625rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:0.375rem}
+.sala-regras li{background:var(--bg);border-radius:999px;padding:0.25rem 0.625rem;font-size:.8rem;font-weight:600}
 .sala-estado{min-height:1.2em;font-size:.88rem;margin:0.25rem 0 0.75rem;color:var(--muted)}
 .sala-estado.ok{color:#5fd38d}
 .sala-estado.erro{color:#ff8a84}

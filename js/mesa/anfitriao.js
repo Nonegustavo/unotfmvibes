@@ -27,7 +27,9 @@ const corDaPessoa=i=>AVCOL[(i*4+1)%AVCOL.length];
 // cadeiras das pessoas de fora: espalhadas entre os adversários (com 4 cadeiras e 1 convidado, ele fica na da frente)
 function cadeirasConvidados(n,k){const out=[];for(let j=1;j<=k;j++)out.push(Math.min(n-1,Math.max(1,Math.round(j*n/(k+1)))));return [...new Set(out)]}
 // resumo das regras para a lista da sala (a tela de cada um escreve o texto)
-const resumoRegras=cfg=>({mode:cfg.mode,diff:cfg.diff,n:cfg.mode==='custom'?RULES.filter(x=>cfg[x.k]&&x.k!=='poker').length:0});
+// (as chaves das regras ligadas, no Personalizado, e a defesa contra compras, que vale em todos os modos)
+const resumoRegras=cfg=>{const lista=cfg.mode==='custom'?RULES.filter(x=>cfg[x.k]===true&&x.k!=='poker').map(x=>x.k):[];
+  return {mode:cfg.mode,diff:cfg.diff,n:lista.length,lista,combo:cfg.combo||'normal'}};
 const anfPessoas=()=>ANF.ligacoes.filter(l=>l.aberta&&l.nome);
 const ligDaCadeira=pi=>ANF.ligacoes.find(l=>l.cadeira===pi);
 // a primeira cadeira que se pode mexer: a 0 é de quem roda a mesa, quando há um ('eu'); online, todas

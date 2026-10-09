@@ -44,9 +44,9 @@ js/lan.js               conexão WebRTC pela rede local: compactação do convit
 js/rede.js              jogar com outras pessoas, a parte da página: ligações (de mentira entre abas, WebRTC ou WebSocket
                         com o servidor das salas, SERVIDOR), convite e resposta (redeConvidar/redeResposta/redeEntrar),
                         sinal e o lado do convidado (só a tela)
-js/sala.js              tela da sala de jogar com amigos (botão 👥 da tela inicial), pela internet (criar, código e link,
+js/sala.js              tela da sala de jogar com amigos (botão Multiplayer da tela inicial), pela internet (criar, código e link,
                         compartilhar, entrar pelo link ou pelo código, voltar sozinho com a chave guardada, dono) ou na
-                        mesma Wi-Fi (convite e resposta por QR code). Lugares, tempo para jogar, regras, pronto, começar.
+                        mesma Wi-Fi (convite e resposta por QR code; escondida, aparece com ?wifi=1). Lugares, tempo para jogar, regras, pronto, começar.
                         A sala em si é a do ANF (neste aparelho ou no servidor); aqui só se desenha e se mandam os
                         comandos (salaCmd)
 js/ui.js                tela: TELA (eventos), VIS, controlador da tela e pedidos, render(), janelas (cor, rastrear,
@@ -54,8 +54,8 @@ js/ui.js                tela: TELA (eventos), VIS, controlador da tela e pedidos
 manifest.webmanifest    manifesto do PWA
 sw.js                   service worker (offline)
 icons/                  ícones do app
-mostruario.html         mostruário de cartas (Configurações → Experimental), com css/mostruario.css e js/mostruario.js
-sons-teste.html         teste de sons (Configurações → Experimental: campainha, gelo e Misericórdia), com css/sons-teste.css e js/sons-teste.js
+mostruario.html         mostruário de cartas (sem link no jogo: abra o endereço), com css/mostruario.css e js/mostruario.js
+sons-teste.html         teste de sons (sem link no jogo: campainha, gelo e Misericórdia), com css/sons-teste.css e js/sons-teste.js
 servidor/servidor.mjs   servidor das salas online (Node, biblioteca ws em servidor/package.json): uma mesa e um anfitrião
                         por sala (js/mesa/*.js num contexto vm), código de 4 caracteres, chave secreta de cada pessoa,
                         conferência do formato e da quantidade das mensagens, limites por endereço

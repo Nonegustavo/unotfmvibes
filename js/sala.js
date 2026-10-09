@@ -12,7 +12,7 @@ const SALA={papel:null,online:false,dono:false,ultima:null,codigo:null,chave:nul
 const TEMPOS=[['normal','Normal'],['longo','Longo'],['livre','Sem limite']];
 const TEMPO_TXT={normal:'20 s por jogada, 15 s para cor e alvo, 30 s para Memória, Carta da Regra e Mix.',longo:'O dobro do Normal.',livre:'Ninguém tem pressa (bom para aprender as regras).'};
 function salaEstado(id,txt,tipo){const e=$(id);e.textContent=txt||'';e.className='sala-estado'+(tipo?' '+tipo:'')}
-function salaMostra(qual){['salaInicio','salaAnfitriao','salaConvidado'].forEach(id=>$(id).hidden=id!==qual)}
+function salaMostra(qual){['salaInicio','salaCriando','salaAnfitriao','salaConvidado'].forEach(id=>$(id).hidden=id!==qual)}
 // nomes vão para o HTML da sala: sem os caracteres que viram marcação
 const salaHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -69,6 +69,8 @@ document.addEventListener('visibilitychange',()=>{
 function salaAbre(){
   $('salaNome').value=load('unotfm-nome','')||'';
   salaMostra('salaInicio');$('salaComecar').hidden=true;$('salaSair').textContent='Voltar';$('salaCodigoBox').hidden=true;
+  // a sala na mesma Wi-Fi (sem internet) fica escondida: aparece com ?wifi=1 no endereço
+  $('salaWifi').hidden=!/^(1|sim)$/.test(new URLSearchParams(location.search).get('wifi')||'');
   $('salaOv').classList.add('show');
 }
 function salaGuardaNome(){
@@ -96,6 +98,11 @@ function salaRegrasTxt(r){
   const dif=(SEGS.diff.find(x=>x[0]===r.diff)||[])[1]||'';
   return `${modo}${r.mode==='custom'?` (${r.n} regra${r.n===1?'':'s'})`:''} · bots no ${dif.toLowerCase()}`;
 }
+// as regras ligadas, uma por etiqueta, e a defesa contra compras
+function salaRegrasLista(r){
+  const def=(SEGS.combo.find(x=>x[0]===r.combo)||[])[1];
+  return [...(r.lista||[]).map(k=>`${ruleIcon(k)} ${RNAME[k]||k}`),...(def?[`🛡️ Defesa contra compras: ${def}`]:[])].map(t=>`<li>${t}</li>`).join('');
+}
 // desenha a sala de quem manda nela (o anfitrião da rede local ou o dono online); os outros veem salaDoAnfitriao
 function salaDesenha(){
   if(SALA.papel!=='anfitriao'&&!(SALA.online&&SALA.dono))return;
@@ -113,7 +120,7 @@ function salaDesenha(){
   $('salaSortear').checked=!!m.sortear;
   $('salaTempoSeg').innerHTML=TEMPOS.map(([k,t])=>`<button type="button" data-tempo="${k}" aria-pressed="${m.tempo===k}">${t}</button>`).join('');
   $('salaTempoLegenda').textContent=TEMPO_TXT[m.tempo]||'';
-  $('salaRegrasTxt').textContent=salaRegrasTxt(m.regras);
+  $('salaRegrasTxt').textContent=salaRegrasTxt(m.regras);$('salaRegrasLista').innerHTML=salaRegrasLista(m.regras);
   $('salaConvidar').hidden=!lan;
   $('salaConvidar').textContent=pessoas>1?'➕ Convidar outra pessoa':'➕ Convidar alguém';
   $('salaConvidar').disabled=pessoas>=6;
@@ -209,6 +216,7 @@ function salaDoAnfitriao(m){
   const quem=(m.lugares.find(x=>x.anfitriao||x.dono)||{}).nome||'anfitrião';
   $('salaDentroTxt').textContent=`Você está na sala de ${quem}. A partida começa quando ${quem} tocar em Começar.`;
   $('salaLugaresConv').innerHTML=salaLinhas(m.lugares).map(({bot,nome,tag,ok,col})=>`<li class="${bot?'bot':''}" data-nome="${bot?'':salaHtml(nome)}"><span class="av" style="background:${col}">${bot?'🤖':salaHtml(nome[0])}</span><span class="nm">${salaHtml(nome)}</span><span class="tg ${ok?'ok':''}">${tag}</span></li>`).join('');
+  $('salaRegrasListaConv').innerHTML=salaRegrasLista(m.regras);
   $('salaRegrasConv').textContent=`${salaRegrasTxt(m.regras)} · tempo para jogar: ${(TEMPOS.find(x=>x[0]===m.tempo)||[])[1]||''}${m.sortear?' · lugares sorteados a cada partida':''}`;
   $('salaPronto').textContent=SALA.pronto?'✓ Pronto (tocar para cancelar)':'Estou pronto';
   salaEstado('salaEstadoConv','✅ Conectado!','ok');
@@ -234,6 +242,8 @@ function onlineInicia(){
   REDE.aoVisao=()=>{if(SALA.voltando&&S&&S.players&&S.phase!=='over'){SALA.voltando=false;$('salaOv').classList.remove('show')}};
   $('salaSair').textContent='Sair da sala';
 }
+// enquanto o servidor não responde: uma tela só de espera (a sala aparece quando chegar a lista dela)
+function salaEspera(txt){$('salaCriandoTxt').textContent=txt;salaMostra('salaCriando');$('salaOv').classList.add('show')}
 // mensagem com que se entra: criar a sala, entrar pelo código, ou voltar com a chave
 function onlinePrimeira(){
   const base={nome:OPCOES.meuNome||'',versao:VERSAO_REDE};
@@ -248,7 +258,7 @@ function onlineConecta(){
 }
 function onlineCria(){
   salaGuardaNome();SALA.codigo=null;SALA.chave=null;onlineInicia();
-  salaEstado('salaEstadoInicio','Criando a sala…');onlineConecta();
+  salaEspera('Criando a sala…');onlineConecta();
 }
 function onlineEntra(texto){
   const codigo=String(texto||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -256,12 +266,12 @@ function onlineEntra(texto){
   salaGuardaNome();
   const salvo=load(ONLINE_KEY,null);
   SALA.codigo=codigo;SALA.chave=salvo&&salvo.codigo===codigo&&salvo.servidor===SERVIDOR?salvo.chave:null;
-  onlineInicia();salaEstado('salaEstadoInicio','Entrando na sala…');onlineConecta();
+  onlineInicia();salaEspera(`Entrando na sala ${codigo}…`);onlineConecta();
 }
 // volta para a sala guardada (a página recarregou ou o jogo foi aberto de novo)
 function onlineVolta(salvo){
   OPCOES.meuNome=load('unotfm-nome','')||'';SALA.codigo=salvo.codigo;SALA.chave=salvo.chave;
-  onlineInicia();salaAbre();salaEstado('salaEstadoInicio',`Voltando para a sala ${salvo.codigo}…`);onlineConecta();
+  onlineInicia();salaAbre();salaEspera(`Voltando para a sala ${salvo.codigo}…`);onlineConecta();
 }
 // a conexão fechou: de propósito (sala acabou, tirado, outra aba) ou não (sinal): nesse caso, tenta de novo
 function onlineCaiu(l,e){
@@ -283,7 +293,6 @@ function onlineMsg(m){
     SALA.codigo=m.codigo;SALA.chave=m.chave;SALA.tentativas=0;SALA.dentro=true;SALA.voltando=!!m.voltou;
     save(ONLINE_KEY,{codigo:m.codigo,chave:m.chave,servidor:SERVIDOR,t:Date.now()});
     $('salaCodigoTxt').textContent=m.codigo;$('salaLink').textContent=salaLink(m.codigo);$('salaOnlineBox').hidden=false;
-    desenharQR($('salaQRLink'),salaLink(m.codigo),'Byte');
     salaBotaoTopo();salaEstado('salaEstadoInicio','');$('salaSair').textContent='Sair da sala';
     if(m.voltou)toast('Você voltou para a sala');
     return;
