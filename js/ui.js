@@ -541,6 +541,8 @@ function sortHand(h){
 }
 function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
+  // Mix de Regras no multiplayer: até as cartas serem distribuídas, alguém ainda está escolhendo (ou lendo a lista)
+  if(R.poker&&!S.discard.length&&emRede())return 'Aguardando jogadores escolherem as regras…';
   const p=cur();
   if(S.players[0].out)return S.players[0].foraTorneio?'Fora do torneio. Assistindo…':'Você foi eliminado. Assistindo…';
   if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
