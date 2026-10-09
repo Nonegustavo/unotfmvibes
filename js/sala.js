@@ -164,17 +164,45 @@ function salaCria(){
   $('salaTitulo').textContent='Sua sala';$('salaSair').textContent='Sair da sala';
   salaMostra('salaAnfitriao');salaDesenha();
   // fim da partida: nova rodada com a mesma sala, ou de volta à sala para mudar alguma coisa
-  salaBotaoTopo();
-  $('againBtn').onclick=salaComeca;
-  $('endRules').textContent='Voltar à sala';$('endRules').onclick=()=>{$('endOv').classList.remove('show');$('salaOv').classList.add('show');salaDesenha()};
+  FIM_BOTOES=salaBotoesFim;
 }
-// o botão do topo vira "Sala": abre a sala durante a partida
-function salaBotaoTopo(){const bs=$('openSettings');bs.hidden=false;bs.textContent='Sala';bs.setAttribute('aria-label','Sala');bs.onclick=()=>{$('salaOv').classList.add('show');salaDesenha();salaBotaoJogo()}}
-// online, quem não é o dono: com a partida andando, o botão da sala volta ao jogo (o dono tem o de começar/voltar)
+// a sala durante a partida (Sala e regras, no menu, e Ver a sala / Voltar à sala, no fim da rodada)
+function salaVer(){$('salaOv').classList.add('show');salaDesenha();salaBotaoJogo()}
+// quem manda na sala: o anfitrião da rede local ou o dono online
+const salaManda=()=>SALA.papel==='anfitriao'||SALA.online&&SALA.dono;
+// quem não manda na sala: com a partida andando, o botão da sala volta ao jogo (quem manda tem o de começar/voltar)
 function salaBotaoJogo(){
-  if(!SALA.online||SALA.dono){if(SALA.online)$('salaComecar').hidden=false;return}
+  if(salaManda()){$('salaComecar').hidden=false;return}
   const jogando=!!(S&&S.players&&S.phase!=='over');
   $('salaComecar').hidden=!jogando;$('salaComecar').disabled=false;$('salaComecar').textContent='Voltar ao jogo';
+}
+// fim da rodada: quem manda começa outra ou volta à sala; os outros veem a sala e esperam
+function salaBotoesFim(){
+  $('againBtn').hidden=false;$('endRules').hidden=false;
+  $('endRules').onclick=()=>{$('endOv').classList.remove('show');salaVer()};
+  if(salaManda()){
+    $('againBtn').disabled=false;$('againBtn').onclick=salaComeca;$('endRules').textContent='Voltar à sala';
+    if(/^Esperando/.test($('againBtn').textContent))$('againBtn').textContent='Nova rodada';
+  }else{
+    $('againBtn').disabled=true;$('againBtn').onclick=null;$('againBtn').textContent=SALA.online?'Esperando o dono…':'Esperando o anfitrião…';
+    $('endRules').textContent='Ver a sala';
+  }
+}
+// sair da sala (Sair da partida, no menu; Menu principal, no fim da rodada; Sair da sala, na sala): pergunta antes, com
+// o que acontece para quem sai
+function salaDentro(){return SALA.online?!!(SALA.codigo&&!SALA.saindo):SALA.papel==='anfitriao'||!!REDE.conectado}
+async function salaSai(){
+  if(!salaDentro()){
+    if(SALA.online){onlineEsquece();location.href=semSala();return}
+    if(SALA.papel){location.reload();return}
+    $('salaOv').classList.remove('show');return;
+  }
+  const jogando=!!(S&&S.players&&S.phase!=='over'),bot=jogando?' Na partida, um bot joga no seu lugar.':'';
+  const texto=SALA.papel==='anfitriao'?'A sala fecha e a partida acaba para todos.'
+    :SALA.online&&SALA.dono?'Você volta ao menu principal e outra pessoa vira dona da sala.'+bot:'Você volta ao menu principal.'+bot;
+  if(!await confirmaJogo({titulo:'Sair da sala?',texto,sim:'Sair',nao:'Ficar'}))return;
+  if(SALA.online){SALA.saindo=true;if(REDE.anfitriao)REDE.anfitriao.enviar({t:'sair'});onlineEsquece();setTimeout(()=>{location.href=semSala()},150);return}
+  location.reload();
 }
 async function salaConvida(){
   const b=$('salaConvidar');b.disabled=true;salaEstado('salaEstado','Preparando o convite…');
@@ -201,8 +229,8 @@ function salaEntra(){
   $('salaTitulo').textContent='Entrar numa sala';$('salaSair').textContent='Sair';$('salaComecar').hidden=true;
   $('salaLerConvite').hidden=false;$('salaResposta').hidden=true;$('salaDentro').hidden=true;salaEstado('salaEstadoConv','');
   salaMostra('salaConvidado');
-  // o fim da partida não tem botões: a próxima rodada é com o anfitrião
-  $('againBtn').hidden=true;$('endRules').hidden=true;
+  // o fim da partida: a próxima rodada é com o anfitrião
+  FIM_BOTOES=salaBotoesFim;
 }
 async function salaUsaConvite(texto){
   salaEstado('salaEstadoConv','Preparando a resposta…');
@@ -243,7 +271,7 @@ const onlineEsquece=()=>{try{localStorage.removeItem(ONLINE_KEY)}catch(e){}};
 function onlineInicia(){
   if(SALA.online)return;
   SALA.online=true;SALA.papel='online';telaAcesa();
-  redeConvidado();REDE.online=true;REDE.aoSala=onlineMsg;
+  redeConvidado();REDE.online=true;REDE.aoSala=onlineMsg;FIM_BOTOES=salaBotoesFim;
   // voltou no meio de uma partida: a sala fecha e a partida aparece
   REDE.aoVisao=()=>{if(SALA.voltando&&S&&S.players&&S.phase!=='over'){SALA.voltando=false;$('salaOv').classList.remove('show')}};
   $('salaSair').textContent='Sair da sala';
@@ -299,7 +327,7 @@ function onlineMsg(m){
     SALA.codigo=m.codigo;SALA.chave=m.chave;SALA.tentativas=0;SALA.dentro=true;SALA.voltando=!!m.voltou;
     save(ONLINE_KEY,{codigo:m.codigo,chave:m.chave,servidor:SERVIDOR,t:Date.now()});
     $('salaCodigoTxt').textContent=m.codigo;$('salaLink').textContent=salaLink(m.codigo);$('salaOnlineBox').hidden=false;
-    salaBotaoTopo();salaEstado('salaEstadoInicio','');$('salaSair').textContent='Sair da sala';
+    salaEstado('salaEstadoInicio','');$('salaSair').textContent='Sair da sala';
     if(m.voltou)toast('Você voltou para a sala');
     return;
   }
@@ -321,13 +349,9 @@ function onlineMsg(m){
   if(dono&&!SALA.dono&&antes)toast('Agora você é o dono da sala');
   SALA.dono=dono;
   $('salaTitulo').textContent=dono?'Sua sala':'Na sala';
-  salaBotaoJogo();
-  $('againBtn').hidden=!dono;$('endRules').hidden=!dono;
-  if(dono){
-    $('againBtn').onclick=salaComeca;
-    $('endRules').textContent='Voltar à sala';$('endRules').onclick=()=>{$('endOv').classList.remove('show');$('salaOv').classList.add('show');salaDesenha()};
-    salaMostra('salaAnfitriao');salaDesenha();
-  }else{salaMostra('salaConvidado');salaDoAnfitriao(m)}
+  salaBotaoJogo();salaBotoesFim();
+  if(dono){salaMostra('salaAnfitriao');salaDesenha()}
+  else{salaMostra('salaConvidado');salaDoAnfitriao(m)}
 }
 function onlineCompartilha(){
   const url=salaLink(SALA.codigo),txt=`Entre na minha sala do unotfm: ${url} (código ${SALA.codigo})`;
@@ -355,11 +379,7 @@ $('salaUsarCodigo').onclick=()=>onlineEntra($('salaCodigo').value);
 $('salaCodigo').onkeydown=e=>{if(e.key==='Enter')onlineEntra($('salaCodigo').value)};
 $('salaCompartilhar').onclick=onlineCompartilha;
 $('salaCopiarLink').onclick=()=>SALA.codigo&&salaCopia(salaLink(SALA.codigo),'Link copiado');
-$('salaSair').onclick=()=>{
-  if(SALA.online&&!SALA.saindo&&SALA.codigo){SALA.saindo=true;if(REDE.anfitriao)REDE.anfitriao.enviar({t:'sair'});onlineEsquece();setTimeout(()=>{location.href=semSala()},150);return}
-  if(SALA.online){onlineEsquece();location.href=semSala();return}
-  if(SALA.papel)location.reload();else $('salaOv').classList.remove('show');
-};
+$('salaSair').onclick=salaSai;
 $('salaLugaresSeg').onclick=e=>{const b=e.target.closest('button[data-n]');if(b&&!b.disabled){const n=+b.dataset.n;CFG.bots=n-1;save('unotfm-solo-cfg',CFG);salaCmd('lugares',{n})}};
 $('salaLugares').onclick=e=>{const s=e.target.closest('[data-sobe]'),d=e.target.closest('[data-desce]'),t=e.target.closest('[data-tirar]');
   if(s)return salaCmd('troca',{i:+s.dataset.sobe,j:+s.dataset.sobe-1});if(d)return salaCmd('troca',{i:+d.dataset.desce,j:+d.dataset.desce+1});

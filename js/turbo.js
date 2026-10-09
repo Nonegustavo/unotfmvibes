@@ -11,7 +11,20 @@ window.setTimeout=(fn,ms,...a)=>{
   else TB.live.set(id,{fn,a,due:realNow()+ms,h:nativeTimeout(()=>{TB.live.delete(id);fn(...a)},ms)});
   return id;
 };
-window.clearTimeout=id=>{const t=TB.live.get(id);if(t){nativeClear(t.h);TB.live.delete(id)}TB.q.delete(id)};
+window.clearTimeout=id=>{const t=TB.live.get(id);if(t){nativeClear(t.h);TB.live.delete(id)}TB.q.delete(id);if(TB.parados)TB.parados.delete(id)};
+/* Pausa (menu do solo): os timers que estão esperando param e guardam quanto faltava (TB.parados); tbContinua arma
+   todos de novo com esse tempo. Timers criados durante a pausa (os do próprio menu) correm normalmente */
+TB.parados=null;
+function tbPausa(){
+  if(TB.on||TB.parados)return;
+  const agora=realNow();TB.parados=new Map();
+  for(const [id,t] of TB.live){nativeClear(t.h);TB.parados.set(id,{fn:t.fn,a:t.a,resta:Math.max(0,t.due-agora)})}
+  TB.live.clear();
+}
+function tbContinua(){
+  const p=TB.parados;if(!p)return;TB.parados=null;
+  for(const [id,t] of p)TB.live.set(id,{fn:t.fn,a:t.a,due:realNow()+t.resta,h:nativeTimeout(()=>{TB.live.delete(id);t.fn(...t.a)},t.resta)});
+}
 Date.now=()=>TB.on?TB.now:realNow();
 
 /* ---------- Terminar e descobrir vencedor (turbo) ----------

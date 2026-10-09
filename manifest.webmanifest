@@ -1,7 +1,7 @@
 {
-  "name": "unotfm solo",
+  "name": "unotfm",
   "short_name": "unotfm",
-  "description": "O jogo de cartas do unotfm para jogar sozinho contra adversários, com regras e cartas especiais.",
+  "description": "O jogo de cartas do unotfm para jogar sozinho contra adversários ou com amigos, com regras e cartas especiais.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",

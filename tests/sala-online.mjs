@@ -105,7 +105,7 @@ try {
   for (let i = 0; i < 25; i++) { for (const p of [dono, bia, caio]) await joga(p); await dono.waitForTimeout(200); }
   confere(await dono.evaluate(() => S.vezes > 3), 'a partida anda');
   // quem não é o dono abre a sala no meio da partida e volta ao jogo
-  await caio.click('#openSettings');
+  await caio.click('#menuBtn'); await caio.click('#menuSala');
   await caio.waitForSelector('#salaOv.show', { timeout: 5000 });
   confere(await caio.isVisible('#salaComecar') && (await caio.textContent('#salaComecar')) === 'Voltar ao jogo', 'o Caio abre a sala e vê "Voltar ao jogo"');
   await caio.click('#salaComecar');
@@ -120,7 +120,9 @@ try {
   confere(await bia.evaluate(() => S.players.map(p => p.name).join(',')) === vizinhos || await bia.evaluate(() => S.phase === 'over'), 'a Bia recarregou a página e voltou para a mesma cadeira');
 
   // ---------- o dono tira o Caio e sai ----------
-  await dono.click('#openSettings');
+  await dono.click('#menuBtn');
+  confere(/Sala [A-Z0-9]{4}/.test(await dono.textContent('#menuTitulo')) && await dono.isVisible('#menuSala') && !(await dono.isVisible('#menuNova')), 'o menu do canto mostra o código da sala e "Sala e regras"');
+  await dono.click('#menuSala');
   await dono.waitForSelector('#salaOv.show', { timeout: 5000 });
   await dono.click('#salaLugares li[data-nome="Caio"] [data-tirar]');
   await caio.waitForFunction(() => /tirad/.test(document.getElementById('salaEstado')?.textContent + document.getElementById('toast')?.textContent + document.body.textContent), null, { timeout: 8000 });
@@ -128,8 +130,11 @@ try {
   await dono.waitForFunction(() => ![...document.querySelectorAll('#salaLugares li .nm')].some(e => e.textContent === 'Caio'), null, { timeout: 5000 });
   confere(true, 'o Caio saiu da lista do dono');
   await dono.click('#salaSair');
-  await bia.waitForFunction(() => !document.getElementById('openSettings').hidden, null, { timeout: 8000 });
-  await bia.click('#openSettings');
+  await dono.waitForSelector('#confirmOv.show', { timeout: 3000 });
+  confere(/outra pessoa vira dona/.test(await dono.textContent('#confirmTexto')), 'o dono vê a pergunta antes de sair da sala');
+  await dono.click('#confirmSim');
+  await bia.waitForFunction(() => SALA.dono, null, { timeout: 8000 });
+  await bia.click('#menuBtn'); await bia.click('#menuSala');
   await bia.waitForSelector('#salaAnfitriao:not([hidden])', { timeout: 5000 });
   confere(true, 'o dono saiu e a Bia virou dona da sala (vê os botões de dono)');
   await foto(bia, 'nova-dona');

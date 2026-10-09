@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>unotfm solo</title>
+<title>unotfm</title>
 <meta name="description" content="O jogo de cartas do unotfm para jogar sozinho contra adversários, com regras e cartas especiais.">
 <meta name="theme-color" content="#6a47cf">
 <meta name="mobile-web-app-capable" content="yes">
@@ -23,8 +23,8 @@
 </head>
 <body>
 <header class="top">
-  <div class="brand">unotfm <small>solo</small></div>
-  <div class="topbtns"><button class="iconbtn" id="openMenu" aria-label="Menu principal" title="Menu principal">🏠</button><button class="iconbtn" id="openConfig" aria-label="Configurações">⚙️</button><button class="iconbtn" id="openSettings" aria-label="Nova partida">Nova partida</button></div>
+  <div class="brand">unotfm</div>
+  <div class="topbtns"><button class="iconbtn" id="menuBtn" aria-label="Menu" title="Menu (Esc)">☰</button></div>
 </header>
 <section class="rail" id="rail" aria-label="Ordem de jogada"><div class="seatrow" id="seatrow"></div><div class="marker" id="marker"></div></section>
 <section class="rulestrip" id="rulestrip" aria-label="Regras em jogo"></section>
@@ -65,7 +65,7 @@
 
 <div class="home" id="home">
   <div class="home-fan" id="homeFan" aria-hidden="true"></div>
-  <div class="home-logo">unotfm <small>solo</small></div>
+  <div class="home-logo">unotfm</div>
   <div class="home-btns"><button type="button" class="btn main" id="homePlay">Modo solo</button><button type="button" class="btn main" id="homeAmigos">Multiplayer</button><button type="button" class="btn" id="homeCfg">Opções</button></div>
 </div>
 <div class="ov" id="settingsOv" role="dialog" aria-modal="true" aria-labelledby="stTitle">
@@ -119,6 +119,16 @@
     <div class="field"><div class="lb">Efeitos 3D</div><div class="seg" data-key="fx3d"></div><p class="legend">Dado 3D, partículas dos climas, explosões e confete. Desligue se o celular ficar lento.</p></div>
     <div class="field" id="installField" hidden><div class="lb">App</div><button type="button" class="btn" id="installCfg" style="width:100%">📲 Instalar o unotfm neste aparelho</button></div>
     <div class="row2" style="margin-top:6px"><button class="btn main" id="cfgClose">Voltar</button></div></div>
+</div>
+<div class="ov" id="menuOv" role="dialog" aria-modal="true" aria-labelledby="menuTitulo">
+  <div class="sheet"><h2 id="menuTitulo">Partida pausada</h2>
+    <div class="menu-btns">
+      <button type="button" class="btn main" id="menuContinuar">Continuar</button>
+      <button type="button" class="btn" id="menuNova">Nova partida</button>
+      <button type="button" class="btn" id="menuSala" hidden>Sala e regras</button>
+      <button type="button" class="btn" id="menuOpcoes">Opções</button>
+      <button type="button" class="btn" id="menuSair">🏠 Sair da partida</button>
+    </div></div>
 </div>
 <div class="ov" id="confirmOv" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitulo" aria-describedby="confirmTexto">
   <div class="sheet"><h2 id="confirmTitulo"></h2><p class="sub" id="confirmTexto"></p>
@@ -206,6 +216,7 @@
     <p class="sub" id="endSub"></p>
     <table class="score" id="scoreTbl"></table>
     <div class="row2"><button class="btn" id="endRules">Mudar modo</button><button class="btn main" id="againBtn">Nova rodada</button></div>
+    <button type="button" class="fim-menu" id="endMenu">🏠 Menu principal</button>
   </div>
 </div>
 

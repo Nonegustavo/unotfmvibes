@@ -479,6 +479,7 @@ function telaFim({pi,vencedores:winners,pts,tourMsg}){
     $('endSub').textContent=(tourMsg?texto(tourMsg)+' ':'')+`Rodada ${TOUR.round}. ${TOUR.mode==='tournament'?'Primeiro a 500 pontos vence.':'Quem chega a 300 pontos sai do torneio.'}`;
     $('scoreTbl').innerHTML=Object.keys(TOUR.pts).sort((a,b)=>TOUR.mode==='tournament'?TOUR.pts[b]-TOUR.pts[a]:TOUR.pts[a]-TOUR.pts[b]).map(n=>`<tr${n===S.players[0].name?' style="font-weight:700"':''}><td>${n===S.players[0].name?'Você':n}${TOUR.out.includes(n)?' <span style="color:var(--muted)">(fora)</span>':''}</td><td>${TOUR.pts[n]} / ${goal}</td></tr>`).join('');
     $('againBtn').textContent=TOUR.done?'Novo torneio':'Próxima partida';
+    if(FIM_BOTOES)FIM_BOTOES();
     $('endOv').classList.add('show');$('againBtn').focus();return;
   }
   $('againBtn').textContent='Nova rodada';
@@ -486,6 +487,7 @@ function telaFim({pi,vencedores:winners,pts,tourMsg}){
   const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||((b.p.outAt||0)-(a.p.outAt||0))||(a.pts-b.pts)||(a.n-b.n));
   $('endSub').textContent=(S.players[0].out?`Você ${VIS.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
   $('scoreTbl').innerHTML=rank.map((x,k)=>`<tr${x.i===0?' style="font-weight:700"':''}><td>${['🥇','🥈','🥉'][k]||`${k+1}º`} ${x.p.name}${x.p.out?' <span style="color:var(--muted)">(eliminado)</span>':` <span style="color:var(--muted)">(${x.n} carta${x.n===1?'':'s'})</span>`}</td><td>${x.p.out?'—':x.pts+' pts'}</td></tr>`).join('');
+  if(FIM_BOTOES)FIM_BOTOES();
   $('endOv').classList.add('show');$('againBtn').focus();
 }
 
@@ -1185,7 +1187,6 @@ $('drawBtn').onclick=e=>S&&S.players[0].out&&S.phase!=='over'?turboStart():human
 $('unoBtn').onclick=humanUno;
 $('mullBtn').onclick=mulligan;
 $('chalBtn').onclick=()=>{if(myTurn()&&S.chal)acao({t:'desafiar'})};
-$('openSettings').onclick=openSettings;
 // mesa: tocar abre o histórico; segurar 0,5 s mostra a descrição da carta do topo (e não abre o histórico)
 {let lp=null,fired=false;const dis=$('discard'),cancel=()=>{if(lp){clearTimeout(lp.t);lp=null}};
  dis.addEventListener('pointerdown',e=>{fired=false;cancel();if(!topInfoOk())return;
@@ -1231,7 +1232,7 @@ function showRuleInfo(k){
   const a=(S&&S.added||[]).find(x=>x.k===k);
   notice(k,a?`Nova regra, adicionada por ${texto(a.by)}`:'Em jogo',{info:true,title:RNAME[k],anchor:b});
 }
-$('openConfig').onclick=()=>{updateInstallUI();CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()};
+function abreOpcoes(){updateInstallUI();CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()}
 // pergunta com a janela do próprio jogo (no lugar do confirm do navegador); devolve true se a pessoa confirmar
 function confirmaJogo({titulo,texto,sim,nao}){
   return new Promise(res=>{
@@ -1243,21 +1244,59 @@ function confirmaJogo({titulo,texto,sim,nao}){
     $('confirmOv').classList.add('show');$('confirmNao').focus();
   });
 }
-// 🏠 no topo (solo; no multiplayer, sai-se pela sala): a partida em andamento acaba (as esperas dela deixam de valer)
-// e a tela inicial volta. Com a partida andando, pergunta antes
-$('openMenu').onclick=async()=>{
+/* ---------- menu do canto (☰) ----------
+   O único botão do topo da partida abre o menu: Continuar, Nova partida (solo) ou Sala e regras (multiplayer), Opções
+   e Sair da partida. No solo, a partida fica pausada enquanto o menu, ou uma tela aberta a partir dele (Nova partida,
+   Opções), estiver na frente (tbPausa/tbContinua, js/turbo.js); no multiplayer não dá para pausar. Esc abre e fecha */
+const emRede=()=>!!REDE_MODO||typeof SALA!=='undefined'&&!!SALA.papel;
+let MENU_ABERTO=false; // o menu, ou uma tela aberta a partir dele, está na frente
+function abreMenu(){
+  const rede=emRede();
+  $('menuTitulo').textContent=rede?(SALA.online&&SALA.codigo?`Sala ${SALA.codigo}`:'Sala'):'Partida pausada';
+  $('menuNova').hidden=rede;$('menuSala').hidden=!rede;
+  if(!rede&&S&&S.phase!=='over')tbPausa();
+  MENU_ABERTO=true;$('menuOv').classList.add('show');$('menuContinuar').focus();
+}
+function fechaMenu(){MENU_ABERTO=false;$('menuOv').classList.remove('show');tbContinua()}
+// uma tela aberta a partir do menu fechou: o menu volta (e a partida continua pausada)
+const voltaAoMenu=()=>{if(MENU_ABERTO)$('menuOv').classList.add('show')};
+// sai da partida: no multiplayer, sai da sala (salaSai, js/sala.js, pergunta antes); no solo, pergunta se a partida
+// está andando
+async function sairDaPartida(){
+  if(emRede())return salaSai();
   if(S&&S.phase!=='over'&&!S.players[0].out&&!await confirmaJogo({titulo:'Sair da partida?',texto:'A partida em andamento acaba e você volta ao menu principal.',sim:'Sair',nao:'Continuar jogando'}))return;
+  soloParaMenu();
+}
+// a partida acaba (as esperas dela deixam de valer) e a tela inicial volta
+function soloParaMenu(){
+  MENU_ABERTO=false;$('menuOv').classList.remove('show');tbContinua();
   if(TB.on)turboStop();
   if(S){S.gen++;S.phase='over'}
   closeOverlays();['configOv','endOv','settingsOv'].forEach(id=>$(id).classList.remove('show'));$('fx').innerHTML='';FX3D.reset();render();
   $('home').hidden=false;
-};
-$('cfgClose').onclick=()=>$('configOv').classList.remove('show');
+}
+// o fim da rodada: no multiplayer, js/sala.js troca os botões conforme quem manda na sala (salaBotoesFim)
+let FIM_BOTOES=null;
+$('menuBtn').onclick=abreMenu;
+$('menuContinuar').onclick=fechaMenu;
+$('menuOv').onclick=e=>{if(e.target===$('menuOv'))fechaMenu()};
+$('menuNova').onclick=()=>{$('menuOv').classList.remove('show');openSettings()};
+$('menuOpcoes').onclick=()=>{$('menuOv').classList.remove('show');abreOpcoes()};
+$('menuSala').onclick=()=>{fechaMenu();salaVer()};
+$('menuSair').onclick=sairDaPartida;
+$('endMenu').onclick=()=>emRede()?salaSai():soloParaMenu();
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if($('confirmOv').classList.contains('show'))return $('confirmNao').click();
+  if($('menuOv').classList.contains('show'))return fechaMenu();
+  if($('home').hidden&&S&&!document.querySelector('.ov.show'))abreMenu();
+});
+$('cfgClose').onclick=()=>{$('configOv').classList.remove('show');voltaAoMenu()};
 document.addEventListener('pointerdown',()=>{if(!MUTED)audio()},{once:true});
 $('closeActive').onclick=()=>$('activeOv').classList.remove('show');
 $('endRules').onclick=openSettings;
-$('closeSettings').onclick=()=>$('settingsOv').classList.remove('show');
-$('startBtn').onclick=()=>{save('unotfm-solo-cfg',CFG);R=rulesForMode();TOUR=null;$('settingsOv').classList.remove('show');newGame()};
+$('closeSettings').onclick=()=>{$('settingsOv').classList.remove('show');voltaAoMenu()};
+$('startBtn').onclick=()=>{if(MENU_ABERTO){MENU_ABERTO=false;tbContinua()}save('unotfm-solo-cfg',CFG);R=rulesForMode();TOUR=null;$('settingsOv').classList.remove('show');newGame()};
 $('againBtn').onclick=()=>{$('endOv').classList.remove('show');R=rulesForMode();newGame()};
 /* Altura da mesa: a Compacta limita a mesa em telas altas e estreitas (o CSS decide pela proporção, TALL);
    nas outras telas a opção não muda nada, e as Configurações avisam */
@@ -1327,5 +1366,5 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&!/claude\.
 /* tela inicial: no lugar da mesa vazia até a primeira partida */
 $('homeFan').innerHTML=[['r','num',7],['y','skip'],['w','wild'],['g','rev'],['b','num',0]].map(([c,t,v],k)=>`<div class="card c-${c}" style="--k:${k}">${faceHTML({color:c,type:t,value:v??null})}</div>`).join('');
 $('homePlay').onclick=()=>openSettings();
-$('homeCfg').onclick=()=>$('openConfig').click();
+$('homeCfg').onclick=abreOpcoes;
 
