@@ -49,29 +49,38 @@
 .w-sun i{position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(255,226,140,.5),rgba(255,190,90,.18) 30%,transparent 58%);animation:sunPulse 4.5s ease-in-out infinite}
 @keyframes sunPulse{0%,100%{opacity:.3}50%{opacity:1}}
 .w-storm{background:linear-gradient(180deg,rgba(40,40,80,.35),transparent 75%)}
-.w-fog i{position:absolute;left:0;width:calc(18rem*var(--fs,1));height:calc(6.5rem*var(--fs,1));opacity:.85;animation:fogmove linear infinite;
-  background:radial-gradient(ellipse 40% 50% at 30% 60%,rgba(255,255,255,.95),rgba(225,225,238,.55) 45%,rgba(255,255,255,0) 70%),radial-gradient(ellipse 35% 55% at 55% 45%,rgba(255,255,255,.95),rgba(220,220,235,.5) 45%,rgba(250,250,255,0) 70%),radial-gradient(ellipse 30% 45% at 75% 62%,rgba(255,255,255,.9),rgba(220,220,235,.45) 45%,rgba(245,245,252,0) 70%);filter:drop-shadow(0 2px 3px rgba(80,70,120,.15))}
-.w-fog{background:linear-gradient(180deg,rgba(215,212,235,.16),rgba(215,212,235,.09))}
-.w-fog i:nth-child(1){top:-4%;animation-duration:34s;animation-delay:-6s;--fs:1;opacity:0.85}
-.w-fog i:nth-child(2){top:12%;animation-duration:58s;animation-delay:-33s;--fs:0.8;opacity:0.6}
-.w-fog i:nth-child(3){top:24%;animation-duration:46s;animation-delay:-28s;--fs:1;opacity:0.7}
-.w-fog i:nth-child(4){top:36%;animation-duration:38s;animation-delay:-4s;--fs:0.75;opacity:0.55}
-.w-fog i:nth-child(5){top:47%;animation-duration:40s;animation-delay:-16s;--fs:1;opacity:0.85}
-.w-fog i:nth-child(6){top:58%;animation-duration:62s;animation-delay:-50s;--fs:0.87;opacity:0.6}
-.w-fog i:nth-child(7){top:70%;animation-duration:52s;animation-delay:-40s;--fs:1;opacity:0.65}
-.w-fog i:nth-child(8){top:82%;animation-duration:44s;animation-delay:-22s;--fs:0.8;opacity:0.7}
-.w-fog i:nth-child(9){top:5%;animation-duration:70s;animation-delay:-12s;--fs:0.7;opacity:0.5}
-.w-fog i:nth-child(10){top:40%;animation-duration:66s;animation-delay:-45s;--fs:1.15;opacity:0.45}
-.w-fog i:nth-child(11){top:63%;animation-duration:36s;animation-delay:-30s;--fs:0.68;opacity:0.55}
-.w-fog i:nth-child(12){top:16%;animation-duration:50s;animation-delay:-8s;--fs:0.9;opacity:0.6}
-.w-fog i:nth-child(13){top:30%;animation-duration:64s;animation-delay:-58s;--fs:1.1;opacity:0.5}
-.w-fog i:nth-child(14){top:52%;animation-duration:42s;animation-delay:-36s;--fs:0.8;opacity:0.65}
-.w-fog i:nth-child(15){top:76%;animation-duration:56s;animation-delay:-20s;--fs:1;opacity:0.55}
-.w-fog i:nth-child(16){top:-2%;animation-duration:48s;animation-delay:-42s;--fs:0.85;opacity:0.6}
-.w-fog i:nth-child(17){top:88%;animation-duration:60s;animation-delay:-10s;--fs:0.95;opacity:0.5}
-.w-fog i:nth-child(18){top:44%;animation-duration:54s;animation-delay:-26s;--fs:0.7;opacity:0.6}
-@media (max-width:899px){.w-fog i:nth-child(n+12){display:none}}
-@keyframes fogmove{from{transform:translateX(-100%)}to{transform:translateX(max(100vw,100%))}}
+/* Neblina: névoa rasteira em camadas largas e sem contorno, mais densa nas bordas da mesa (o centro fica legível). Cada lado
+   entra pela sua lateral quando o clima começa, e a névoa se desfaz (some aos poucos) quando ele muda */
+.w-fog{background:linear-gradient(180deg,rgba(215,212,235,.07),rgba(215,212,235,.13));
+  -webkit-mask-image:radial-gradient(ellipse 62% 52% at 50% 48%,rgba(0,0,0,.3) 0%,rgba(0,0,0,.5) 45%,#000 92%);mask-image:radial-gradient(ellipse 62% 52% at 50% 48%,rgba(0,0,0,.3) 0%,rgba(0,0,0,.5) 45%,#000 92%)}
+.fg-lado{position:absolute;inset:0}
+.fg-esq{-webkit-mask-image:linear-gradient(90deg,#000 30%,transparent 85%);mask-image:linear-gradient(90deg,#000 30%,transparent 85%)}
+.fg-dir{-webkit-mask-image:linear-gradient(270deg,#000 30%,transparent 85%);mask-image:linear-gradient(270deg,#000 30%,transparent 85%)}
+.table[data-weather="fog"] .fg-esq{animation:fogEntraEsq 2.8s cubic-bezier(.2,.7,.3,1) both}
+.table[data-weather="fog"] .fg-dir{animation:fogEntraDir 2.8s cubic-bezier(.2,.7,.3,1) both}
+.table.wxnow .fg-lado{animation:none!important}
+@keyframes fogEntraEsq{from{transform:translateX(-75%);opacity:0}}
+@keyframes fogEntraDir{from{transform:translateX(75%);opacity:0}}
+/* cada camada tem o dobro da largura e o desenho repetido duas vezes, então andar metade dela emenda sem pulo; as manchas
+   ficam dentro do desenho (centro mais ou menos 70% do raio entre 0 e 100%), senão o corte na borda aparece */
+.fg-lado i{position:absolute;left:0;width:200%;top:var(--y);height:var(--h);opacity:var(--o);
+  background:radial-gradient(ellipse 22% 38% at 20% 55%,rgba(232,229,246,.55),transparent 70%),radial-gradient(ellipse 26% 30% at 48% 45%,rgba(232,229,246,.45),transparent 70%),radial-gradient(ellipse 18% 42% at 72% 58%,rgba(232,229,246,.5),transparent 70%),radial-gradient(ellipse 13% 34% at 90% 48%,rgba(232,229,246,.42),transparent 70%);
+  background-size:50% 100%;background-repeat:repeat-x;animation:fogDeriva var(--d) linear var(--dl) infinite var(--dir,normal)}
+.fg-esq i:nth-child(1){--y:-8%;--h:46%;--o:.9;--d:70s;--dl:-10s}
+.fg-esq i:nth-child(2){--y:28%;--h:42%;--o:.7;--d:95s;--dl:-40s;--dir:reverse}
+.fg-esq i:nth-child(3){--y:60%;--h:48%;--o:.85;--d:80s;--dl:-25s}
+.fg-dir i:nth-child(1){--y:6%;--h:42%;--o:.75;--d:88s;--dl:-60s;--dir:reverse}
+.fg-dir i:nth-child(2){--y:42%;--h:44%;--o:.8;--d:66s;--dl:-5s}
+.fg-dir i:nth-child(3){--y:72%;--h:40%;--o:.7;--d:100s;--dl:-70s;--dir:reverse}
+@keyframes fogDeriva{to{transform:translateX(-50%)}}
+/* neblina sobre as cadeiras dos adversários (ela esconde quantas cartas eles têm): mais forte na altura do leque de
+   cartas, fraca nos nomes e nos selos; só na faixa das cadeiras (--nvL/--nvW, postos pela tela) */
+.rail::after{content:"";position:absolute;top:0;bottom:0;left:var(--nvL,0px);width:var(--nvW,100%);pointer-events:none;z-index:3;opacity:0;transition:opacity 1.3s ease;
+  background:radial-gradient(ellipse 16% 34% at 14% 60%,rgba(232,229,246,.55),transparent 70%),radial-gradient(ellipse 22% 30% at 37% 66%,rgba(232,229,246,.5),transparent 70%),radial-gradient(ellipse 14% 36% at 60% 58%,rgba(232,229,246,.55),transparent 70%),radial-gradient(ellipse 20% 32% at 84% 64%,rgba(232,229,246,.5),transparent 70%);
+  background-size:50% 100%;background-repeat:repeat-x;animation:fogRail 50s linear infinite;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.3) 28%,#000 52%,#000 74%,rgba(0,0,0,.35) 92%),linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.3) 28%,#000 52%,#000 74%,rgba(0,0,0,.35) 92%),linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-composite:intersect}
+.rail.neblina::after{opacity:.85}
+@keyframes fogRail{to{background-position:200% 0}}
 .wxl>.w-snow{transition-duration:2.5s}
 .w-snow i{position:absolute;top:-1rem;left:var(--x);width:var(--sz);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff 0 45%,rgba(150,185,230,.7) 60%,transparent 72%);opacity:var(--o);animation:snowfall var(--d) linear var(--dl) infinite,snowsway var(--sd) ease-in-out var(--dl) infinite alternate}
 @keyframes snowfall{from{top:-1rem}to{top:calc(100% + 1rem)}}

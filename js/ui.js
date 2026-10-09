@@ -779,7 +779,8 @@ function desenha(){
   if(S.turbo){VIS.pendingInfo=null;VIS.seatFlip=null;VIS.seatFollow=false;VIS.morph=false;VIS.animPlay=null;VIS.wxNow=false;VIS.handFrom=null;VIS.newIds=[];VIS.botDraw={};return}
   const me=S.players[0];
   const railScroll=$('rail').scrollLeft;
-  renderRail();$('rail').scrollLeft=railScroll;renderRuleStrip();
+  renderRail();$('rail').scrollLeft=railScroll;{const rl=$('rail'),nv=S.weather==='fog'&&S.phase!=='over';rl.classList.toggle('neblina',nv);
+   if(nv){const ss=rl.querySelectorAll('.seat');if(ss.length){const r0=rl.getBoundingClientRect(),a=ss[0].getBoundingClientRect(),z=ss[ss.length-1].getBoundingClientRect();rl.style.setProperty('--nvL',(a.left-r0.left+rl.scrollLeft)+'px');rl.style.setProperty('--nvW',(z.right-a.left)+'px')}}}renderRuleStrip();
   if(VIS.pendingInfo){const k=VIS.pendingInfo;VIS.pendingInfo=null;setTimeout(()=>showRuleInfo(k),120)}
   if(VIS.seatFlip){const old=VIS.seatFlip;VIS.seatFlip=null;
     // Dança das Cadeiras: se quem está com a vez mudou de lugar, o cursor vai junto com a cadeira (sem dar a volta pela borda)
