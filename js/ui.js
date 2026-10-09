@@ -232,7 +232,16 @@ function TELA(ev){
       if(!ev.anunciada)VIS.rot[ev.carta.id]=Math.random()*24-12;
       return;
     case 'gira':VIS.morph=true;return;
-    case 'segueVez':VIS.seatFollow=true;return;
+    // Dança das Cadeiras: o que a tela guarda pelo número da cadeira acompanha cada jogador (mapa: antes -> agora); se
+    // quem está com a vez mudou de lugar na tela, o cursor vai junto com a cadeira
+    case 'cadeirasTrocadas':{
+      const m=ev.mapa;
+      (VIS.hist||[]).forEach(h=>{if(typeof h.by==='number')h.by=m[h.by]});
+      VIS.botDraw=Object.fromEntries(Object.entries(VIS.botDraw).map(([k,v])=>[m[k],v]));
+      if(VIS.seloVoa&&typeof VIS.seloVoa.para==='number')VIS.seloVoa.para=m[VIS.seloVoa.para];
+      Object.values(BALOES).forEach(b=>b.fim());
+      VIS.seatFollow=MK.turn!=null&&m[MK.turn]!==MK.turn;
+      return}
     case 'contagemDireta':VIS.cntJump=true;return;
     case 'redesenhaMesa':VIS.lastTop=null;return;
     case 'regraFresca':VIS.freshRules.push(ev.k);return;
@@ -466,8 +475,8 @@ function telaFim({pi,vencedores:winners,pts,tourMsg}){
   $('endSub').textContent=(pi>=0?`Pontos da rodada: ${pts}. `:`Você ${VIS.outWhy}. `)+'Vitórias acumuladas neste navegador:';
   if(TOUR){
     const goal=TOUR.mode==='tournament'?500:300;
-    $('endSub').textContent=(tourMsg?tourMsg+' ':'')+`Rodada ${TOUR.round}. ${TOUR.mode==='tournament'?'Primeiro a 500 pontos vence.':'Quem chega a 300 pontos sai do torneio.'}`;
-    $('scoreTbl').innerHTML=['Você',...TOUR.names].sort((a,b)=>TOUR.mode==='tournament'?TOUR.pts[b]-TOUR.pts[a]:TOUR.pts[a]-TOUR.pts[b]).map(n=>`<tr><td>${n}${TOUR.out.includes(n)?' <span style="color:var(--muted)">(fora)</span>':''}</td><td>${TOUR.pts[n]} / ${goal}</td></tr>`).join('');
+    $('endSub').textContent=(tourMsg?texto(tourMsg)+' ':'')+`Rodada ${TOUR.round}. ${TOUR.mode==='tournament'?'Primeiro a 500 pontos vence.':'Quem chega a 300 pontos sai do torneio.'}`;
+    $('scoreTbl').innerHTML=Object.keys(TOUR.pts).sort((a,b)=>TOUR.mode==='tournament'?TOUR.pts[b]-TOUR.pts[a]:TOUR.pts[a]-TOUR.pts[b]).map(n=>`<tr${n===S.players[0].name?' style="font-weight:700"':''}><td>${n===S.players[0].name?'Você':n}${TOUR.out.includes(n)?' <span style="color:var(--muted)">(fora)</span>':''}</td><td>${TOUR.pts[n]} / ${goal}</td></tr>`).join('');
     $('againBtn').textContent=TOUR.done?'Novo torneio':'Próxima partida';
     $('endOv').classList.add('show');$('againBtn').focus();return;
   }
@@ -530,7 +539,7 @@ function sortHand(h){
 function statusText(){
   if(S.phase==='over')return 'Fim da rodada';
   const p=cur();
-  if(S.players[0].out)return 'Você foi eliminado. Assistindo…';
+  if(S.players[0].out)return S.players[0].foraTorneio?'Fora do torneio. Assistindo…':'Você foi eliminado. Assistindo…';
   if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
   if(deBot(S.turn))return '';
   // na vez de outra pessoa, nada (o balão e o cursor da vez mostram quem joga)
@@ -549,7 +558,7 @@ function statusText(){
 }
 function seatStatus(i){
   const p=S.players[i],L=[];if(p.out)return L;
-  if(TOUR&&i===0)L.push(tourItem('Você'));
+  if(TOUR&&i===0)L.push(tourItem(p.name));
   const n=p.hand.length;
   const shiny=R.shiny&&(p.colorida??colorful(p));
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
@@ -570,7 +579,7 @@ function seatStatus(i){
   if(fog)L.push({ic:'☁️',short:'☁️',name:'Neblina',txt:'quantidade de cartas ocultada até mudar o clima'});
   return L;
 }
-const OUT_INFO={'+99':['+99','comprou as cartas do +99'],'💣':['Bomba','comprou a Carta Bomba'],'🏋️':['Sobrecarga','passou de 10 cartas na mão'],'☠️':['Morte súbita','precisou comprar, passou a vez ou cometeu um erro durante a Morte súbita'],'🥔':['Batata','ficou 5 turnos com a Batata'],'🌵':['Maldição do espinho','comprou cartas com a maldição ativa']};
+const OUT_INFO={'🏅':['Fora do torneio','chegou a 300 pontos na Sobrevivência e assiste até o torneio acabar'],'+99':['+99','comprou as cartas do +99'],'💣':['Bomba','comprou a Carta Bomba'],'🏋️':['Sobrecarga','passou de 10 cartas na mão'],'☠️':['Morte súbita','precisou comprar, passou a vez ou cometeu um erro durante a Morte súbita'],'🥔':['Batata','ficou 5 turnos com a Batata'],'🌵':['Maldição do espinho','comprou cartas com a maldição ativa']};
 function seatInfoItems(i){
   const p=S.players[i];
   if(p.out){const ic=p.outIcon||'✖';const inf=OUT_INFO[ic]||['Limite de cartas',`passou de ${ic} cartas na mão`];return [{ic,name:inf[0],txt:inf[1]},...(TOUR?[tourItem(p.name)]:[])]}
@@ -583,14 +592,14 @@ function seatInfoItems(i){
 const tourIc=()=>TOUR.mode==='tournament'?'🏆':'🏅';
 const tourGoal=()=>TOUR.mode==='tournament'?500:300;
 function tourItem(name){
-  const pts=TOUR.pts[name]||0,me=name==='Você';
+  const pts=TOUR.pts[name]||0,me=name===S.players[0].name;
   return {ic:tourIc(),short:`${tourIc()}${pts}`,name:TOUR.mode==='tournament'?'Torneio':'Sobrevivência',
     txt:`${me?'você tem':'tem'} ${pts} de ${tourGoal()} pontos. ${TOUR.mode==='tournament'?`Quem chegar a ${tourGoal()} vence o torneio`:`Quem chegar a ${tourGoal()} sai do torneio`}`};
 }
 function tourRanking(){
-  const all=['Você',...TOUR.names],up=TOUR.mode==='tournament';
+  const all=Object.keys(TOUR.pts),up=TOUR.mode==='tournament';
   const sorted=all.sort((a,b)=>{const oa=TOUR.out.includes(a),ob=TOUR.out.includes(b);if(oa!==ob)return oa?1:-1;return up?TOUR.pts[b]-TOUR.pts[a]:TOUR.pts[a]-TOUR.pts[b]});
-  return sorted.map((n,k)=>({ic:TOUR.out.includes(n)?'✖':`${k+1}º`,name:n,txt:`${TOUR.pts[n]||0} pontos${TOUR.out.includes(n)?' (fora do torneio)':''}`}));
+  return sorted.map((n,k)=>({ic:TOUR.out.includes(n)?'✖':`${k+1}º`,name:n===S.players[0].name?'Você':n,txt:`${TOUR.pts[n]||0} pontos${TOUR.out.includes(n)?' (fora do torneio)':''}`}));
 }
 // selos do monte de compra (regras e efeitos que mudam a compra), com a explicação de cada um
 function deckBadges(){
@@ -898,12 +907,12 @@ function desenha(){
   main.hidden=!(turn&&(S.phase==='combo'||S.phase==='drawn'));main.disabled=false;
   // eliminado assistindo: o botão termina a partida na hora
   const watching=me.out&&S.phase!=='over';
-  if(watching){main.textContent='Terminar e descobrir vencedor';main.hidden=false;main.disabled=TB.on}
+  if(watching&&!semTurbo){main.textContent='Terminar e descobrir vencedor';main.hidden=false;main.disabled=TB.on}
   $('unoBtn').hidden=watching;
   const unoOk=S.weather!=='fog'&&!me.called&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0));
   $('unoBtn').disabled=!unoOk;
   $('unoBtn').classList.toggle('lit',unoOk&&me.hand.length===target());
-  $('mullBtn').hidden=!(S.mull&&S.phase!=='over');
+  $('mullBtn').hidden=!(me.mull&&S.phase!=='over');
   $('chalBtn').hidden=!(turn&&S.phase==='play'&&S.pending>0&&S.chal&&S.chal.by!==0);
 }
 

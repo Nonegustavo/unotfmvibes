@@ -30,6 +30,8 @@ const CONTROLES={};
 const ctrl=pi=>CONTROLES[S.players[pi].ctrl];
 const deBot=pi=>S.players[pi].ctrl==='bot';
 const humano=pi=>!deBot(pi);
+// cadeira de uma pessoa, mesmo enquanto o computador joga por ela (tempo esgotado, queda)
+const pessoa=pi=>(S.players[pi].ctrlReal||S.players[pi].ctrl)!=='bot';
 function pedir(pi,ped){
   if(humano(pi)){
     if(!ped.mix)balaoPessoa(pi,ped);
@@ -70,7 +72,7 @@ function assume(pi){const p=S.players[pi];if(!p.ctrlReal){p.ctrlReal=p.ctrl;p.ct
 function devolve(pi){const p=S.players[pi];if(!p.ctrlReal)return;p.ctrl=p.ctrlReal;delete p.ctrlReal;emit({t:'ausente',p:pi});atualiza()}
 function esgotouJogada(pi){
   if(S.phase==='over'||S.turn!==pi||!humano(pi))return;
-  if(S.busy){agendar(()=>esgotouJogada(pi),300);return}
+  if(S.busy){const q=S.players[pi];agendar(()=>esgotouJogada(S.players.indexOf(q)),300);return}
   const p=S.players[pi];p.esgotou=(p.esgotou||0)+1;
   log(`O tempo de ${J(pi)} acabou: um bot jogou.`);
   assume(pi);S.tok++;botAct();
@@ -171,7 +173,9 @@ function markOut(pi,reason,icon){
   p.outIcon=icon||(S.boom===pi?'💣':/morte súbita/.test(why)?'☠️':/espinho/.test(why)?'🌵':/batata/.test(why)?'🥔':(R.overload&&limit()<=10?'🏋️':String(limit())));
   if(S.boom===pi)S.boom=null;
   log(`${J(pi)} foi eliminado: ${why}.`);emit({t:'aviso',txt:`${J(pi)} foi eliminado!`,cor:'var(--cr)'});
-  emit({t:'eliminado',p:pi,motivo:why,a:pi});if(S.players[pi].ctrl==='tela')S.spectate=true;
+  emit({t:'eliminado',p:pi,motivo:why,a:pi});
+  // sem nenhuma pessoa no jogo, os bots jogam mais rápido (com outras pessoas ainda jogando, o ritmo continua o mesmo)
+  if(pessoa(pi)&&!alive().some(pessoa))S.spectate=true;
   const a=alive();
   if(a.length>1)emit({t:'aviso',a:pi,txt:'Você foi eliminado. Assistindo os adversários…',cor:'var(--cr)'});
   if(a.length===1||(R.team&&new Set(a.map(teamOf)).size===1)){endRound(a[0]);return true}
@@ -232,21 +236,29 @@ function newGame(){
   const tourMode=R.tournament?'tournament':R.survivor?'survivor':null;
   if(!tourMode)TOUR=null;
   else if(!TOUR||TOUR.mode!==tourMode||TOUR.done)TOUR={mode:tourMode,pts:{},names:null,out:[],round:0};
+  // com pessoas de outros aparelhos (sala), as cadeiras são as da sala: no torneio, quem saiu dele continua na cadeira,
+  // fora da partida. No solo, os adversários que saíram do torneio deixam a mesa
+  const sala=!!(OPCOES.controles&&OPCOES.controles.includes('rede'));
   let names;
-  if(TOUR&&TOUR.names)names=TOUR.names.filter(n=>!TOUR.out.includes(n));
+  if(TOUR&&TOUR.names)names=sala?TOUR.names:TOUR.names.filter(n=>!TOUR.out.includes(n));
   else{
     names=shuffle([...BOTNAMES]).slice(0,R.bots);
     if(TOUR)TOUR.names=names;
   }
-  if(TOUR){TOUR.round++;['Você',...names].forEach(n=>TOUR.pts[n]=TOUR.pts[n]||0)}
   const ctl=i=>(OPCOES.controles&&OPCOES.controles[i])||(i===0?'tela':'bot');
   // nomes das pessoas (no solo, "Você"); as cadeiras de adversários usam os nomes sorteados
   const nome=(i,n)=>(OPCOES.nomes&&OPCOES.nomes[i])||n;
   const players=[{name:nome(0,'Você'),ctrl:ctl(0),hand:[],called:false,col:'var(--accent)'}];
-  names.forEach((n,k)=>players.push({name:ctl(k+1)==='bot'?n:nome(k+1,n),ctrl:ctl(k+1),hand:[],called:false,col:ctl(k+1)!=='bot'&&OPCOES.cores&&OPCOES.cores[k+1]||AVCOL[BOTNAMES.indexOf(n)]}));
+  if(sala){
+    // os bots ficam com os nomes sorteados na ordem das cadeiras deles (no torneio, os mesmos em todas as rodadas)
+    let b=0;
+    for(let i=1;i<=R.bots;i++){const bot=ctl(i)==='bot',n=bot?names[b++]:nome(i,'Convidado');
+      players.push({name:n,ctrl:ctl(i),hand:[],called:false,col:bot?AVCOL[BOTNAMES.indexOf(n)]:(OPCOES.cores&&OPCOES.cores[i])||AVCOL[0]})}
+  }else names.forEach((n,k)=>players.push({name:ctl(k+1)==='bot'?n:nome(k+1,n),ctrl:ctl(k+1),hand:[],called:false,col:ctl(k+1)!=='bot'&&OPCOES.cores&&OPCOES.cores[k+1]||AVCOL[BOTNAMES.indexOf(n)]}));
+  if(TOUR){TOUR.round++;players.forEach(p=>{TOUR.pts[p.name]=TOUR.pts[p.name]||0;if(TOUR.out.includes(p.name)){p.out=true;p.outIcon='🏅';p.foraTorneio=true}})}
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,busy:false,
-     mull:R.mulligan,autoResolve:null,semente:RNG.semente};
+     autoResolve:null,semente:RNG.semente};
   nomesCor();emit({t:'cores'});S.added=[];S.removed=[];S.ruleOrder=[];
   S.mem={lacks:{},lastCol:{},played:{}};S.side='a';S.other=null;S.added=S.added||[];S.removed=S.removed||[];
   S.weather=null;S.peace=0;S.boom=null;S.curse=null;S.death=false;S.traffic=null;S.simon=[];S.chal=null;S.timeWin=false;
@@ -256,8 +268,8 @@ function newGame(){
     // a faixa de regras fica vazia até o fim do Mix (flyRules)
     S.busy=true;emit({t:'seguraFaixa'});atualiza();
     // as pessoas escolhem uma de cada vez (cada uma já vê as regras de quem escolheu antes), depois os adversários
-    const pessoas=S.players.map((p,i)=>i).filter(i=>humano(i));
-    const adversarios=()=>{S.players.forEach((p,i)=>{if(humano(i))return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});listaMix(pessoas)};
+    const pessoas=S.players.map((p,i)=>i).filter(i=>humano(i)&&!S.players[i].out);
+    const adversarios=()=>{S.players.forEach((p,i)=>{if(humano(i)||p.out)return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});listaMix(pessoas)};
     const escolhe=(k,op)=>{
       if(k>=pessoas.length)return adversarios();
       const pi=pessoas[k];op=op||ruleOptions(3,true);
@@ -289,14 +301,15 @@ function comecaMix(){
 }
 function dealAndStart(){
   const players=S.players;
-  S.deck=buildDeck();S.mull=R.mulligan;nomesCor();emit({t:'cores'});
+  // Segunda Chance: cada pessoa pode trocar a mão até a primeira ação dela
+  S.deck=buildDeck();players.forEach(p=>p.mull=!!R.mulligan&&p.ctrl!=='bot');nomesCor();emit({t:'cores'});
   const startOf=i=>R.mini?4:R.maxi?9:R.start;
-  for(let r=0;r<10;r++)for(let i=0;i<players.length;i++)if(r<startOf(i))drawOne(i);
-  if(R.twohands)players.forEach((p,i)=>{const keep=p.hand;p.hand=[];for(let r=0;r<startOf(i);r++)drawOne(i);p.hand2=p.hand;p.hand=keep});
+  for(let r=0;r<10;r++)for(let i=0;i<players.length;i++)if(r<startOf(i)&&!players[i].out)drawOne(i);
+  if(R.twohands)players.forEach((p,i)=>{if(p.out)return;const keep=p.hand;p.hand=[];for(let r=0;r<startOf(i);r++)drawOne(i);p.hand2=p.hand;p.hand=keep});
   let first;
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
   S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,mk('w','bomb'));emit({t:'histInicio',carta:snap(first)});
-  S.turn=Math.floor(rng()*players.length);
+  S.turn=Math.floor(rng()*players.length);if(players[S.turn].out)S.turn=nextIdx(S.turn,1);
   log(`Primeira carta: ${cardName(first)}. ${J(S.turn)} ${V(S.turn,'começa','começa')}.`);
   if(spOn('portal'))buildSideB(startOf);
   emit({t:'distribuiu'});
@@ -314,8 +327,8 @@ function buildSideB(startOf){
   R={...saved.R,bg:false};
   S.deck=buildDeck();
   S.players.forEach(p=>{p.hand=[];p.hand2=[];p.called=false;p.luck=false;p.webbed=false;p.confuse=false;p.confuseNext=false;p.treasure=0;p.batata=0;p.escaped=false});
-  for(let r=0;r<10;r++)S.players.forEach((p,i)=>{if(r<startOf(i)){const c=popDeck();if(c&&c.type==='bomb'){S.deck.unshift(c);const d=popDeck();if(d)p.hand.push(d)}else if(c)p.hand.push(c)}});
-  if(R.twohands)S.players.forEach((p,i)=>{for(let r=0;r<startOf(i);r++){const c=popDeck();if(c&&c.type!=='bomb')p.hand2.push(c)}});
+  for(let r=0;r<10;r++)S.players.forEach((p,i)=>{if(r<startOf(i)&&!p.out){const c=popDeck();if(c&&c.type==='bomb'){S.deck.unshift(c);const d=popDeck();if(d)p.hand.push(d)}else if(c)p.hand.push(c)}});
+  if(R.twohands)S.players.forEach((p,i)=>{if(p.out)return;for(let r=0;r<startOf(i);r++){const c=popDeck();if(c&&c.type!=='bomb')p.hand2.push(c)}});
   let first;S.discard=[];
   do{first=S.deck.pop();if(first.color==='w'||SP[first.type]){S.deck.unshift(first);first=null}}while(!first);
   S.discard.push(first);S.color=first.color;if(spOn('bomb')&&!R.noaction)S.deck.splice(Math.floor(rng()*(S.deck.length+1)),0,mk('w','bomb'));
@@ -444,10 +457,10 @@ function afterOneCard(pi){
   if(!p.called)scheduleCatch(pi);
 }
 function scheduleCatch(pi){
-  const g=S.gen,d=DIFF[R.diff];
+  const g=S.gen,d=DIFF[R.diff],p=S.players[pi];
   agendar(()=>{
     if(!S||g!==S.gen||S.phase==='over')return;
-    const p=S.players[pi];
+    const pi=S.players.indexOf(p); // pela pessoa, não pela cadeira (a Dança das Cadeiras muda os números)
     if(S.weather==='fog'||p.out||p.hand.length!==target()||p.called)return;
     const catchers=alive().filter(i=>i!==pi&&deBot(i)&&i!==partner(pi));
     if(catchers.length&&rng()<d.catchP)penalize(pi,rand(catchers));
@@ -537,7 +550,7 @@ function startTurn(){
 }
 function takeDraw(pi){
   const p=S.players[pi];
-  if(humano(pi))S.mull=false;
+  p.mull=false;
   // Morte súbita: quem precisa comprar é eliminado, mesmo com o monte congelado (não dá para só passar a vez)
   if(S.death&&(S.weather==='blizzard'||curseIs('ice'))){
     S.pending=0;S.pendingType=null;S.chal=null;
@@ -660,16 +673,22 @@ function endRound(pi){
   let tourMsg='';
   if(TOUR){
     const handPts=p=>p.out?(p.outPts||50):[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
+    // participantes: todos os que já jogaram (na ordem em que entraram); quem saiu da Sobrevivência não soma mais pontos
+    const jogam=S.players.filter(p=>!p.foraTorneio),pessoas=S.players.filter((p,i)=>pessoa(i)).map(p=>p.name);
     if(TOUR.mode==='tournament'){
-      if(pi>=0){pts=S.players.reduce((s,p)=>s+handPts(p),0);winners.forEach(i=>TOUR.pts[S.players[i].name]+=pts)}
+      if(pi>=0){pts=jogam.reduce((s,p)=>s+handPts(p),0);winners.forEach(i=>TOUR.pts[S.players[i].name]+=pts)}
       const champ=Object.entries(TOUR.pts).find(([n,v])=>v>=500);
-      if(champ){TOUR.done=true;tourMsg=champ[0]==='Você'?'Você venceu o torneio!':`${champ[0]} venceu o torneio.`}
+      if(champ){TOUR.done=true;tourMsg=VN(champ[0],'Você venceu o torneio!',`${champ[0]} venceu o torneio.`)}
     }else{
-      S.players.forEach((p,i)=>{if(!winners.includes(i))TOUR.pts[p.name]+=handPts(p)});
+      S.players.forEach((p,i)=>{if(!winners.includes(i)&&!p.foraTorneio)TOUR.pts[p.name]+=handPts(p)});
+      const antes=[...TOUR.out];
       Object.entries(TOUR.pts).forEach(([n,v])=>{if(v>=300&&!TOUR.out.includes(n))TOUR.out.push(n)});
-      const left=['Você',...TOUR.names].filter(n=>!TOUR.out.includes(n));
-      if(TOUR.out.includes('Você')){TOUR.done=true;tourMsg='Você foi eliminado do torneio.'}
-      else if(left.length<=1){TOUR.done=true;tourMsg=left[0]==='Você'?'Você sobreviveu e venceu o torneio!':`${left[0]} venceu o torneio.`}
+      const left=Object.keys(TOUR.pts).filter(n=>!TOUR.out.includes(n));
+      // acaba quando todas as pessoas saíram (no solo, você) ou quando sobra um só
+      if(pessoas.length&&pessoas.every(n=>TOUR.out.includes(n))){TOUR.done=true;tourMsg=pessoas.length===1?VN(pessoas[0],'Você foi eliminado do torneio.',`${pessoas[0]} saiu do torneio.`):'Todas as pessoas saíram do torneio.'}
+      else if(left.length<=1){TOUR.done=true;tourMsg=VN(left[0],'Você sobreviveu e venceu o torneio!',`${left[0]} venceu o torneio.`)}
+      // com várias pessoas, quem saiu agora fica sabendo (e assiste às próximas partidas na cadeira)
+      else tourMsg=pessoas.filter(n=>TOUR.out.includes(n)&&!antes.includes(n)).map(n=>VN(n,'Você saiu do torneio e assiste às próximas partidas.',`${n} saiu do torneio.`)).join(' ');
     }
   }
   atualiza();
@@ -734,10 +753,10 @@ function agirValida(pi,a){
       doChallenge(pi);return true;
     case 'fecharMix':if(!S.mixFaltam||!S.mixFaltam.includes(pi))return false;fechouMix(pi);return true;
     case 'trocarMao':{
-      if(!S.mull||p.out)return false;
+      if(!p.mull||p.out)return false;
       const n=p.hand.length;
       S.deck.unshift(...p.hand);shuffle(S.deck);p.hand=[];
-      drawN(pi,n);S.mull=false;log(V(pi,'Você trocou sua mão.',`${J(pi)} trocou de mão.`));emit({t:'aviso',txt:'Mão nova!',a:pi});
+      drawN(pi,n);p.mull=false;log(V(pi,'Você trocou sua mão.',`${J(pi)} trocou de mão.`));emit({t:'aviso',txt:'Mão nova!',a:pi});
       if(overloaded(pi)&&markOut(pi))return true;atualiza();return true}
   }
   return false;
@@ -749,7 +768,7 @@ function agirValida(pi,a){
 function jogar(pi,card){
   const p=S.players[pi],h=humano(pi);
   const ultima=h&&p.hand.length===1&&!(p.hand2&&p.hand2.length);
-  if(h)S.mull=false;
+  p.mull=false;
   const vira=card.type==='clone'||card.type==='random';
   // espera do anúncio: undefined é a padrão, null é sem anúncio
   let espera;
@@ -766,6 +785,6 @@ function termina(pi,card,col){
   S.busy=false;
   const r=playCard(pi,card,col);
   if(r==='win'||r==='defer')return;
-  if(r==='combo'){S.tok++;atualiza();pedirJogada(pi);return}
+  if(r==='combo'){S.tok++;atualiza();pedirJogada(S.turn);return} // S.turn: a Dança das Cadeiras pode ter mudado o número da cadeira
   endTurn();
 }

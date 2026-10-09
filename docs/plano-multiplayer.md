@@ -2,8 +2,8 @@
 
 Aprovado em 07/10/2026 (versão 2). Versão 2.1: acrescentada a seção 6, segurança no online.
 
-Andamento: a sineta já foi feita, e a prova de conceito da rede local (seção 4.1) foi testada em 07/10/2026 entre dois
-Androids, com bons resultados. O iPhone não foi testado.
+Andamento (09/10/2026): fases 0, 1 e 1.5 feitas no código. Falta testar a sala nos celulares (roteiro na seção 4.3.2);
+o iPhone ainda não foi testado. Próxima: fase 3 sem login (veja a decisão abaixo da tabela de fases).
 
 Objetivo final: partidas online com salas privadas, fila pública e ranking, login e progresso salvo, e o jogo
 publicado também na Play Store e na App Store. O solo offline continua existindo.
@@ -53,6 +53,10 @@ Conferi cada afirmação da versão 1 contra o código. Principais correções e
 | 4. Fila casual | Partidas com desconhecidos, sem pontos | Fly.io + Supabase |
 | 5. Ranqueada | Temporadas, ligas e placar | Fly.io + Supabase |
 | Lojas | App na Play Store e na App Store | Depois da fase 2 |
+
+**Decisão de 09/10/2026: a fase 3 vem antes da 2, sem login.** As salas privadas online não dependem de conta: cada
+pessoa recebe um token da própria cadeira, e a mesa roda no servidor (mais seguro que a rede local). O login continua
+necessário para a fila, o ranking e as lojas, e entra depois.
 
 A **prova de conceito da rede local** (seção 4.1) é pequena e independente. Dá para fazer antes da fase 0, para
 saber cedo se o caminho escolhido funciona no iPhone.
@@ -437,12 +441,35 @@ substituir os QR codes. Isso exige um serviço na internet só para apresentar o
   ligação fechada, a pessoa volta com um convite novo e recupera a cadeira (número do aparelho). Tela acesa na sala
   (Wake Lock). Mix: uma pessoa por vez, depois os adversários, lista para todos e começo quando todos fecharem.
   O anfitrião abre a sala durante a partida pelo botão "Sala" do topo. `npm run test:tempo` confere tudo isso.
-  Falta: teste em celulares de verdade e tirar o `lan-teste`.
+- **Etapa 4, fechamento (feita em 09/10/2026):** o que ainda era só do jogador 0 passou a valer para cada pessoa.
+  - Segunda Chance de cada pessoa (antes, só o anfitrião via o botão, e a primeira jogada de qualquer pessoa tirava a troca de todas).
+  - Dança das Cadeiras: todos os adversários de quem jogou trocam de lugar, pessoas e bots, levando junto as marcas e o
+    outro lado do Portal. Cada tela continua com a pessoa embaixo (a mesa gira junto).
+  - Torneio e Sobrevivência na sala, com placar por pessoa; quem sai da Sobrevivência assiste às partidas seguintes na
+    cadeira dele, e o torneio acaba quando todas as pessoas saem ou sobra um só.
+  - Com outras pessoas, quem é eliminado assiste no ritmo normal (o "Terminar e descobrir vencedor" é só do solo).
+  - O `lan-teste` saiu; o `npm run test:sala` passou a testar também a leitura dos QR codes pela câmera (`--camera`) e,
+    sem câmera, a conexão com o endereço escondido num nome `.local`. `npm run test:rede-regras` confere a Segunda Chance,
+    a Dança e o Torneio com pessoas.
 - **Decisões da sala (08/10/2026):** o anfitrião escolhe quantas cadeiras (as vazias são adversários), pode arrumar os
   lugares ou sortear a cada partida; os convidados tocam em "Pronto", mas quem começa é o anfitrião. Nome guardado no
   aparelho. Uma opção "Tempo para jogar" (Normal, Longo, Sem limite). No Mix de Regras, as pessoas escolhem uma de
   cada vez, depois os adversários; a lista de regras aparece para todos, e a partida começa quando todos fecharem a
-  janela ou o tempo acabar. O `lan-teste` sai no fim da fase.
+  janela ou o tempo acabar.
+
+### 4.3.2 Roteiro para testar nos celulares
+
+Com 2 ou 3 aparelhos na mesma Wi-Fi e o jogo atualizado em todos (abrir uma vez com internet). Para cada item, anotar
+se funcionou, se demorou e, se travar, tirar uma captura da tela.
+
+1. Criar a sala, convidar pela câmera (convite e resposta) e começar. Quanto tempo levou cada leitura?
+2. Jogar uma partida no Personalizado com Dança das Cadeiras, Troca, Desejo e Segunda Chance, e outra no Mix de Regras.
+3. Sem internet: desligar a internet do roteador (ou usar o ponto de acesso de um celular sem dados) e repetir o item 1.
+4. Bloquear a tela de um convidado por 20 s e por 2 min: o bot joga por ele (📵) e ele volta sozinho? Se a conexão
+   cair, entrar com um convite novo e conferir que ele volta para a mesma cadeira.
+5. Com o tempo para jogar Normal, deixar o tempo acabar 3 vezes seguidas e depois voltar a jogar.
+6. O anfitrião troca de app por alguns segundos e volta: a partida continua?
+7. iPhone, quando houver um: repetir os itens 1, 3 e 4 com o iPhone como convidado e depois como anfitrião.
 
 ### 4.4 Limitações
 

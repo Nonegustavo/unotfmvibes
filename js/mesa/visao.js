@@ -10,7 +10,7 @@ const copia=o=>o==null?o:JSON.parse(JSON.stringify(o));
 const mascara=(mao,dono)=>dono?copia(mao):(mao||[]).map(c=>c.type==='batata'?copia(c):{oculta:true});
 function jogadorVisto(q,dono,lado){
   const v={};
-  for(const k of ['name','col','ctrl','ctrlReal','caiu','esgotou','called','out','outAt','outPts','outIcon','luck','webbed','confuse','confuseNext','treasure','batata','escaped','thorned'])if(q[k]!==undefined)v[k]=q[k];
+  for(const k of ['name','col','ctrl','mull','foraTorneio','ctrlReal','caiu','esgotou','called','out','outAt','outPts','outIcon','luck','webbed','confuse','confuseNext','treasure','batata','escaped','thorned'])if(q[k]!==undefined)v[k]=q[k];
   v.hand=mascara(q.hand,dono);v.hand2=mascara(q.hand2,dono);
   // Mão Colorida (R.shiny) é pública: se ele segura todas as cores ou um curinga
   v.colorida=colorful(q);
@@ -32,7 +32,7 @@ function visao(pi){
     'curse','death','traffic','simon','passes','added','removed','ruleOrder','timeWin','vezes','auto','spectate'])v[k]=copia(S[k]);
   v.turn=giraPara(pi,S.turn);v.boom=giraPara(pi,S.boom);
   v.drawnId=S.turn===pi?S.drawnId:null;
-  v.mull=false;v.turbo=false;
+  v.turbo=false;
   v.discard=copia(S.discard);v.ann=copia(S.ann);
   // monte: só a quantidade; com a Revelação, a carta do topo é de todos
   v.deck=S.deck.map(()=>({oculta:true}));if(R.revelation&&S.deck.length)v.deck[v.deck.length-1]=copia(S.deck[S.deck.length-1]);
@@ -48,5 +48,7 @@ function eventoPara(pi,ev){
   // balão escolhendo um jogador: as opções também são cadeiras
   if(e.t==='pensa'&&e.tipo==='player'&&Array.isArray(e.lista))e.lista=e.lista.map(i=>giraPara(pi,i));
   if(Array.isArray(e.vencedores))e.vencedores=e.vencedores.map(i=>giraPara(pi,i));
+  // Dança das Cadeiras: pi já é a cadeira nova de quem vê; o mapa (antes -> agora) vai do giro de antes para o de agora
+  if(e.t==='cadeirasTrocadas'){const n=ev.mapa.length,antes=ev.mapa.indexOf(pi);e.mapa=ev.mapa.map((x,g)=>giraPara(pi,ev.mapa[(g+antes)%n]))}
   return e;
 }

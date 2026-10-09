@@ -1,16 +1,21 @@
-// Sala para jogar com amigos, pelas telas: o anfitrião cria a sala, convida duas pessoas (o QR code é trocado pelo
-// "Sem câmera?", colando o código), arruma os lugares, muda para 5 lugares, os convidados tocam em "Estou pronto" e o
-// anfitrião começa. A conexão é a WebRTC de verdade, entre abas. Confere nomes e lugares nas três telas, que a partida
-// anda e tira capturas (tests/sala-*.png).
-// Uso: npm run test:sala   (--ver abre o navegador visível)
+// Sala para jogar com amigos, pelas telas: o anfitrião cria a sala, convida duas pessoas, arruma os lugares, muda para 5
+// lugares, os convidados tocam em "Estou pronto" e o anfitrião começa. A conexão é a WebRTC de verdade, entre abas.
+// Confere nomes e lugares nas três telas, que a partida anda e tira capturas (tests/sala-*.png).
+// Sem câmera (padrão), os códigos são trocados pelo "Sem câmera?", colando o texto; sem a permissão da câmera, o navegador
+// esconde o endereço do aparelho atrás de um nome .local, e a conexão precisa funcionar assim também.
+// Com --camera, cada pessoa fica num navegador com uma câmera falsa (um vídeo de arquivo) e o script desenha nela o QR
+// code da tela do outro aparelho: o convite e a resposta são lidos pela câmera, como nos celulares.
+// Uso: npm run test:sala   (--camera lê os QR codes pela câmera falsa; --ver abre o navegador visível)
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HEADED = process.argv.includes('--ver');
+const CAMERA = process.argv.includes('--camera');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.txt': 'text/plain' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -22,13 +27,49 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const BASE = `http://127.0.0.1:${server.address().port}/`;
-const browser = await chromium.launch(HEADED ? { headless: false, channel: 'chrome' } : {});
-const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, deviceScaleFactor: 2 });
-await ctx.addInitScript(() => { try { localStorage.setItem('unotfm-solo-cfg', JSON.stringify({ mode: 'custom', poker: false, trade: true, gift: true })); } catch (e) {} });
+const regras = () => { try { localStorage.setItem('unotfm-solo-cfg', JSON.stringify({ mode: 'custom', poker: false, trade: true, gift: true })); } catch (e) {} };
+const navegadores = [];
+const lanca = args => chromium.launch({ ...(HEADED ? { headless: false, channel: 'chrome' } : {}), args }).then(b => (navegadores.push(b), b));
+let ctx = null;
+if (!CAMERA) { ctx = await (await lanca([])).newContext({ viewport: { width: 390, height: 800 }, deviceScaleFactor: 2 }); await ctx.addInitScript(regras); }
+
+// câmera falsa: quadro de vídeo 640x480 (YUV 4:2:0) com o QR code no meio, sobre fundo cinza claro
+const W = 640, H = 480;
+function y4m(arquivo, qr) {
+  const Y = Buffer.alloc(W * H, 200), UV = Buffer.alloc((W / 2) * (H / 2) * 2, 128);
+  if (qr) {
+    const lado = 360, x0 = (W - lado) >> 1, y0 = (H - lado) >> 1;
+    for (let y = 0; y < lado; y++) for (let x = 0; x < lado; x++) {
+      const sx = Math.floor(x * qr.w / lado), sy = Math.floor(y * qr.h / lado);
+      Y[(y0 + y) * W + x0 + x] = qr.px[sy * qr.w + sx] < 128 ? 30 : 230;
+    }
+  }
+  fs.writeFileSync(arquivo, Buffer.concat([Buffer.from(`YUV4MPEG2 W${W} H${H} F30:1 Ip A1:1 C420jpeg\nFRAME\n`), Y, UV]));
+}
+// o QR code desenhado na tela (canvas), em tons de cinza
+const pixels = (page, id) => page.evaluate(id => {
+  const cv = document.getElementById(id), d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, px = [];
+  for (let i = 0; i < d.length; i += 4) px.push(d[i]);
+  return { w: cv.width, h: cv.height, px };
+}, id);
+const tmp = CAMERA ? fs.mkdtempSync(path.join(os.tmpdir(), 'unotfm-sala-cam-')) : null;
+
 const erros = [];
 const falhou = m => { console.error('FALHOU: ' + m); process.exitCode = 1; };
 const confere = (ok, m) => ok ? console.log('ok: ' + m) : falhou(m);
-const abre = async nome => { const p = await ctx.newPage(); p.on('pageerror', e => erros.push(`${nome}: ${e.message}`)); p.on('console', m => { if (m.type() === 'error') erros.push(`${nome} console: ${m.text()}`); }); await p.goto(BASE); return p; };
+// com --camera, cada pessoa tem o próprio navegador (cada um com a sua câmera falsa)
+const abre = async nome => {
+  let c = ctx, cam = null;
+  if (CAMERA) {
+    cam = path.join(tmp, nome + '.y4m'); y4m(cam, null);
+    c = await (await lanca(['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${cam}`]))
+      .newContext({ viewport: { width: 390, height: 800 }, deviceScaleFactor: 2, permissions: ['camera'] });
+    await c.addInitScript(regras);
+  }
+  const p = await c.newPage(); p.cam = cam;
+  p.on('pageerror', e => erros.push(`${nome}: ${e.message}`)); p.on('console', m => { if (m.type() === 'error') erros.push(`${nome} console: ${m.text()}`); });
+  await p.goto(BASE); return p;
+};
 const foto = (p, nome) => p.screenshot({ path: path.join(ROOT, 'tests', `sala-${nome}.png`) });
 
 try {
@@ -56,19 +97,23 @@ try {
     else { lugarBot = await host.evaluate(() => { const l = document.querySelector('#salaLugares li[data-convidar]'); return +l.dataset.convidar; }); await host.click(`#salaLugares li[data-convidar="${lugarBot}"] .nm`); }
     await host.waitForFunction(() => !!SALA.convite, null, { timeout: 15000 });
     if (!convidados.length) await foto(host, 'anfitriao-convite');
-    const convite = await host.evaluate(() => SALA.convite);
-    await c.click('#salaLerConvite summary'); await c.fill('#salaColarConvite', convite); await c.click('#salaUsarConvite');
-    await c.waitForFunction(() => !!SALA.resposta, null, { timeout: 15000 });
+    if (CAMERA) { y4m(c.cam, await pixels(host, 'salaQR')); await c.click('#salaLerConviteBtn'); }
+    else { const convite = await host.evaluate(() => SALA.convite); await c.click('#salaLerConvite summary'); await c.fill('#salaColarConvite', convite); await c.click('#salaUsarConvite'); }
+    await c.waitForFunction(() => !!SALA.resposta, null, { timeout: 20000 });
+    if (CAMERA) confere(true, `${nome} leu o convite pela câmera`);
     if (!convidados.length) await foto(c, 'convidado-resposta');
-    const resposta = await c.evaluate(() => SALA.resposta);
-    await host.evaluate(() => { document.querySelector('#salaConvite details').open = true; }); await host.fill('#salaColar', resposta); await host.click('#salaUsarColado');
-    await c.waitForSelector('#salaDentro:not([hidden])', { timeout: 15000 });
-    confere(true, `${nome} entrou na sala`);
+    if (CAMERA) { y4m(host.cam, await pixels(c, 'salaQRResp')); await host.click('#salaLerResposta'); }
+    else { const resposta = await c.evaluate(() => SALA.resposta); await host.evaluate(() => { document.querySelector('#salaConvite details').open = true; }); await host.fill('#salaColar', resposta); await host.click('#salaUsarColado'); }
+    await c.waitForSelector('#salaDentro:not([hidden])', { timeout: 20000 });
+    confere(true, `${nome} entrou na sala${CAMERA ? ' (o anfitrião leu a resposta pela câmera)' : ''}`);
     if (lugarBot != null) { await host.waitForTimeout(300); confere(await host.evaluate(l => SALA.lugares[l] && SALA.lugares[l].nome === 'Caio', lugarBot), `convidado pelo bot do lugar ${lugarBot}, o Caio sentou nele`); }
     convidados.push(c);
   }
   await host.waitForFunction(() => document.querySelectorAll('#salaLugares li:not(.bot)').length === 3, null, { timeout: 5000 });
   confere(true, 'o anfitrião vê as duas pessoas na lista');
+  // sem a câmera, o navegador costuma esconder o endereço do aparelho atrás de um nome .local (e a conexão funciona assim)
+  const enderecos = await host.evaluate(() => REDE.ligacoes.filter(l => l.pc && l.aberta).map(l => /\.local/.test(l.pc.localDescription.sdp) ? 'nome .local' : 'endereço IP'));
+  console.log(`   endereço do anfitrião nos convites: ${[...new Set(enderecos)].join(', ')}`);
   // pronto
   await convidados[0].click('#salaPronto');
   await host.waitForFunction(() => /pronto/.test(document.getElementById('salaLugares').textContent), null, { timeout: 5000 });
@@ -112,5 +157,7 @@ try {
   falhou(e.message);
 } finally {
   if (erros.length) falhou('erros nas páginas:\n' + [...new Set(erros)].join('\n'));
-  await browser.close(); server.close();
+  for (const b of navegadores) await b.close();
+  server.close();
+  if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
 }

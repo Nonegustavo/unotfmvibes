@@ -1,6 +1,6 @@
 /* unotfm: conexão direta entre aparelhos pela rede local (WebRTC), sem servidor. A "proposta" do anfitrião e a
    "resposta" do convidado viajam em QR codes, compactadas (só o essencial da descrição da conexão, em Base45, que cabe
-   no modo mais compacto do QR code). Usado pelo jogo (js/rede.js) e pela página de teste (lan-teste.html).
+   no modo mais compacto do QR code). Usado pela sala e pela rede (js/sala.js, js/rede.js).
    Precisa de qrcode-generator (js/vendor/qrcode.js) para desenhar os QR codes */
 /* ---------- Base45: texto que cabe no modo alfanumérico do QR code (o mais compacto) ---------- */
 const B45='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';

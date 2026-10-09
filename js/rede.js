@@ -140,15 +140,16 @@ function cadeirasConvidados(n,k){const out=[];for(let j=1;j<=k;j++)out.push(Math
 // convidados sentam espalhados entre os adversários
 function redeComeca(mapa){
   const ls=REDE.ligacoes.filter(l=>l.aberta&&l.nome);
-  R=rulesForMode();R.tournament=false;R.survivor=false;TOUR=null;
+  R=rulesForMode(); // o torneio continua de uma rodada para a outra (newGame recomeça quando ele acaba ou o modo muda)
   if(!mapa){R.bots=Math.max(R.bots,ls.length);const n=R.bots+1,cads=cadeirasConvidados(n,ls.length);mapa=Array(n).fill(null);ls.forEach((l,k)=>mapa[cads[k]]=l)}
   R.bots=mapa.length-1;
   OPCOES.tempos=TEMPOS_REDE[REDE.sala?CFG.tempoRede:(new URLSearchParams(location.search).get('tempo')||'livre')]||null;
-  REDE.ligacoes.forEach(l=>l.cadeira=null);
+  REDE.ligacoes.forEach(l=>l.cadeira=l.lugar=null);
   OPCOES.controles=mapa.map((l,i)=>i===0?'tela':l?'rede':'bot');
   OPCOES.nomes=mapa.map((l,i)=>i===0?(OPCOES.meuNome||'Anfitrião'):l?l.nome:null);
   OPCOES.cores=mapa.map((l,i)=>l?corDaPessoa(i):null);
-  mapa.forEach((l,i)=>{if(l)l.cadeira=i});
+  // lugar: a cadeira da pessoa no começo de cada partida (a Dança das Cadeiras muda a cadeira só durante a partida)
+  mapa.forEach((l,i)=>{if(l)l.cadeira=l.lugar=i});
   $('endOv').classList.remove('show');$('settingsOv').classList.remove('show');
   newGame();
 }
@@ -162,7 +163,7 @@ function redeDoConvidado(l,m){
     // o mesmo aparelho voltando (convite novo depois de a ligação cair): fica com a cadeira e o nome de antes
     const velha=m.id&&REDE.ligacoes.find(x=>x!==l&&x.meuId===m.id&&x.cadeira!=null);
     if(velha&&!l.nome){
-      l.meuId=m.id;l.nome=velha.nome;l.cadeira=velha.cadeira;l.pronto=velha.pronto;REDE.ligacoes=REDE.ligacoes.filter(x=>x!==velha);
+      l.meuId=m.id;l.nome=velha.nome;l.cadeira=velha.cadeira;l.lugar=velha.lugar;l.pronto=velha.pronto;REDE.ligacoes=REDE.ligacoes.filter(x=>x!==velha);
       if(typeof SALA!=='undefined')SALA.lugares=SALA.lugares.map(x=>x===velha?l:x);
       l.caiu=false;if(S&&S.phase!=='over'&&S.players[l.cadeira]){voltou(l.cadeira);l.enviar({t:'evento',ev:{t:'atualiza'},visao:visao(l.cadeira)})}
       if(REDE.aoMudar)REDE.aoMudar();return;
@@ -185,12 +186,18 @@ function redeDoConvidado(l,m){
   if(m.t==='escolher')respondePedido(l,m);
 }
 function redeAnfitriao(){
-  REDE.papel='anfitriao';nativeTimeout(redeSinal,1000);
+  REDE.papel='anfitriao';semTurbo=true;nativeTimeout(redeSinal,1000);
   $('home').hidden=true;
   $('openSettings').hidden=true; // partida nova é pela sala ou pelo fim da partida
   // cada evento da mesa vai para cada convidado (os que são só de outro jogador, não), girado e com a visão dele
   OUVINTES.push(ev=>{
     if(!S||!S.players)return;
+    // partida nova: cada pessoa volta ao lugar dela; na Dança das Cadeiras, vai para a cadeira nova (e os pedidos abertos dela também)
+    if(ev.t==='novaPartida')for(const l of REDE.ligacoes)if(l.lugar!=null)l.cadeira=l.lugar;
+    if(ev.t==='cadeirasTrocadas'){
+      for(const l of REDE.ligacoes)if(l.cadeira!=null)l.cadeira=ev.mapa[l.cadeira];
+      for(const pd of Object.values(REDE.pedidos))pd.pi=ev.mapa[pd.pi];
+    }
     for(const l of REDE.ligacoes){
       const pi=l.cadeira;if(pi==null||!l.aberta||!S.players[pi])continue;
       if(ev.a!=null&&ev.a!=='todos'&&ev.a!==pi)continue;
@@ -221,7 +228,7 @@ async function redeResposta(texto){
 
 /* ---------- convidado: só a tela ---------- */
 function redeConvidado(){
-  REDE.papel='convidado';nativeTimeout(redeSinal,1000);
+  REDE.papel='convidado';semTurbo=true;nativeTimeout(redeSinal,1000);
   $('home').hidden=true;
   $('openSettings').hidden=true; // quem começa as partidas é o anfitrião
   acaoRemota=a=>{const n=++REDE.seq;if(VIS.previa)VIS.previa.n=n;if(REDE.anfitriao)REDE.anfitriao.enviar({t:'acao',acao:a,n});return true};
@@ -277,7 +284,6 @@ function redeAbrePedido(m){
 if(REDE_MODO){
   const q=new URLSearchParams(location.search);
   REDE.convidados=Math.max(1,Math.min(5,+q.get('convidados')||1));
-  turboStart=()=>{}; // o turbo só existe no solo
   if(REDE_MODO==='anfitriao'){
     redeAnfitriao();abreCanalMentira('anfitriao');
     redeAviso(`Rede de mentira: anfitrião (esperando ${REDE.convidados} convidado(s) em outras abas, com ?rede=convidado)`);

@@ -237,9 +237,10 @@ function autoHuman(pi){
   },1000);
 }
 function autoPlay(pi,card){
+  const me=S.players[pi];
   termina(pi,card,isWildPick(card)?rand(COLORS):null);
   if(S.busy&&S.autoResolve)agendar(()=>S.autoResolve&&S.autoResolve(),800);
-  else if(S.phase==='combo'&&S.turn===pi)endTurn();
+  else if(S.phase==='combo'&&S.players[S.turn]===me)endTurn();
 }
 const CARD_RULES=()=>RULES.filter(r=>r.g==='Cartas especiais').map(r=>r.k);
 function ruleOptions(n=2,pre){
@@ -412,16 +413,12 @@ function applySpecial(pi,card){
       emit({t:'fx',g:'🤲',txt:`${J(pi)} partilhou ${copies.length} cópia${copies.length===1?'':'s'}`,cor:col,modo:'slam'});log(`${J(pi)} deu ${copies.length} cópias das suas cartas.`);return massCheck()}
     case 'simon':return pedir(pi,{tipo:'memoria',carta:card,responde:(ok,c)=>{S.busy=false;aposEscolha(resolveSimon(pi,card,ok,c))}});
     case 'chair':{
-      // adversário que joga também troca de lugar e leva a vez junto (a próxima vez é a do vizinho no lugar novo)
-      const idx=alive().filter(i=>!humano(i));
-      if(R.team||idx.length<2){emit({t:'fx',g:'🪑',txt:'Ninguém trocou de lugar',cor:col,modo:'stamp'});return 'done'}
+      // os adversários de quem jogou (pessoas e bots) trocam de lugar; quem jogou fica com a vez
+      if(R.team||opp.length<2){emit({t:'fx',g:'🪑',txt:'Ninguém trocou de lugar',cor:col,modo:'stamp'});return 'done'}
       emit({t:'cadeiras'});
-      const from=shuffle([...idx]),mv=(a,ix)=>{const o=[...a];idx.forEach((i,k)=>o[i]=a[from[k]]);return o};
-      const put=(a,b)=>b.forEach((x,i)=>a[i]=x);put(S.players,mv(S.players));
-      if(S.other)put(S.other.players,mv(S.other.players));
-      if(S.mem)['lacks','lastCol'].forEach(k=>{const m=S.mem[k],o={...m};idx.forEach((i,k2)=>{if(m[from[k2]]!==undefined)o[i]=m[from[k2]];else delete o[i]});S.mem[k]=o});
-      if(!humano(pi)&&S.turn===pi){S.turn=idx[from.indexOf(pi)];if(S.turn!==pi)emit({t:'segueVez'})}
-      emit({t:'fx',g:'🪑',txt:'Os adversários trocaram de lugar',cor:col,modo:'slam'});log('Dança: os adversários trocaram de lugar.');
+      dancaCadeiras(pi);pi=S.players.indexOf(p); // a mesa pode ter girado (a pessoa desta tela fica na cadeira dela)
+      emit({t:'fx',g:'🪑',txt:V(pi,'Seus adversários trocaram de lugar',`Os adversários de ${J(pi)} trocaram de lugar`),cor:col,modo:'slam'});
+      log(V(pi,'Dança: seus adversários trocaram de lugar.',`Dança: os adversários de ${J(pi)} trocaram de lugar.`));
       // espera um pouco com a vez ainda no lugar novo, para ficar claro quem se mexeu, antes de passar a vez
       if(canCombo(p,card)&&(R.stack||R.sequence))return 'done';
       const g=S.gen;S.busy=true;atualiza();
@@ -521,6 +518,36 @@ function botSwapTarget(pi){
   return fewest(pi,others);
 }
 
+/* ---------- Dança das Cadeiras ----------
+   Os adversários de quem jogou (todos os outros que ainda estão no jogo, pessoas e bots) trocam de lugar ao acaso. A
+   pessoa deste aparelho (controlador 'tela') continua na cadeira dela: quando ela troca de lugar, a mesa inteira gira
+   junto, o que não muda a ordem de ninguém (só os números das cadeiras) */
+function dancaCadeiras(pi){
+  const n=S.players.length,idx=alive().filter(i=>i!==pi),de=shuffle([...idx]);
+  const mapa=[...Array(n).keys()];idx.forEach((i,k)=>mapa[de[k]]=i); // cadeira de antes -> cadeira nova
+  const fixa=S.players.findIndex(p=>(p.ctrlReal||p.ctrl)==='tela');
+  if(fixa>=0&&mapa[fixa]!==fixa){const d=mapa[fixa]-fixa;for(let i=0;i<n;i++)mapa[i]=(mapa[i]-d+n)%n}
+  trocaCadeiras(mapa);
+}
+/* Troca os jogadores de cadeira (mapa: cadeira de antes -> cadeira nova). Tudo o que é de um jogador vai junto (mão,
+   marcas, o outro lado do Portal); o que a mesa guarda pelo número da cadeira é renumerado (vez, bomba, desafio,
+   memória do Mestre, pedidos abertos). Os relógios saem: a vez seguinte (ou a continuação do combo) põe outro. A tela
+   e a rede renumeram o que é delas pelo evento 'cadeirasTrocadas' */
+function trocaCadeiras(mapa){
+  const nova=i=>typeof i==='number'&&mapa[i]!=null?mapa[i]:i;
+  Object.keys(RELOGIOS).forEach(k=>tiraRelogio(+k));
+  const lado=o=>{
+    const ps=[...o.players];ps.forEach((q,i)=>o.players[mapa[i]]=q);
+    o.boom=nova(o.boom);if(o.chal)o.chal.by=nova(o.chal.by);
+    if(o.mem)['lacks','lastCol'].forEach(k=>{const m=o.mem[k],r={};Object.keys(m).forEach(i=>r[mapa[+i]]=m[i]);o.mem[k]=r});
+  };
+  lado(S);if(S.other)lado(S.other);
+  S.turn=nova(S.turn);if(S.mixFaltam)S.mixFaltam=S.mixFaltam.map(nova);
+  const ab={...ABERTOS};Object.keys(ab).forEach(k=>delete ABERTOS[k]);Object.keys(ab).forEach(k=>ABERTOS[mapa[+k]]=ab[k]);
+  S.tok++; // o que estava marcado para a vez de antes (cortes e jogadas dos bots) não vale mais
+  emit({t:'cadeirasTrocadas',mapa:[...mapa]});
+}
+
 /* ---------- jump-in ---------- */
 function canJump(pi,c){
   return R.jumpin&&S.phase==='play'&&!S.busy&&S.turn!==pi&&!S.players[pi].out&&identical(c,topCard());
@@ -528,7 +555,7 @@ function canJump(pi,c){
 function doJumpIn(pi,card){
   S.tok++;
   S.turn=pi;S.extra=false;S.skip=false;
-  if(humano(pi))S.mull=false;
+  S.players[pi].mull=false;
   emit({t:'fx',g:'✂',txt:V(pi,'Você cortou!',`Corte de ${J(pi)}!`),cor:'var(--cy)',modo:'stamp'});
   log(`${J(pi)} cortou a vez!`);
   const go=()=>{
@@ -536,7 +563,7 @@ function doJumpIn(pi,card){
     if(humano(pi)&&ASK_TYPES.includes(card.type))S.preLanded=card;
     const r=playCard(pi,card,null);
     if(r==='win'||r==='defer')return;
-    if(r==='combo'){S.tok++;atualiza();pedirJogada(pi);return}
+    if(r==='combo'){S.tok++;atualiza();pedirJogada(S.turn);return}
     endTurn();
   };
   if(card.type!=='num'){announce(pi,card,go,fastMode()?250:480);return}

@@ -232,8 +232,8 @@ const identical=(a,b)=>a.color!=='w'&&a.color===b.color&&a.type===b.type&&a.valu
 /* Textos das regras sem "você": as regras não sabem quem está olhando. J(pi) marca o nome de um jogador (vira "Você"
    para ele mesmo) e V(pi,'para ele','para os outros') escolhe a frase conforme quem vê. As marcas guardam o nome do
    jogador (que não muda com a Dança das Cadeiras) e a tela troca tudo com texto(s) na hora de mostrar */
-const J=pi=>`${S.players[pi].name}`;
-const V=(pi,meu,dos)=>`${S.players[pi].name}${meu}${dos}`;
+const JN=nome=>`${nome}`,J=pi=>JN(S.players[pi].name);
+const VN=(nome,meu,dos)=>`${nome}${meu}${dos}`,V=(pi,meu,dos)=>VN(S.players[pi].name,meu,dos);
 // texto para quem vê (eu: nome do jogador desta tela; no solo, a cadeira 0)
 function texto(s,eu=S&&S.players[0].name){
   if(typeof s!=='string'||!/[]/.test(s))return s;

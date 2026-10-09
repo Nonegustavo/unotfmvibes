@@ -20,8 +20,9 @@ Date.now=()=>TB.on?TB.now:realNow();
    Ao terminar, o que sobrou da fila volta para o navegador (a tela de fim aparece no tempo normal).
    Partida longa demais (TURBO_MAX vezes): vence quem tiver menos pontos na mão */
 const TURBO_MAX=2000;
+let semTurbo=false; // jogando com outras pessoas (rede): quem é eliminado assiste no ritmo normal
 function turboStart(){
-  if(!S||S.phase==='over'||!S.players[0].out||TB.on)return;
+  if(semTurbo||!S||S.phase==='over'||!S.players[0].out||TB.on)return;
   const now=realNow();
   TB.on=true;TB.now=now;TB.turns=S.vezes||0;TB.idle=0;
   for(const [id,t] of TB.live){nativeClear(t.h);TB.q.set(id,{fn:t.fn,a:t.a,due:now+Math.max(0,t.due-now),id})}

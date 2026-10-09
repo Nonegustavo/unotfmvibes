@@ -4,12 +4,11 @@
   "type": "module",
   "scripts": {
     "test": "node tests/smoke.mjs",
-    "test:lan": "node tests/lan-teste.mjs",
-    "test:lan-camera": "node tests/lan-camera.mjs",
     "test:mostruario": "node tests/mostruario.mjs",
     "test:cartas": "node tests/cartas.mjs",
     "test:mesa": "node tests/mesa.mjs",
     "test:rede": "node tests/rede.mjs",
+    "test:rede-regras": "node tests/rede-regras.mjs",
     "test:sala": "node tests/sala.mjs",
     "test:tempo": "node tests/tempo.mjs"
   },
