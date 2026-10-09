@@ -99,7 +99,7 @@ function redeAnfitriao(){
   // partida nova (pela sala ou, nos testes, quando os convidados chegam): o placar e as Configurações fecham
   ANF.aoComecar=()=>{$('endOv').classList.remove('show');$('settingsOv').classList.remove('show')};
   $('home').hidden=true;
-  $('openSettings').hidden=true; // partida nova é pela sala ou pelo fim da partida
+  $('openSettings').hidden=true;$('openMenu').hidden=true; // partida nova é pela sala ou pelo fim da partida; sair, pela sala
 }
 // convite por WebRTC: devolve o texto do QR code; a resposta do convidado entra por redeResposta
 async function redeConvidar(){
@@ -125,7 +125,7 @@ async function redeResposta(texto){
 function redeConvidado(){
   REDE.papel='convidado';semTurbo=true;nativeTimeout(redeSinal,1000);
   $('home').hidden=true;
-  $('openSettings').hidden=true; // quem começa as partidas é o anfitrião
+  $('openSettings').hidden=true;$('openMenu').hidden=true; // quem começa as partidas é o anfitrião; sair, pela sala
   acaoRemota=a=>{const n=++REDE.seq;if(VIS.previa)VIS.previa.n=n;if(REDE.anfitriao)REDE.anfitriao.enviar({t:'acao',acao:a,n});return true};
   // o convidado não tem mesa: se a tela chamar uma regra direto (em vez de acao), é erro, e os testes pegam pelo console
   for(const k of ['agir','jogar','termina','playCard','takeDraw','endTurn','startTurn','doJumpIn','penalize','doChallenge','newGame','dealAndStart','comecaMix','drawOne','markOut'])

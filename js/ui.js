@@ -1231,13 +1231,22 @@ function showRuleInfo(k){
   const a=(S&&S.added||[]).find(x=>x.k===k);
   notice(k,a?`Nova regra, adicionada por ${texto(a.by)}`:'Em jogo',{info:true,title:RNAME[k],anchor:b});
 }
-$('openConfig').onclick=()=>{updateInstallUI();CFG.sound=!MUTED;buildSettings();
-  // no solo, com a partida na tela: volta ao menu principal (no multiplayer, sai-se pela sala)
-  $('cfgMenu').hidden=!$('home').hidden||typeof SALA!=='undefined'&&!!SALA.papel||!!REDE_MODO;
-  $('configOv').classList.add('show');$('cfgClose').focus()};
-// menu principal: a partida em andamento acaba (as esperas dela deixam de valer) e a tela inicial volta
-$('cfgMenu').onclick=()=>{
-  if(S&&S.phase!=='over'&&!S.players[0].out&&!confirm('Sair da partida e voltar ao menu principal?'))return;
+$('openConfig').onclick=()=>{updateInstallUI();CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()};
+// pergunta com a janela do próprio jogo (no lugar do confirm do navegador); devolve true se a pessoa confirmar
+function confirmaJogo({titulo,texto,sim,nao}){
+  return new Promise(res=>{
+    $('confirmTitulo').textContent=titulo;$('confirmTexto').textContent=texto;$('confirmSim').textContent=sim;$('confirmNao').textContent=nao;
+    const fim=v=>{$('confirmOv').classList.remove('show');res(v)};
+    $('confirmSim').onclick=()=>fim(true);$('confirmNao').onclick=()=>fim(false);
+    // tocar fora da janela é o mesmo que não
+    $('confirmOv').onclick=e=>{if(e.target===$('confirmOv'))fim(false)};
+    $('confirmOv').classList.add('show');$('confirmNao').focus();
+  });
+}
+// 🏠 no topo (solo; no multiplayer, sai-se pela sala): a partida em andamento acaba (as esperas dela deixam de valer)
+// e a tela inicial volta. Com a partida andando, pergunta antes
+$('openMenu').onclick=async()=>{
+  if(S&&S.phase!=='over'&&!S.players[0].out&&!await confirmaJogo({titulo:'Sair da partida?',texto:'A partida em andamento acaba e você volta ao menu principal.',sim:'Sair',nao:'Continuar jogando'}))return;
   if(TB.on)turboStop();
   if(S){S.gen++;S.phase='over'}
   closeOverlays();['configOv','endOv','settingsOv'].forEach(id=>$(id).classList.remove('show'));$('fx').innerHTML='';FX3D.reset();render();
