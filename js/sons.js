@@ -10,7 +10,7 @@ const SOM_GELO={tom:3200,quiques:1,intervalo:.11,queda:.6,tinido:.15,brilho:.5,v
 
 // Carta da Misericórdia: um dos modelos (coro, harpa, sinos ou martelo), com o tom em semitons e a velocidade das notas
 // (2 = notas duas vezes mais rápidas, mais juntas)
-const SOM_MISERICORDIA={modelo:'sinos',tom:1,volume:1,velocidade:1};
+const SOM_MISERICORDIA={modelo:'harpa',tom:0,volume:1,velocidade:.5};
 
 // um oscilador com ataque quase instantâneo e decaimento exponencial
 function somParcial(ctx,dest,f,vol,dur,t,cents=0,tipo='sine'){
