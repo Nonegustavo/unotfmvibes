@@ -708,14 +708,16 @@ function renderRail(){
     const near=!p.out&&!hidden&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
     const v=p.out?n:cntShown(i,n,hidden);
     const badge=hidden?'?':said?'🛎️':near?`${v}/${lim}`:String(v);
-    const ctCls=said?'said':hidden?'':near?'nr':v<=3?'low':'';
+    // a sineta do balão só pula quando aparece; depois só pulsa, no ritmo do relógio (o redesenho não recomeça a animação)
+    const vistos=VIS.saidVisto||(VIS.saidVisto=new Set()),saidNovo=said&&!vistos.has(p.name);if(said)vistos.add(p.name);else vistos.delete(p.name);
+    const ctCls=said?(saidNovo?'said novo':'said'):hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
     parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&(p.colorida??colorful(p))?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)};animation-delay:${shinyDelay()}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
       <div class="nm">${p.name}</div>
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
-      ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${ctCls}">${badge}</span></div>`}
+      ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${ctCls}"${said&&!saidNovo?` style="animation-delay:-${(performance.now()%1000).toFixed(0)}ms"`:''}>${badge}</span></div>`}
       ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" aria-label="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const sv=comVoo(seatStatus(i),i),st=sv.map(seloHTML),vazio=sv.every(x=>x.voo==='oculto');
         return st.length?`<span class="tag stat ${vazio?'oculto':''}">${st.join(' ')}</span>`:''})()}${(()=>{const t=[];if(!p.out&&partner(i)===0)t.push('🤝');if(TOUR)t.push(tourItem(p.name).short);
         return t.length?`<span class="tops">${t.map(x=>`<span class="tag top">${x}</span>`).join('')}</span>`:''})()}</div>`);

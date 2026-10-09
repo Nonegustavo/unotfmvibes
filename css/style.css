@@ -92,7 +92,8 @@
   text-shadow:0 0 2px #1d1435,1px 1px 0 #1d1435,-1px -1px 0 #1d1435,1px -1px 0 #1d1435,-1px 1px 0 #1d1435,0 2px 3px rgba(0,0,0,.4)}
 .fan .cnt.low{color:#ffd24d}
 .fan .cnt.nr{color:#ff5a52}
-.fan .cnt.said{top:1.5rem;color:#fff;background:#fff;box-shadow:0 0 0 2px var(--cr),0 0 0.625rem var(--cr);padding:1px 0.5rem;border-radius:999px;font-size:1.05rem;text-shadow:none;animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
+.fan .cnt.said{top:1.5rem;color:#fff;background:#fff;box-shadow:0 0 0 2px var(--cr),0 0 0.625rem var(--cr);padding:1px 0.5rem;border-radius:999px;font-size:1.05rem;text-shadow:none;animation:cntPulse 1s ease-in-out infinite}
+.fan .cnt.said.novo{animation:cntPop .35s,cntPulse 1s ease-in-out infinite .35s}
 @keyframes cntPop{0%{scale:.4}70%{scale:1.2}100%{scale:1}}
 @keyframes cntPulse{50%{scale:1.08}}
 .tag,.catch{z-index:4}

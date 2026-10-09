@@ -166,7 +166,7 @@ function comboMode(){for(const k in DEF_RULES)if(R[k])return DEF_RULES[k];return
 const RULE_POOL=['stack','sequence','neighbor','hell','jumpin','perfection','clean','nou','satisfaction','insatisfaction','fastdraw','tracking','dos','shiny','black','revelation','camouflage','bg','overload','nochallenge'];
 const CONFLICT_PAIRS=[['mini','maxi'],['tournament','survivor'],['stack','sequence'],['stack','neighbor'],['stack','mess'],['stack','perfection'],['sequence','mess'],['sequence','perfection'],['perfection','mess'],['mess','noaction'],['mess','clean'],['revelation','tracking'],['tracking','satisfaction'],['satisfaction','insatisfaction'],['insatisfaction','fastdraw'],['satisfaction','fastdraw']];
 Object.keys(DEF_RULES).forEach((a,i,l)=>l.slice(i+1).forEach(b=>CONFLICT_PAIRS.push([a,b])));
-CONFLICT_PAIRS.push(['nou','dfnone'],['nochallenge','noaction']); // Contra-ataque não combina com a defesa desativada (também a da configuração, veja NOU_OFF)
+CONFLICT_PAIRS.push(['nou','dfnone'],['nochallenge','noaction'],['dos','camouflage']); // Contra-ataque não combina com a defesa desativada (também a da configuração, veja NOU_OFF)
 RULES.filter(r=>r.g==='Cartas especiais').forEach(r=>CONFLICT_PAIRS.push(['mess',r.k],['noaction',r.k]));
 const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[]).push(b);(CONFLICT[b]=CONFLICT[b]||[]).push(a)});
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
