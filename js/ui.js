@@ -73,7 +73,8 @@ function comPrevia(s){
   if(pv.vez!=null&&s.turn===0)v.turn=pv.vez;
   return v;
 }
-const myTurn=()=>S&&S.phase!=='over'&&S.turn===0&&!S.busy&&!S.auto&&!S.players[0].out;
+// sem carta na mesa (no Mix, antes de distribuir), ainda não é a vez de ninguém
+const myTurn=()=>S&&S.phase!=='over'&&S.turn===0&&!S.busy&&!S.auto&&!S.players[0].out&&S.discard.length>0;
 function humanClick(id,el){
   if(!S||S.phase==='over')return;
   const me=S.players[0];const card=me.hand.find(c=>c.id===id);if(!card)return;

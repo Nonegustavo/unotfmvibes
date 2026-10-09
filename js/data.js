@@ -60,7 +60,7 @@ let hardClicks={n:0,t:0};
 RULES.forEach(r=>{if(CFG[r.k]&&(CONFLICT[r.k]||[]).some(x=>CFG[x]&&RULES.findIndex(q=>q.k===x)<RULES.findIndex(q=>q.k===r.k)))CFG[r.k]=false});
 const NOU_OFF='Incompatível com a defesa contra compras desativada';if(CFG.combo==='none')CFG.nou=false;
 if(!CFG.mode)CFG.mode=RULES.some(r=>r.k!=='poker'&&CFG[r.k])?'custom':'mix';
-function rulesForMode(){const r={...CFG};if(CFG.mode!=='custom'){RULES.forEach(x=>r[x.k]=false);if(CFG.mode==='mix')r.poker=true;r.bots=3;r.start=7}return r}
+const rulesForMode=()=>regrasDe(CFG);
 R=rulesForMode();
 let SCORE=load('unotfm-solo-score',{});
 let stormT=null;

@@ -1,5 +1,6 @@
-/* unotfm: jogar com outras pessoas. O anfitrião roda a mesa e joga numa cadeira; cada convidado tem uma ligação com ele
-   e só tem a tela. Toda mensagem vira texto (JSON).
+/* unotfm: jogar com outras pessoas, a parte da página. O anfitrião roda a mesa e joga numa cadeira; o que ele faz com
+   as pessoas (sala, eventos, pedidos, ações, sinal) está em js/mesa/anfitriao.js, sem página. Cada convidado tem uma
+   ligação com ele e só tem a tela. Toda mensagem vira texto (JSON).
    - Anfitrião → convidado: cada evento da mesa (girado para o convidado ficar na cadeira 0) com a visão dele da partida
      (visao), e os pedidos de escolha (CONTROLES.rede).
    - Convidado → anfitrião: as ações (acao → agir) e as respostas dos pedidos. O anfitrião confere tudo.
@@ -10,9 +11,8 @@
      redeEntrar (nos testes, ?rede=lan-anfitriao e ?rede=lan-convidado).
    Sem ?rede, nada daqui roda. */
 const REDE_MODO=new URLSearchParams(location.search).get('rede');
-const VERSAO_REDE='rede-1'; // os aparelhos comparam ao entrar: com versões diferentes, aparece "atualize o jogo"
-const REDE={papel:null,ultimoSinal:0,ligacoes:[],anfitriao:null,pendente:null,seq:0,pedidos:{},convidados:1,canal:null,eu:null,
-  sala:false,aoMudar:null,aoSala:null, // com a sala (js/sala.js), o anfitrião começa a partida; sem ela (testes), começa sozinho
+// no convidado: a ligação com o anfitrião (anfitriao) e a sala (aoSala); no anfitrião, as pessoas ficam em ANF.ligacoes
+const REDE={papel:null,ultimoSinal:0,anfitriao:null,pendente:null,seq:0,canal:null,eu:null,aoSala:null,
   conectado:false,enviadas:0,recebidas:0,ultimas:[]}; // contadores: para os testes
 // faixa no topo com o estado da rede: só nas abas de teste (?rede=…); na sala, as telas dela mostram o estado
 function redeAviso(txt){
@@ -45,8 +45,8 @@ function abreCanalMentira(eu){
   REDE.eu=eu;REDE.canal=new BroadcastChannel('unotfm-rede');
   REDE.canal.onmessage=e=>{
     const env=JSON.parse(e.data);if(env.para!==REDE.eu)return;
-    let l=REDE.ligacoes.find(x=>x.id===env.de)||(REDE.anfitriao&&REDE.anfitriao.id===env.de?REDE.anfitriao:null);
-    if(!l&&REDE.papel==='anfitriao'){l=ligacaoMentira(env.de);redeNovaLigacao(l)}
+    let l=ANF.ligacoes.find(x=>x.id===env.de)||(REDE.anfitriao&&REDE.anfitriao.id===env.de?REDE.anfitriao:null);
+    if(!l&&REDE.papel==='anfitriao'){l=ligacaoMentira(env.de);anfNovaLigacao(l)}
     if(l&&l.aoReceber)l.aoReceber(env.m);
   };
 }
@@ -60,66 +60,13 @@ function ligacaoWebRTC(pc,dc){
   return l;
 }
 
-/* ---------- anfitrião: roda a mesa ---------- */
-const ligDaCadeira=pi=>REDE.ligacoes.find(l=>l.cadeira===pi);
-// a pessoa de outro aparelho responde aos pedidos de lá: a janela abre lá, e a resposta volta para cá (respondePedido)
-CONTROLES.rede={
-  jogada(){},
-  pedido(pi,ped){
-    const g=S.gen;
-    const envia=()=>{
-      if(g!==S.gen||S.phase==='over')return;
-      const l=ligDaCadeira(pi),t=ped.tela||{},id=++REDE.seq;
-      const opcoes=ped.tipo==='cor'||ped.tipo==='memoria'?null:t.opcoes();
-      if(ped.tipo==='regra'&&!opcoes.length){ped.responde(null);return}
-      REDE.pedidos[id]={pi,ped,opcoes};
-      if(l)l.enviar({t:'pedido',id,tipo:ped.tipo,carta:copia(ped.carta),titulo:t.titulo,sub:t.sub,mix:!!ped.mix,
-        opcoes:opcoes&&(ped.tipo==='alvo'?opcoes.map(i=>giraPara(pi,i)):copia(opcoes))});
-    };
-    // os mesmos tempos da tela deste aparelho: cor e Mix na hora; carta especial depois do anúncio
-    if(ped.tipo==='cor'){S.busy=true;atualiza();envia();return}
-    if(ped.mix){envia();return}
-    S.busy=true;atualiza();
-    if(ped.ja){envia();return}
-    if(S.preLanded===ped.carta){S.preLanded=null;envia();return}
-    agendar(envia,480);
-  },
-};
-// resposta de um pedido: só vale de quem está na cadeira e se for uma das opções oferecidas (senão, a primeira)
-function respondePedido(l,m){
-  const pd=REDE.pedidos[m.id];if(!pd||!S||pd.pi!==l.cadeira)return;delete REDE.pedidos[m.id];
-  const {pi,ped,opcoes}=pd;
-  if(ped.encerrado)return; // o computador já respondeu (o tempo acabou)
-  S.busy=false; // como a janela fechando na tela deste aparelho
-  if(ped.tipo==='cor')return ped.responde(COLORS.includes(m.valor)?m.valor:bestColor(S.players[pi].hand));
-  if(ped.tipo==='alvo'){const t=giraDe(pi,m.valor);return ped.responde(opcoes.includes(t)?t:opcoes[0])}
-  if(ped.tipo==='carta')return ped.responde(opcoes.find(c=>c.id===m.valor)||opcoes[0]);
-  if(ped.tipo==='regra')return ped.responde(opcoes.includes(m.valor)?m.valor:opcoes[0]);
-  if(ped.tipo==='memoria'){
-    // a mesa confere os toques em vez de acreditar no "acertei"
-    const taps=Array.isArray(m.toques)?m.toques:[];
-    const ok=taps.length===S.simon.length&&taps.every((c,i)=>sameCol(c,S.simon[i]));
-    return ped.responde(ok,ok?(COLORS.includes(m.valor)?m.valor:'r'):null);
-  }
-}
-// tempo para jogar (ms): jogada, cor e alvo, carta, e o que precisa de leitura (Memória, Carta da Regra, Mix)
-const TEMPOS_REDE={normal:{jogada:20000,cor:15000,alvo:15000,carta:15000,regra:30000,memoria:30000,mix:30000},
-  longo:{jogada:40000,cor:30000,alvo:30000,carta:30000,regra:60000,memoria:60000,mix:60000},livre:null,
-  rapido:{jogada:2500,cor:2000,alvo:2000,carta:2000,regra:2500,memoria:2500,mix:3000}}; // rapido: só nos testes
-/* Sinal: cada lado manda um "oi" a cada 2 s. Sem nada do convidado por 8 s (tela bloqueada, Wi-Fi caiu), o computador
-   joga por ele até o sinal voltar; se a ligação fechar, ele volta lendo um convite novo e recupera a cadeira (o aparelho
-   tem um número próprio, OPCOES.meuId) */
+/* ---------- anfitrião: roda a mesa (js/mesa/anfitriao.js) ---------- */
+// Sinal: cada lado manda um "oi" a cada 2 s. O anfitrião confere quem ficou mudo (anfSinal); o convidado, se o
+// anfitrião sumiu por mais de 8 s
 function redeSinal(){
   const agora=realNow();
-  if(REDE.papel==='anfitriao'){
-    for(const l of REDE.ligacoes){
-      if(l.aberta&&agora-(l.enviouEm||0)>=2000)l.enviar({t:'oi'});
-      if(l.cadeira==null||!S||S.phase==='over'||!S.players[l.cadeira])continue;
-      const mudo=!l.aberta||agora-(l.visto||agora)>8000;
-      if(mudo&&!l.caiu){l.caiu=true;caiu(l.cadeira);if(REDE.aoMudar)REDE.aoMudar()}
-      else if(!mudo&&l.caiu){l.caiu=false;voltou(l.cadeira);if(REDE.aoMudar)REDE.aoMudar()}
-    }
-  }else if(REDE.anfitriao){
+  if(REDE.papel==='anfitriao')anfSinal();
+  else if(REDE.anfitriao){
     const l=REDE.anfitriao;
     if(l.aberta&&agora-(l.enviouEm||0)>=2000)l.enviar({t:'oi'});
     redeSemSinal(REDE.conectado&&(!l.aberta||agora-REDE.ultimoSinal>8000));
@@ -132,79 +79,13 @@ function redeSemSinal(sem){
   el.textContent=REDE.anfitriao&&!REDE.anfitriao.aberta?'📵 A conexão com o anfitrião caiu. Para voltar, saia e entre com um convite novo.':'📵 Sem sinal do anfitrião…';
   el.hidden=!sem;
 }
-// cor de uma pessoa de outro aparelho: a mesma na sala e na mesa
-const corDaPessoa=i=>AVCOL[(i*4+1)%AVCOL.length];
-// cadeiras das pessoas de fora: espalhadas entre os adversários (com 4 cadeiras e 1 convidado, ele fica na da frente)
-function cadeirasConvidados(n,k){const out=[];for(let j=1;j<=k;j++)out.push(Math.min(n-1,Math.max(1,Math.round(j*n/(k+1)))));return [...new Set(out)]}
-// mapa: quem senta em cada cadeira (null = adversário do computador; a 0 é sempre do anfitrião). Sem mapa (testes), os
-// convidados sentam espalhados entre os adversários
-function redeComeca(mapa){
-  const ls=REDE.ligacoes.filter(l=>l.aberta&&l.nome);
-  R=rulesForMode(); // o torneio continua de uma rodada para a outra (newGame recomeça quando ele acaba ou o modo muda)
-  if(!mapa){R.bots=Math.max(R.bots,ls.length);const n=R.bots+1,cads=cadeirasConvidados(n,ls.length);mapa=Array(n).fill(null);ls.forEach((l,k)=>mapa[cads[k]]=l)}
-  R.bots=mapa.length-1;
-  OPCOES.tempos=TEMPOS_REDE[REDE.sala?CFG.tempoRede:(new URLSearchParams(location.search).get('tempo')||'livre')]||null;
-  REDE.ligacoes.forEach(l=>l.cadeira=l.lugar=null);
-  OPCOES.controles=mapa.map((l,i)=>i===0?'tela':l?'rede':'bot');
-  OPCOES.nomes=mapa.map((l,i)=>i===0?(OPCOES.meuNome||'Anfitrião'):l?l.nome:null);
-  OPCOES.cores=mapa.map((l,i)=>l?corDaPessoa(i):null);
-  // lugar: a cadeira da pessoa no começo de cada partida (a Dança das Cadeiras muda a cadeira só durante a partida)
-  mapa.forEach((l,i)=>{if(l)l.cadeira=l.lugar=i});
-  $('endOv').classList.remove('show');$('settingsOv').classList.remove('show');
-  newGame();
-}
-function redeNovaLigacao(l){
-  REDE.ligacoes.push(l);
-  l.aoReceber=m=>{l.visto=realNow();if(m.t!=='oi')redeDoConvidado(l,m)};
-}
-function redeDoConvidado(l,m){
-  if(m.t==='ola'){
-    if(m.versao!==VERSAO_REDE){l.enviar({t:'versao',versao:VERSAO_REDE});return}
-    // o mesmo aparelho voltando (convite novo depois de a ligação cair): fica com a cadeira e o nome de antes
-    const velha=m.id&&REDE.ligacoes.find(x=>x!==l&&x.meuId===m.id&&x.cadeira!=null);
-    if(velha&&!l.nome){
-      l.meuId=m.id;l.nome=velha.nome;l.cadeira=velha.cadeira;l.lugar=velha.lugar;l.pronto=velha.pronto;REDE.ligacoes=REDE.ligacoes.filter(x=>x!==velha);
-      if(typeof SALA!=='undefined')SALA.lugares=SALA.lugares.map(x=>x===velha?l:x);
-      l.caiu=false;if(S&&S.phase!=='over'&&S.players[l.cadeira]){voltou(l.cadeira);l.enviar({t:'evento',ev:{t:'atualiza'},visao:visao(l.cadeira)})}
-      if(REDE.aoMudar)REDE.aoMudar();return;
-    }
-    l.meuId=m.id;
-    const novo=!l.nome;l.nome=String(m.nome||'').slice(0,16)||`Convidado ${REDE.ligacoes.indexOf(l)+1}`;
-    // nomes repetidos ganham um número (os textos do jogo usam o nome para saber quem é "Você")
-    const usados=[OPCOES.meuNome||'Anfitrião',...REDE.ligacoes.filter(x=>x!==l&&x.nome).map(x=>x.nome)];
-    if(novo&&usados.includes(l.nome)){let k=2;while(usados.includes(l.nome+' '+k))k++;l.nome=l.nome+' '+k}
-    if(REDE.sala){if(REDE.aoMudar)REDE.aoMudar();if(S&&S.phase!=='over'&&l.cadeira!=null)l.enviar({t:'evento',ev:{t:'atualiza'},visao:visao(l.cadeira)});return}
-    if(novo)redeAviso(`Anfitrião: ${REDE.ligacoes.filter(x=>x.nome).length} convidado(s) na sala`);
-    if((!S||S.phase==='over')&&REDE.ligacoes.filter(x=>x.nome).length>=REDE.convidados)redeComeca();
-    else if(S&&l.cadeira!=null)l.enviar({t:'evento',ev:{t:'atualiza'},visao:visao(l.cadeira)});
-    return;
-  }
-  if(m.t==='pronto'){l.pronto=!!m.pronto;if(REDE.aoMudar)REDE.aoMudar();return}
-  if(l.cadeira==null||!S)return;
-  // ação do convidado: a mesa confere; se recusar, ele fica sabendo na hora (e a prévia dele sai)
-  if(m.t==='acao'&&m.acao){const a={...m.acao};if(typeof a.alvo==='number')a.alvo=giraDe(l.cadeira,a.alvo);if(!agir(l.cadeira,a))l.enviar({t:'recusada',n:m.n});return}
-  if(m.t==='escolher')respondePedido(l,m);
-}
 function redeAnfitriao(){
   REDE.papel='anfitriao';semTurbo=true;nativeTimeout(redeSinal,1000);
+  ANF.agora=realNow;ANF.cfg=CFG;ANF.aviso=redeAviso;anfInicia();
+  // partida nova (pela sala ou, nos testes, quando os convidados chegam): o placar e as Configurações fecham
+  ANF.aoComecar=()=>{$('endOv').classList.remove('show');$('settingsOv').classList.remove('show')};
   $('home').hidden=true;
   $('openSettings').hidden=true; // partida nova é pela sala ou pelo fim da partida
-  // cada evento da mesa vai para cada convidado (os que são só de outro jogador, não), girado e com a visão dele
-  OUVINTES.push(ev=>{
-    if(!S||!S.players)return;
-    // partida nova: cada pessoa volta ao lugar dela; na Dança das Cadeiras, vai para a cadeira nova (e os pedidos abertos dela também)
-    if(ev.t==='novaPartida')for(const l of REDE.ligacoes)if(l.lugar!=null)l.cadeira=l.lugar;
-    if(ev.t==='cadeirasTrocadas'){
-      for(const l of REDE.ligacoes)if(l.cadeira!=null)l.cadeira=ev.mapa[l.cadeira];
-      for(const pd of Object.values(REDE.pedidos))pd.pi=ev.mapa[pd.pi];
-    }
-    for(const l of REDE.ligacoes){
-      const pi=l.cadeira;if(pi==null||!l.aberta||!S.players[pi])continue;
-      if(ev.a!=null&&ev.a!=='todos'&&ev.a!==pi)continue;
-      if(ev.exceto===pi)continue;
-      l.enviar({t:'evento',ev:eventoPara(pi,ev),visao:visao(pi)});
-    }
-  });
 }
 // convite por WebRTC: devolve o texto do QR code; a resposta do convidado entra por redeResposta
 async function redeConvidar(){
@@ -215,7 +96,7 @@ async function redeConvidar(){
   const z=compactar(pc.localDescription.sdp,0,sess);
   if(!z.cands.length)throw new Error('nenhum endereço de rede encontrado. O aparelho está conectado à Wi-Fi?');
   REDE.pendente={l,sess};
-  l.aoAbrir=()=>{};l.aoFechar=()=>{if(REDE.aoMudar)REDE.aoMudar()};redeNovaLigacao(l);
+  l.aoAbrir=()=>{};l.aoFechar=anfMudou;anfNovaLigacao(l);
   return z.texto;
 }
 async function redeResposta(texto){
@@ -283,10 +164,11 @@ function redeAbrePedido(m){
 
 if(REDE_MODO){
   const q=new URLSearchParams(location.search);
-  REDE.convidados=Math.max(1,Math.min(5,+q.get('convidados')||1));
+  // sem a sala: a partida começa sozinha quando chegam os convidados, com o tempo para jogar do endereço (?tempo=)
+  ANF.automatico=Math.max(1,Math.min(5,+q.get('convidados')||1));ANF.tempo=q.get('tempo')||'livre';
   if(REDE_MODO==='anfitriao'){
     redeAnfitriao();abreCanalMentira('anfitriao');
-    redeAviso(`Rede de mentira: anfitrião (esperando ${REDE.convidados} convidado(s) em outras abas, com ?rede=convidado)`);
+    redeAviso(`Rede de mentira: anfitrião (esperando ${ANF.automatico} convidado(s) em outras abas, com ?rede=convidado)`);
   }else if(REDE_MODO==='convidado'){
     redeConvidado();abreCanalMentira('c'+Math.floor(Math.random()*1e9));
     OPCOES.meuNome=q.get('nome')||'';

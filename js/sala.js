@@ -1,8 +1,9 @@
 /* unotfm: sala para jogar com amigos na rede local (fase 1.5). O anfitrião cria a sala, escolhe quantos lugares, a
    ordem das pessoas na mesa (ou sorteio a cada partida), o tempo para jogar e as regras, e convida cada pessoa com um
    QR code (e lê o QR code de resposta dela). Os convidados entram lendo o convite e tocam em "Estou pronto"; quem
-   começa a partida é o anfitrião. A conexão é a de js/rede.js (redeConvidar, redeResposta, redeEntrar). */
-const SALA={lugarConvite:null,papel:null,n:4,lugares:[],sortear:false,convite:null,resposta:null,camera:false,pronto:false};
+   começa a partida é o anfitrião. A conexão é a de js/rede.js (redeConvidar, redeResposta, redeEntrar), e a sala em si
+   (lugares, sortear, tempo, começar) é a do anfitrião sem página (ANF, js/mesa/anfitriao.js): aqui só se desenha. */
+const SALA={papel:null,convite:null,resposta:null,camera:false,pronto:false};
 const TEMPOS=[['normal','Normal'],['longo','Longo'],['livre','Sem limite']];
 const TEMPO_TXT={normal:'20 s por jogada, 15 s para cor e alvo, 30 s para Memória, Carta da Regra e Mix.',longo:'O dobro do Normal.',livre:'Ninguém tem pressa (bom para aprender as regras).'};
 function salaEstado(id,txt,tipo){const e=$(id);e.textContent=txt||'';e.className='sala-estado'+(tipo?' '+tipo:'')}
@@ -66,10 +67,11 @@ function salaGuardaNome(){
 // lugares: um por cadeira, na ordem da mesa. 0 é sempre o anfitrião ('eu'); os outros são uma ligação (pessoa) ou null
 function salaCria(){
   SALA.papel='anfitriao';salaGuardaNome();telaAcesa();
-  redeAnfitriao();REDE.sala=true;REDE.aoMudar=salaMudou;
-  SALA.n=Math.min(6,Math.max(2,(CFG.bots||3)+1));SALA.lugares=['eu',...Array(SALA.n-1).fill(null)];
-  SALA.sortear=!!CFG.sortearLugares;$('salaSortear').checked=SALA.sortear;
-  if(!CFG.tempoRede)CFG.tempoRede='normal';
+  redeAnfitriao();ANF.sala=true;ANF.aoMudar=salaDesenha;
+  ANF.aoEntrar=l=>{salaEstado('salaEstado',`✅ ${l.nome} entrou na sala!`,'ok');$('salaConvite').hidden=true;SALA.convite=null};
+  ANF.n=Math.min(6,Math.max(2,(CFG.bots||3)+1));ANF.lugares=['eu',...Array(ANF.n-1).fill(null)];
+  ANF.sortear=!!CFG.sortearLugares;$('salaSortear').checked=ANF.sortear;
+  if(!CFG.tempoRede)CFG.tempoRede='normal';ANF.tempo=CFG.tempoRede;
   $('salaTitulo').textContent='Sua sala';$('salaSair').textContent='Sair da sala';$('salaComecar').hidden=false;
   salaMostra('salaAnfitriao');salaDesenha();
   // fim da partida: nova rodada com a mesma sala, ou de volta à sala para mudar alguma coisa
@@ -77,40 +79,13 @@ function salaCria(){
   $('againBtn').onclick=salaComeca;
   $('endRules').textContent='Voltar à sala';$('endRules').onclick=()=>{$('endOv').classList.remove('show');$('salaOv').classList.add('show');salaDesenha()};
 }
-const pessoasNaSala=()=>REDE.ligacoes.filter(l=>l.aberta&&l.nome);
-// acompanha quem entrou e quem saiu: quem entra senta no lugar vazio mais espalhado; quem sai vira adversário
-function salaMudou(){
-  if(SALA.papel!=='anfitriao')return;
-  const ls=pessoasNaSala();
-  const jogando=S&&S.phase!=='over';
-  SALA.lugares=SALA.lugares.map(x=>x==='eu'||!x||ls.includes(x)||(jogando&&x.cadeira!=null)?x:null);
-  for(const l of ls)if(!SALA.lugares.includes(l)){
-    const vazios=SALA.lugares.map((x,i)=>x?-1:i).filter(i=>i>0);
-    if(!vazios.length){if(SALA.n<6){SALA.n++;SALA.lugares.push(null);vazios.push(SALA.n-1)}else continue}
-    const k=SALA.lugares.filter(x=>x&&x!=='eu').length+1,ideal=cadeirasConvidados(SALA.n,k)[k-1]||vazios[0];
-    // convidada pelo bot de um lugar: senta nele (se ainda estiver livre)
-    const melhor=vazios.includes(SALA.lugarConvite)?SALA.lugarConvite:vazios.reduce((a,b)=>Math.abs(b-ideal)<Math.abs(a-ideal)?b:a);SALA.lugarConvite=null;
-    SALA.lugares[melhor]=l;
-    salaEstado('salaEstado',`✅ ${l.nome} entrou na sala!`,'ok');$('salaConvite').hidden=true;SALA.convite=null;
-  }
-  salaDesenha();
-}
-function salaMudaLugares(n){
-  const pessoas=SALA.lugares.filter(x=>x&&x!=='eu');
-  if(n-1<pessoas.length)return;
-  // mantém a ordem das pessoas e completa com adversários
-  let lug=SALA.lugares.slice(0,n);
-  const fora=pessoas.filter(p=>!lug.includes(p));
-  for(const p of fora){const i=lug.findIndex((x,k)=>k>0&&!x);lug[i]=p}
-  while(lug.length<n)lug.push(null);
-  SALA.n=n;SALA.lugares=lug;CFG.bots=n-1;save('unotfm-solo-cfg',CFG);salaDesenha();
-}
-function salaTroca(i,j){if(i<1||j<1||i>=SALA.n||j>=SALA.n)return;[SALA.lugares[i],SALA.lugares[j]]=[SALA.lugares[j],SALA.lugares[i]];salaDesenha()}
-function salaRegrasTxt(){
-  const modo=(SEGS.mode.find(x=>x[0]===CFG.mode)||[])[1]||'';
-  const dif=(SEGS.diff.find(x=>x[0]===CFG.diff)||[])[1]||'';
-  const n=CFG.mode==='custom'?RULES.filter(x=>CFG[x.k]&&x.k!=='poker').length:0;
-  return `${modo}${CFG.mode==='custom'?` (${n} regra${n===1?'':'s'})`:''} · bots no ${dif.toLowerCase()}`;
+// quantos lugares: a quantidade de bots fica salva nas Configurações
+function salaMudaLugares(n){if(anfLugares(n)){CFG.bots=n-1;save('unotfm-solo-cfg',CFG)}}
+// texto das regras da sala a partir do resumo (resumoRegras: modo, dificuldade e quantas regras)
+function salaRegrasTxt(r){
+  const modo=(SEGS.mode.find(x=>x[0]===r.mode)||[])[1]||'';
+  const dif=(SEGS.diff.find(x=>x[0]===r.diff)||[])[1]||'';
+  return `${modo}${r.mode==='custom'?` (${r.n} regra${r.n===1?'':'s'})`:''} · bots no ${dif.toLowerCase()}`;
 }
 function salaLinhas(lugares,eu){
   return lugares.map((x,i)=>{
@@ -119,22 +94,20 @@ function salaLinhas(lugares,eu){
     return {i,bot,nome,tag,ok:!!(x&&x.pronto)};
   });
 }
+// desenha a sala do anfitrião (os convidados recebem a lista pelo anfEnviaSala)
 function salaDesenha(){
   if(SALA.papel!=='anfitriao')return;
-  const pessoas=SALA.lugares.filter(x=>x&&x!=='eu').length;
-  $('salaLugaresSeg').innerHTML=[2,3,4,5,6].map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===SALA.n}" ${n-1<pessoas?'disabled':''}>${n}</button>`).join('');
-  $('salaLugares').innerHTML=salaLinhas(SALA.lugares).map(({i,bot,nome,tag,ok})=>{if(bot&&!SALA.sortear)tag=SALA.lugarConvite===i&&SALA.convite?'convidando…':'➕ convidar';return `<li class="${bot?'bot convida':''}" ${bot?`data-convidar="${i}"`:''}><span class="av" style="background:${i===0?'var(--accent)':bot?'#4a3f6b':corDaPessoa(i)}">${bot?'🤖':nome[0]}</span><span class="nm">${nome}</span><span class="tg ${ok?'ok':''}">${tag}</span>${i>0&&!SALA.sortear?`<button type="button" data-sobe="${i}" ${i<=1?'disabled':''} aria-label="Subir">▲</button><button type="button" data-desce="${i}" ${i>=SALA.n-1?'disabled':''} aria-label="Descer">▼</button>`:''}</li>`}).join('');
+  const pessoas=ANF.lugares.filter(x=>x&&x!=='eu').length;
+  $('salaLugaresSeg').innerHTML=[2,3,4,5,6].map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===ANF.n}" ${n-1<pessoas?'disabled':''}>${n}</button>`).join('');
+  $('salaLugares').innerHTML=salaLinhas(ANF.lugares).map(({i,bot,nome,tag,ok})=>{if(bot&&!ANF.sortear)tag=ANF.lugarConvite===i&&SALA.convite?'convidando…':'➕ convidar';return `<li class="${bot?'bot convida':''}" ${bot?`data-convidar="${i}"`:''}><span class="av" style="background:${i===0?'var(--accent)':bot?'#4a3f6b':corDaPessoa(i)}">${bot?'🤖':nome[0]}</span><span class="nm">${nome}</span><span class="tg ${ok?'ok':''}">${tag}</span>${i>0&&!ANF.sortear?`<button type="button" data-sobe="${i}" ${i<=1?'disabled':''} aria-label="Subir">▲</button><button type="button" data-desce="${i}" ${i>=ANF.n-1?'disabled':''} aria-label="Descer">▼</button>`:''}</li>`}).join('');
   $('salaTempoSeg').innerHTML=TEMPOS.map(([k,t])=>`<button type="button" data-tempo="${k}" aria-pressed="${CFG.tempoRede===k}">${t}</button>`).join('');
   $('salaTempoLegenda').textContent=TEMPO_TXT[CFG.tempoRede]||'';
-  $('salaRegrasTxt').textContent=salaRegrasTxt();
+  $('salaRegrasTxt').textContent=salaRegrasTxt(resumoRegras(CFG));
   $('salaConvidar').textContent=pessoas?'➕ Convidar outra pessoa':'➕ Convidar alguém';
   $('salaConvidar').disabled=pessoas>=5;
   const jogando=S&&S.phase!=='over';
   $('salaComecar').textContent=jogando?'Voltar ao jogo':'Começar partida';
   $('salaComecar').disabled=!pessoas&&!jogando;
-  // cada convidado vê a mesma lista (do jeito dele: "você" na linha dele)
-  for(const l of pessoasNaSala())l.enviar({t:'sala',regras:salaRegrasTxt(),tempo:CFG.tempoRede,sortear:SALA.sortear,
-    lugares:SALA.lugares.map((x,i)=>x==='eu'?{nome:OPCOES.meuNome||'Anfitrião',anfitriao:true,col:'var(--accent)'}:!x?{tipo:'bot'}:{nome:x.nome,pronto:!!x.pronto,voce:x===l,col:corDaPessoa(i)})});
 }
 async function salaConvida(){
   const b=$('salaConvidar');b.disabled=true;salaEstado('salaEstado','Preparando o convite…');
@@ -145,7 +118,7 @@ async function salaConvida(){
     desenharQR($('salaQR'),SALA.convite);$('salaColar').value='';
     $('salaConvite').hidden=false;salaEstado('salaEstado','Esperando a pessoa ler o convite…');
   }catch(e){salaEstado('salaEstado','Não deu para criar o convite: '+e.message,'erro')}
-  b.disabled=pessoasNaSala().length>=5;
+  b.disabled=anfPessoas().length>=5;
 }
 async function salaUsaResposta(texto){
   try{await redeResposta(lerCodigo(texto));salaEstado('salaEstado','Conectando…');
@@ -153,21 +126,13 @@ async function salaUsaResposta(texto){
   catch(e){salaEstado('salaEstado',e.message,'erro')}
 }
 // a partida: cada pessoa no lugar escolhido (ou sorteado entre os lugares das pessoas)
-function salaComeca(){
-  let mapa=SALA.lugares.map(x=>x==='eu'?null:x);
-  if(SALA.sortear){
-    const ps=mapa.filter(Boolean),idx=mapa.map((x,i)=>i).filter(i=>i>0);
-    for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]]}
-    mapa=Array(SALA.n).fill(null);ps.forEach((p,k)=>mapa[idx[k]]=p);
-  }
-  $('salaOv').classList.remove('show');$('endOv').classList.remove('show');
-  redeComeca(mapa);
-}
+function salaComeca(){$('salaOv').classList.remove('show');anfComecaSala()}
 // as regras: as Configurações de sempre, sem a quantidade de adversários (vem dos lugares) e sem começar a partida
 function salaEditaRegras(){
   $('salaOv').classList.remove('show');openSettings();$('botsField').hidden=true;
   const st=$('startBtn'),cl=$('closeSettings'),antes=st.onclick,antesCl=cl.onclick,txt=st.textContent;
-  const volta=()=>{$('settingsOv').classList.remove('show');st.onclick=antes;cl.onclick=antesCl;st.textContent=txt;$('botsField').hidden=false;$('salaOv').classList.add('show');salaDesenha()};
+  // a sala mostra as regras novas (e os convidados também)
+  const volta=()=>{$('settingsOv').classList.remove('show');st.onclick=antes;cl.onclick=antesCl;st.textContent=txt;$('botsField').hidden=false;$('salaOv').classList.add('show');anfMudou();salaDesenha()};
   st.textContent='Salvar';st.onclick=()=>{save('unotfm-solo-cfg',CFG);volta()};cl.onclick=volta;
 }
 
@@ -199,7 +164,7 @@ function salaDoAnfitriao(m){
   const anf=(m.lugares.find(x=>x.anfitriao)||{}).nome||'anfitrião';
   $('salaDentroTxt').textContent=`Você está na sala de ${anf}. A partida começa quando ${anf} tocar em Começar.`;
   $('salaLugaresConv').innerHTML=salaLinhas(m.lugares).map(({i,bot,nome,tag,ok})=>`<li class="${bot?'bot':''}"><span class="av" style="background:${bot?'#4a3f6b':m.lugares[i].col}">${bot?'🤖':nome[0]}</span><span class="nm">${nome}</span><span class="tg ${ok?'ok':''}">${tag}</span></li>`).join('');
-  $('salaRegrasConv').textContent=`${m.regras} · tempo para jogar: ${(TEMPOS.find(x=>x[0]===m.tempo)||[])[1]||''}${m.sortear?' · lugares sorteados a cada partida':''}`;
+  $('salaRegrasConv').textContent=`${salaRegrasTxt(m.regras)} · tempo para jogar: ${(TEMPOS.find(x=>x[0]===m.tempo)||[])[1]||''}${m.sortear?' · lugares sorteados a cada partida':''}`;
   $('salaPronto').textContent=SALA.pronto?'✓ Pronto (tocar para cancelar)':'Estou pronto';
   salaEstado('salaEstadoConv','✅ Conectado!','ok');
 }
@@ -210,11 +175,11 @@ $('salaCriar').onclick=salaCria;
 $('salaEntrar').onclick=salaEntra;
 $('salaSair').onclick=()=>{if(SALA.papel)location.reload();else $('salaOv').classList.remove('show')};
 $('salaLugaresSeg').onclick=e=>{const b=e.target.closest('button[data-n]');if(b&&!b.disabled)salaMudaLugares(+b.dataset.n)};
-$('salaLugares').onclick=e=>{const s=e.target.closest('[data-sobe]'),d=e.target.closest('[data-desce]');if(s)return salaTroca(+s.dataset.sobe,+s.dataset.sobe-1);if(d)return salaTroca(+d.dataset.desce,+d.dataset.desce+1);
+$('salaLugares').onclick=e=>{const s=e.target.closest('[data-sobe]'),d=e.target.closest('[data-desce]');if(s)return anfTroca(+s.dataset.sobe,+s.dataset.sobe-1);if(d)return anfTroca(+d.dataset.desce,+d.dataset.desce+1);
   // tocar num bot: convida alguém para o lugar dele
-  const c=e.target.closest('[data-convidar]');if(c&&!$('salaConvidar').disabled){SALA.lugarConvite=+c.dataset.convidar;salaConvida().then(salaDesenha)}};
-$('salaSortear').onchange=e=>{SALA.sortear=e.target.checked;CFG.sortearLugares=SALA.sortear;save('unotfm-solo-cfg',CFG);salaDesenha()};
-$('salaTempoSeg').onclick=e=>{const b=e.target.closest('button[data-tempo]');if(b){CFG.tempoRede=b.dataset.tempo;save('unotfm-solo-cfg',CFG);salaDesenha()}};
+  const c=e.target.closest('[data-convidar]');if(c&&!$('salaConvidar').disabled){ANF.lugarConvite=+c.dataset.convidar;salaConvida().then(salaDesenha)}};
+$('salaSortear').onchange=e=>{ANF.sortear=e.target.checked;CFG.sortearLugares=ANF.sortear;save('unotfm-solo-cfg',CFG);anfMudou()};
+$('salaTempoSeg').onclick=e=>{const b=e.target.closest('button[data-tempo]');if(b){CFG.tempoRede=ANF.tempo=b.dataset.tempo;save('unotfm-solo-cfg',CFG);anfMudou()}};
 $('salaRegras').onclick=salaEditaRegras;
 $('salaConvidar').onclick=salaConvida;
 $('salaCopiar').onclick=()=>SALA.convite&&salaCopia(SALA.convite);

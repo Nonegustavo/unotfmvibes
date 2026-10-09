@@ -106,13 +106,13 @@ try {
     else { const resposta = await c.evaluate(() => SALA.resposta); await host.evaluate(() => { document.querySelector('#salaConvite details').open = true; }); await host.fill('#salaColar', resposta); await host.click('#salaUsarColado'); }
     await c.waitForSelector('#salaDentro:not([hidden])', { timeout: 20000 });
     confere(true, `${nome} entrou na sala${CAMERA ? ' (o anfitrião leu a resposta pela câmera)' : ''}`);
-    if (lugarBot != null) { await host.waitForTimeout(300); confere(await host.evaluate(l => SALA.lugares[l] && SALA.lugares[l].nome === 'Caio', lugarBot), `convidado pelo bot do lugar ${lugarBot}, o Caio sentou nele`); }
+    if (lugarBot != null) { await host.waitForTimeout(300); confere(await host.evaluate(l => ANF.lugares[l] && ANF.lugares[l].nome === 'Caio', lugarBot), `convidado pelo bot do lugar ${lugarBot}, o Caio sentou nele`); }
     convidados.push(c);
   }
   await host.waitForFunction(() => document.querySelectorAll('#salaLugares li:not(.bot)').length === 3, null, { timeout: 5000 });
   confere(true, 'o anfitrião vê as duas pessoas na lista');
   // sem a câmera, o navegador costuma esconder o endereço do aparelho atrás de um nome .local (e a conexão funciona assim)
-  const enderecos = await host.evaluate(() => REDE.ligacoes.filter(l => l.pc && l.aberta).map(l => /\.local/.test(l.pc.localDescription.sdp) ? 'nome .local' : 'endereço IP'));
+  const enderecos = await host.evaluate(() => ANF.ligacoes.filter(l => l.pc && l.aberta).map(l => /\.local/.test(l.pc.localDescription.sdp) ? 'nome .local' : 'endereço IP'));
   console.log(`   endereço do anfitrião nos convites: ${[...new Set(enderecos)].join(', ')}`);
   // pronto
   await convidados[0].click('#salaPronto');
@@ -120,9 +120,9 @@ try {
   confere(true, 'o anfitrião vê quem está pronto');
   // 5 lugares e uma troca de lugar
   await host.click('#salaLugaresSeg button[data-n="5"]');
-  const antes = await host.evaluate(() => SALA.lugares.map(x => x === 'eu' ? 'eu' : x ? x.nome : '-').join(','));
+  const antes = await host.evaluate(() => ANF.lugares.map(x => x === 'eu' ? 'eu' : x ? x.nome : '-').join(','));
   await host.click('#salaLugares [data-desce="1"]');
-  const depois = await host.evaluate(() => SALA.lugares.map(x => x === 'eu' ? 'eu' : x ? x.nome : '-').join(','));
+  const depois = await host.evaluate(() => ANF.lugares.map(x => x === 'eu' ? 'eu' : x ? x.nome : '-').join(','));
   confere(antes !== depois, `troca de lugar (${antes} → ${depois})`);
   await convidados[1].waitForFunction(n => document.querySelectorAll('#salaLugaresConv li').length === n, 5, { timeout: 5000 });
   await foto(host, 'anfitriao-lista');

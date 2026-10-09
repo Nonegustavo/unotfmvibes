@@ -1,6 +1,6 @@
 /* unotfm solo - service worker */
 const CACHE='unotfm-v2';
-const CORE=['./','./index.html','./css/style.css','./js/mesa/dados.js','./js/mesa/regras.js','./js/mesa/cartas.js','./js/mesa/adversarios.js','./js/mesa/visao.js','./js/turbo.js','./js/data.js','./js/arte.js','./js/sons.js','./js/effects.js','./js/cards.js','./js/ui.js','./js/rede.js','./js/sala.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-192.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon-64.png',
+const CORE=['./','./index.html','./css/style.css','./js/mesa/dados.js','./js/mesa/regras.js','./js/mesa/cartas.js','./js/mesa/adversarios.js','./js/mesa/visao.js','./js/mesa/anfitriao.js','./js/turbo.js','./js/data.js','./js/arte.js','./js/sons.js','./js/effects.js','./js/cards.js','./js/ui.js','./js/rede.js','./js/sala.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-192.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon-64.png',
   // rede local: conexão e QR code (precisam funcionar sem internet)
   './js/lan.js','./js/vendor/qrcode.js','./js/vendor/jsQR.js',
   // mostruário de cartas

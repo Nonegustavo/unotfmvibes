@@ -248,7 +248,7 @@ function newGame(){
   const ctl=i=>(OPCOES.controles&&OPCOES.controles[i])||(i===0?'tela':'bot');
   // nomes das pessoas (no solo, "Você"); as cadeiras de adversários usam os nomes sorteados
   const nome=(i,n)=>(OPCOES.nomes&&OPCOES.nomes[i])||n;
-  const players=[{name:nome(0,'Você'),ctrl:ctl(0),hand:[],called:false,col:'var(--accent)'}];
+  const players=[{name:nome(0,'Você'),ctrl:ctl(0),hand:[],called:false,col:(OPCOES.cores&&OPCOES.cores[0])||'var(--accent)'}];
   if(sala){
     // os bots ficam com os nomes sorteados na ordem das cadeiras deles (no torneio, os mesmos em todas as rodadas)
     let b=0;
@@ -729,7 +729,8 @@ function agir(pi,a){
   return ok;
 }
 function agirValida(pi,a){
-  const p=S.players[pi],naVez=S.turn===pi&&!S.busy&&!S.auto&&!p.out;
+  // sem carta na mesa (no Mix, enquanto as pessoas escolhem as regras), ainda não é a vez de ninguém
+  const p=S.players[pi],naVez=S.turn===pi&&!S.busy&&!S.auto&&!p.out&&S.discard.length>0;
   switch(a.t){
     case 'jogar':{
       const c=p.hand.find(x=>x.id===a.id);if(!c)return false;

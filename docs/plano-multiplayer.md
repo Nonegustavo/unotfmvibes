@@ -727,7 +727,20 @@ Cada etapa termina com os testes passando e um commit próprio, como nas fases 0
    - Daqui em diante dá para jogar nos celulares usando o servidor do computador.
 4. **Publicar (P).** Fly.io, com você. Teste com amigos em redes diferentes (Wi-Fi de casas diferentes e 4G).
 
-### 9.6 Decisões (com sugestão)
+### 9.5.1 Andamento
+
+- **Etapa 1, anfitrião sem página (feita em 09/10/2026):** `js/mesa/anfitriao.js` com a sala, os eventos e visões de
+  cada pessoa, os pedidos, as ações, o sinal, a queda e a volta. O `rede.js` ficou com as ligações, o convite e o
+  convidado, e o `sala.js` só desenha e manda os comandos. As regras a partir das Configurações (`regrasDe`) foram para
+  a mesa. A rede local continua igual (`test:rede`, `test:sala`, `test:tempo`, `test:rede-regras`).
+  - `npm run test:anfitriao` roda o anfitrião no Node com convidados robôs que jogam só pelas mensagens, sem ninguém na
+    cadeira "da tela", como no servidor: 300 partidas sem erro, com quedas e voltas.
+  - Ele achou um erro que só apareceria no servidor: no Mix de Regras, quem está na cadeira 0 podia comprar antes de
+    as cartas serem distribuídas. Agora ninguém tem a vez antes da primeira carta na mesa.
+  - Fica para a etapa 2: com Neblina e Camuflagem, a visão ainda manda quantas cartas cada um tem (a tela esconde, mas
+    um cliente modificado veria).
+
+### 9.6 Decisões (aprovadas em 09/10/2026, com as sugestões)
 
 1. **Código da sala:** 4 caracteres, sem os que se confundem (0 e O, 1, I e L). São cerca de 800 mil combinações, e o
    limite de tentativas impede adivinhar.

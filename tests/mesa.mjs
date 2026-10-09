@@ -20,7 +20,7 @@ const LIMITE_VEZES = 3000; // depois disso a partida conta como "longa demais"
 
 // contexto vazio (sem window nem document): só a mesa e um relógio virtual
 const ctx = vm.createContext({ console });
-for (const f of ['dados', 'regras', 'cartas', 'adversarios', 'visao']) {
+for (const f of ['dados', 'regras', 'cartas', 'adversarios', 'visao', 'anfitriao']) {
   const arq = path.join(ROOT, 'js', 'mesa', f + '.js');
   vm.runInContext(fs.readFileSync(arq, 'utf8'), ctx, { filename: arq });
 }

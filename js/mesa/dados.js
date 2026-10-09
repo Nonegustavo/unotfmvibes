@@ -172,6 +172,8 @@ const CONFLICT={};CONFLICT_PAIRS.forEach(([a,b])=>{(CONFLICT[a]=CONFLICT[a]||[])
 const RNAME=Object.fromEntries(RULES.map(r=>[r.k,r.n]));
 // regras de uma partida sem nada ligado (a configuração escolhida liga as que quiser)
 function regrasBase(){const r={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(x=>r[x.k]=false);return r}
+// regras de uma partida a partir das Configurações (cfg): no Clássico e no Mix, sem regras ligadas, 3 bots e 7 cartas
+function regrasDe(cfg){const r={...cfg};if(cfg.mode!=='custom'){RULES.forEach(x=>r[x.k]=false);if(cfg.mode==='mix')r.poker=true;r.bots=3;r.start=7}return r}
 const DIFF={
   easy:{call:.65,catchP:.45,catchMs:2600,jump:.2},
   normal:{call:.88,catchP:.8,catchMs:1700,jump:.45},

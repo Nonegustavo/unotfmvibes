@@ -160,7 +160,7 @@ for (let g = 1; g <= PARTIDAS; g++) {
     if (agora !== ultimo) { ultimo = agora; mudou = Date.now(); }
     if (Date.now() - mudou > 20000) {
       resultado = 'TRAVOU'; problemas.push(`partida ${g} travou`);
-      console.log('anfitrião:', JSON.stringify(await host.evaluate(() => ({ vez: S.turn, busy: S.busy, auto: S.auto, fase: S.phase, compra: S.pending, pedidos: Object.keys(REDE.pedidos), enviadas: REDE.enviadas, registro: VIS.log }))));
+      console.log('anfitrião:', JSON.stringify(await host.evaluate(() => ({ vez: S.turn, busy: S.busy, auto: S.auto, fase: S.phase, compra: S.pending, pedidos: Object.keys(ANF.pedidos), enviadas: REDE.enviadas, registro: VIS.log }))));
       for (const c of convs) console.log(c.nome + ':', JSON.stringify(await c.evaluate(() => ({ vez: S.turn, busy: S.busy, fase: S.phase, recebidas: REDE.recebidas, ultimas: REDE.ultimas, registro: VIS.log, janelas: ['colorOv', 'pickOv', 'swapOv', 'simonOv'].filter(id => document.getElementById(id).classList.contains('show')) }))));
       await host.screenshot({ path: path.join(ROOT, 'tests', `rede-travou-${g}-anfitriao.png`) });
       break;
