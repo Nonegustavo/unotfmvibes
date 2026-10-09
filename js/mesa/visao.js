@@ -1,17 +1,23 @@
 /* unotfm, mesa: o que cada jogador pode saber da partida (visao) e o giro das cadeiras. Cada tela se vê na cadeira 0:
    a visão e os eventos chegam girados para quem os recebe. Mãos dos outros, monte, memória dos adversários, blefe do
-   +4 e semente não saem daqui; das mãos dos outros vai só a quantidade (e o que é público: Batata, Mão Colorida).
-   Não usa nada da página */
+   +4 e semente não saem daqui; das mãos dos outros vai só a quantidade (e o que é público: Batata, Mão Colorida). Com
+   a Neblina, ou com a Camuflagem enquanto ele não tem 1 carta, nem a quantidade: vão UNSEEN cartas, como os bots
+   enxergam. Não usa nada da página */
 // cadeira da mesa -> cadeira de quem vê (pi fica na 0); e o contrário
 const giraPara=(pi,i)=>typeof i!=='number'||i<0?i:(i-pi+S.players.length)%S.players.length;
 const giraDe=(pi,i)=>typeof i!=='number'||i<0?i:(i+pi)%S.players.length;
 const copia=o=>o==null?o:JSON.parse(JSON.stringify(o));
-// cartas que só o dono vê: ficam só as públicas (a Batata, que todos viram passar)
-const mascara=(mao,dono)=>dono?copia(mao):(mao||[]).map(c=>c.type==='batata'?copia(c):{oculta:true});
-function jogadorVisto(q,dono,lado){
+// cartas que só o dono vê: ficam só as públicas (a Batata, que todos viram passar); escondida: sem a quantidade
+const mascara=(mao,dono,escondida)=>{
+  if(dono)return copia(mao);
+  if(!escondida)return (mao||[]).map(c=>c.type==='batata'?copia(c):{oculta:true});
+  const pub=(mao||[]).filter(c=>c.type==='batata').map(copia);
+  return [...pub,...Array.from({length:Math.max(0,UNSEEN-pub.length)},()=>({oculta:true}))];
+};
+function jogadorVisto(q,dono,escondida){
   const v={};
   for(const k of ['name','col','ctrl','mull','foraTorneio','ctrlReal','caiu','esgotou','called','out','outAt','outPts','outIcon','luck','webbed','confuse','confuseNext','treasure','batata','escaped','thorned'])if(q[k]!==undefined)v[k]=q[k];
-  v.hand=mascara(q.hand,dono);v.hand2=mascara(q.hand2,dono);
+  v.hand=mascara(q.hand,dono,escondida);v.hand2=mascara(q.hand2,dono);
   // Mão Colorida (R.shiny) é pública: se ele segura todas as cores ou um curinga
   v.colorida=colorful(q);
   return v;
@@ -23,7 +29,7 @@ function ladoVisto(pi,o,R0){
   v.boom=giraPara(pi,o.boom);
   v.discard=copia(o.discard);v.deck=(o.deck||[]).map(()=>({oculta:true}));
   v.chal=o.chal?{by:giraPara(pi,o.chal.by),amt:o.chal.amt,col:o.chal.col}:null;
-  const n=S.players.length;v.players=[];for(let k=0;k<n;k++){const i=(k+pi)%n;v.players.push(jogadorVisto(o.players[i],i===pi))}
+  const n=S.players.length;v.players=[];for(let k=0;k<n;k++){const i=(k+pi)%n;v.players.push(jogadorVisto(o.players[i],i===pi,i!==pi&&handHidden(i,o)))}
   return v;
 }
 function visao(pi){
@@ -37,7 +43,7 @@ function visao(pi){
   // monte: só a quantidade; com a Revelação, a carta do topo é de todos
   v.deck=S.deck.map(()=>({oculta:true}));if(R.revelation&&S.deck.length)v.deck[v.deck.length-1]=copia(S.deck[S.deck.length-1]);
   v.chal=S.chal?{by:giraPara(pi,S.chal.by),amt:S.chal.amt,col:S.chal.col}:null;
-  v.players=[];for(let k=0;k<n;k++){const i=(k+pi)%n;v.players.push(jogadorVisto(S.players[i],i===pi))}
+  v.players=[];for(let k=0;k<n;k++){const i=(k+pi)%n;v.players.push(jogadorVisto(S.players[i],i===pi,i!==pi&&handHidden(i)))}
   v.other=S.other?ladoVisto(pi,S.other,S.other.R):null;
   return {S:v,R:copia(R),TOUR:copia(TOUR)};
 }

@@ -27,6 +27,12 @@ export function vazamentos(v) {
   if (s.deck.filter(c => !c.oculta).length > (v.R.revelation ? 1 : 0)) ruim.push('carta do monte');
   if (s.mem || s.semente !== undefined || s.fxUntil !== undefined) ruim.push('estado interno da mesa');
   if (s.chal && 'bluff' in s.chal) ruim.push('blefe do +4');
+  // com a Neblina (ou a Camuflagem, fora de quem tem 1 carta), nem a quantidade de cartas dos outros: vão 5
+  if (s.phase !== 'over') s.players.forEach((q, i) => {
+    if (i === 0 || q.out) return;
+    if (s.weather === 'fog' && q.hand.length !== 5) ruim.push('quantidade de cartas na Neblina');
+    if (v.R.camouflage && ![1, 5].includes(q.hand.length)) ruim.push('quantidade de cartas na Camuflagem');
+  });
   if (s.other) s.other.players.forEach((q, i) => { if (i > 0) q.hand.forEach(c => { if (!c.oculta && c.type !== 'batata') ruim.push('carta do outro lado'); }); });
   return ruim;
 }

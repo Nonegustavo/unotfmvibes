@@ -739,6 +739,20 @@ Cada etapa termina com os testes passando e um commit próprio, como nas fases 0
     as cartas serem distribuídas. Agora ninguém tem a vez antes da primeira carta na mesa.
   - Fica para a etapa 2: com Neblina e Camuflagem, a visão ainda manda quantas cartas cada um tem (a tela esconde, mas
     um cliente modificado veria).
+- **Etapa 2, servidor no computador (feita em 09/10/2026):** `servidor/servidor.mjs` (Node e a biblioteca `ws`), com
+  uma mesa e um anfitrião por sala num contexto `vm`.
+  - Salas com código de 4 caracteres, chave secreta de 128 bits para cada pessoa (volta para o mesmo lugar), dono da
+    sala com comandos e posto passando adiante, tirar alguém da sala (a chave dele não entra mais), sala vazia acaba em
+    10 minutos, quem fica desligado fora da partida sai da sala em 2 minutos.
+  - Conferências: site de origem, formato fixo de cada mensagem, no máximo 4 KB e 30 por segundo, 20 mensagens
+    recusadas desconectam, 5 salas por endereço a cada 10 minutos, 10 códigos errados por minuto, regras limpas
+    (`limpaCfg`) e nomes sem caracteres de controle.
+  - Com Neblina e Camuflagem, a visão manda 5 cartas para quem está com a quantidade escondida.
+  - `npm run test:online`: 12 salas ao mesmo tempo, com convidados robôs por WebSocket, sem problemas. Achou um erro
+    que também existia na rede local: ao começar a partida seguinte depois de uma Dança das Cadeiras, uma pessoa recebia
+    por um instante a visão de outra cadeira (a mão de outra pessoa). Agora a cadeira só muda no primeiro evento da
+    partida nova.
+  - `npm run test:trapaca`: as 24 tentativas do cliente trapaceiro foram recusadas, com a partida seguindo.
 
 ### 9.6 Decisões (aprovadas em 09/10/2026, com as sugestões)
 

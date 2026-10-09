@@ -1,0 +1,15 @@
+{
+  "name": "unotfm-servidor",
+  "private": true,
+  "type": "module",
+  "description": "Servidor das salas online do unotfm: cada sala roda a mesa e o anfitrião de js/mesa/",
+  "scripts": {
+    "start": "node servidor.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ws": "8.22.0"
+  }
+}

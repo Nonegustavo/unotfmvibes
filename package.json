@@ -4,10 +4,13 @@
   "type": "module",
   "scripts": {
     "test": "node tests/smoke.mjs",
+    "servidor": "node servidor/servidor.mjs",
     "test:mostruario": "node tests/mostruario.mjs",
     "test:cartas": "node tests/cartas.mjs",
     "test:mesa": "node tests/mesa.mjs",
     "test:anfitriao": "node tests/anfitriao.mjs",
+    "test:online": "node tests/online.mjs",
+    "test:trapaca": "node tests/trapaca.mjs",
     "test:rede": "node tests/rede.mjs",
     "test:rede-regras": "node tests/rede-regras.mjs",
     "test:sala": "node tests/sala.mjs",
