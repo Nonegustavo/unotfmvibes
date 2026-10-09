@@ -61,26 +61,20 @@
 .table.wxnow .fg-lado{animation:none!important}
 @keyframes fogEntraEsq{from{transform:translateX(-75%);opacity:0}}
 @keyframes fogEntraDir{from{transform:translateX(75%);opacity:0}}
-/* cada camada tem o dobro da largura e o desenho repetido duas vezes, então andar metade dela emenda sem pulo; as manchas
-   ficam dentro do desenho (centro mais ou menos 70% do raio entre 0 e 100%), senão o corte na borda aparece */
-.fg-lado i{position:absolute;left:0;width:200%;top:var(--y);height:var(--h);opacity:var(--o);
-  background:radial-gradient(ellipse 22% 38% at 20% 55%,rgba(232,229,246,.55),transparent 70%),radial-gradient(ellipse 26% 30% at 48% 45%,rgba(232,229,246,.45),transparent 70%),radial-gradient(ellipse 18% 42% at 72% 58%,rgba(232,229,246,.5),transparent 70%),radial-gradient(ellipse 13% 34% at 90% 48%,rgba(232,229,246,.42),transparent 70%);
-  background-size:50% 100%;background-repeat:repeat-x;animation:fogDeriva var(--d) linear var(--dl) infinite var(--dir,normal)}
-.fg-esq i:nth-child(1){--y:-8%;--h:46%;--o:.9;--d:70s;--dl:-10s}
-.fg-esq i:nth-child(2){--y:28%;--h:42%;--o:.7;--d:95s;--dl:-40s;--dir:reverse}
-.fg-esq i:nth-child(3){--y:60%;--h:48%;--o:.85;--d:80s;--dl:-25s}
-.fg-dir i:nth-child(1){--y:6%;--h:42%;--o:.75;--d:88s;--dl:-60s;--dir:reverse}
-.fg-dir i:nth-child(2){--y:42%;--h:44%;--o:.8;--d:66s;--dl:-5s}
-.fg-dir i:nth-child(3){--y:72%;--h:40%;--o:.7;--d:100s;--dl:-70s;--dir:reverse}
-@keyframes fogDeriva{to{transform:translateX(-50%)}}
-/* neblina sobre as cadeiras dos adversários (ela esconde quantas cartas eles têm): mais forte na altura do leque de
-   cartas, fraca nos nomes e nos selos; só na faixa das cadeiras (--nvL/--nvW, postos pela tela) */
-.rail::after{content:"";position:absolute;top:0;bottom:0;left:var(--nvL,0px);width:var(--nvW,100%);pointer-events:none;z-index:3;opacity:0;transition:opacity 1.3s ease;
-  background:radial-gradient(ellipse 16% 34% at 14% 60%,rgba(232,229,246,.55),transparent 70%),radial-gradient(ellipse 22% 30% at 37% 66%,rgba(232,229,246,.5),transparent 70%),radial-gradient(ellipse 14% 36% at 60% 58%,rgba(232,229,246,.55),transparent 70%),radial-gradient(ellipse 20% 32% at 84% 64%,rgba(232,229,246,.5),transparent 70%);
-  background-size:50% 100%;background-repeat:repeat-x;animation:fogRail 50s linear infinite;
-  -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.3) 28%,#000 52%,#000 74%,rgba(0,0,0,.35) 92%),linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.3) 28%,#000 52%,#000 74%,rgba(0,0,0,.35) 92%),linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-composite:intersect}
-.rail.neblina::after{opacity:.85}
-@keyframes fogRail{to{background-position:200% 0}}
+/* cada camada repete um ladrilho de tamanho fixo (--fgW × --fgH), então as manchas têm a mesma forma em qualquer tela; a
+   camada é um ladrilho mais larga que a mesa e anda um ladrilho, o que emenda sem pulo. As manchas ficam dentro do ladrilho
+   (centro mais ou menos 70% do raio entre 0 e 100%), senão o corte na borda aparece */
+.w-fog{--fgW:42rem;--fgH:13rem}
+.fg-lado i{position:absolute;left:0;width:calc(100% + var(--fgW));top:var(--y);height:calc(var(--fgH)*var(--e,1));opacity:var(--o);
+  background:radial-gradient(ellipse 34% 34% at 30% 55%,rgba(232,229,246,.42),transparent 70%),radial-gradient(ellipse 28% 26% at 66% 42%,rgba(232,229,246,.36),transparent 70%),radial-gradient(ellipse 19% 32% at 85% 62%,rgba(232,229,246,.32),transparent 70%);
+  background-size:var(--fgW) 100%;background-repeat:repeat-x;animation:fogDeriva var(--d) linear var(--dl) infinite var(--dir,normal)}
+.fg-esq i:nth-child(1){--y:-6%;--o:.9;--d:70s;--dl:-10s}
+.fg-esq i:nth-child(2){--y:30%;--o:.7;--d:95s;--dl:-40s;--dir:reverse;--e:.9}
+.fg-esq i:nth-child(3){--y:62%;--o:.85;--d:80s;--dl:-25s;--e:1.1}
+.fg-dir i:nth-child(1){--y:8%;--o:.75;--d:88s;--dl:-60s;--dir:reverse;--e:.95}
+.fg-dir i:nth-child(2){--y:44%;--o:.8;--d:66s;--dl:-5s}
+.fg-dir i:nth-child(3){--y:74%;--o:.7;--d:100s;--dl:-70s;--dir:reverse;--e:.9}
+@keyframes fogDeriva{to{transform:translateX(calc(var(--fgW)*-1))}}
 .wxl>.w-snow{transition-duration:2.5s}
 .w-snow i{position:absolute;top:-1rem;left:var(--x);width:var(--sz);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff 0 45%,rgba(150,185,230,.7) 60%,transparent 72%);opacity:var(--o);animation:snowfall var(--d) linear var(--dl) infinite,snowsway var(--sd) ease-in-out var(--dl) infinite alternate}
 @keyframes snowfall{from{top:-1rem}to{top:calc(100% + 1rem)}}
