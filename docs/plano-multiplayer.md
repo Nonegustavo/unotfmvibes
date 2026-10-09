@@ -709,6 +709,14 @@ mesa roda num servidor. A sala da rede local continua existindo para jogar sem i
 - **Comigo:** preparo `Dockerfile` e `fly.toml` e publico com `fly deploy` quando você autorizar.
 - **Atualizar o servidor encerra as salas abertas**, porque as partidas ficam na memória. Por enquanto, a regra é
   publicar fora de horário de jogo; esperar as partidas acabarem antes de reiniciar fica para a fase 4.
+- **Como publicar** (arquivos prontos: `Dockerfile`, `.dockerignore` e `fly.toml`, que levam só `servidor/` e `js/mesa/`):
+  1. Com você: criar a conta em fly.io (pede cartão), instalar o `flyctl` no Windows (no PowerShell:
+     `iwr https://fly.io/install.ps1 -useb | iex`) e entrar com `fly auth login` (abre o navegador).
+  2. Comigo, com a sua autorização: `fly apps create mesa-tfm` (se o nome estiver ocupado, escolhemos outro e eu troco
+     em `fly.toml` e no `SERVIDOR` do `js/rede.js`) e `fly deploy --ha=false` (uma máquina só: as salas ficam na memória dela).
+  3. Conferir `https://mesa-tfm.fly.dev` e jogar pelo site publicado, com amigos em redes diferentes (Wi-Fi e 4G).
+  - Cada atualização do jogo que mexer na mesa ou nas mensagens precisa publicar o servidor junto (a versão `rede-N`
+    dos dois tem de ser a mesma).
 
 ### 9.5 Etapas
 

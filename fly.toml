@@ -1,0 +1,28 @@
+# Servidor das salas online do unotfm no Fly.io (São Paulo). As salas ficam na memória: precisa de uma máquina só
+# (publique com "fly deploy --ha=false"). Sem ninguém conectado, a máquina desliga sozinha e liga quando alguém cria
+# uma sala.
+app = 'mesa-tfm'
+primary_region = 'gru'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  PORT = '8080'
+  ORIGENS = 'https://nonegustavo.github.io'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = 'connections'
+    soft_limit = 800
+    hard_limit = 1000
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256mb'

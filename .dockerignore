@@ -1,0 +1,6 @@
+# a imagem do servidor só precisa do servidor e da mesa
+*
+!servidor/package.json
+!servidor/package-lock.json
+!servidor/servidor.mjs
+!js/mesa/
