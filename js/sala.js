@@ -12,7 +12,7 @@ const SALA={papel:null,online:false,dono:false,ultima:null,codigo:null,chave:nul
 const TEMPOS=[['normal','Normal'],['longo','Longo'],['livre','Sem limite']];
 const TEMPO_TXT={normal:'20 s por jogada, 15 s para cor e alvo, 30 s para Memória, Carta da Regra e Mix.',longo:'O dobro do Normal.',livre:'Ninguém tem pressa (bom para aprender as regras).'};
 function salaEstado(id,txt,tipo){const e=$(id);e.textContent=txt||'';e.className='sala-estado'+(tipo?' '+tipo:'')}
-function salaMostra(qual){['salaInicio','salaCriando','salaAnfitriao','salaConvidado'].forEach(id=>$(id).hidden=id!==qual)}
+function salaMostra(qual){['salaInicio','salaCodigoTela','salaCriando','salaAnfitriao','salaConvidado'].forEach(id=>$(id).hidden=id!==qual);$('salaRodape').hidden=qual==='salaCodigoTela'}
 // nomes vão para o HTML da sala: sem os caracteres que viram marcação
 const salaHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -66,12 +66,37 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 /* ---------- início ---------- */
+// a primeira tela: o nome e Criar sala ou Entrar com código (com o link de um convite, só Entrar na sala)
 function salaAbre(){
-  $('salaNome').value=load('unotfm-nome','')||'';
-  salaMostra('salaInicio');$('salaComecar').hidden=true;$('salaSair').textContent='Voltar';$('salaCodigoBox').hidden=true;
+  $('salaNome').value=load('unotfm-nome','')||'';$('salaTitulo').textContent='Jogar com amigos';
+  salaMostra('salaInicio');$('salaComecar').hidden=true;$('salaSair').textContent='Voltar';salaEstado('salaEstadoInicio','');
+  $('salaEscolha').hidden=false;$('salaEntrarConvite').hidden=true;$('salaConviteTxt').hidden=true;SALA.conviteCodigo=null;
   // a sala na mesma Wi-Fi (sem internet) fica escondida: aparece com ?wifi=1 no endereço
   $('salaWifi').hidden=!/^(1|sim)$/.test(new URLSearchParams(location.search).get('wifi')||'');
   $('salaOv').classList.add('show');
+}
+// convidado pelo link (?sala=CÓDIGO): a primeira tela tem só o nome e Entrar na sala
+function salaConviteAbre(codigo){
+  salaAbre();SALA.conviteCodigo=codigo;
+  $('salaEscolha').hidden=true;$('salaEntrarConvite').hidden=false;$('salaEntrarConvite').textContent=`Entrar na sala ${codigo}`;
+  $('salaConviteTxt').hidden=false;$('salaConviteTxt').textContent=`Você foi convidado para a sala ${codigo}.`;
+}
+// a janela de escrever o código
+function salaCodigoAbre(erro){
+  $('salaTitulo').textContent='Entrar com código';salaMostra('salaCodigoTela');salaEstado('salaEstadoCodigo',erro||'',erro?'erro':'');
+  salaCodigoConfere();$('salaCodigo').focus();
+}
+function salaCodigoConfere(){
+  const c=$('salaCodigo'),v=c.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+  if(c.value!==v)c.value=v;
+  $('salaCodigoEntrar').disabled=v.length!==4;
+}
+// o nome é obrigatório para jogar online: é ele que os outros veem na mesa
+function salaNomeOk(){
+  salaGuardaNome();
+  if(OPCOES.meuNome)return true;
+  salaEstado('salaEstadoInicio','Escreva seu nome primeiro: é ele que os outros veem na mesa.','erro');$('salaNome').focus();
+  return false;
 }
 function salaGuardaNome(){
   const n=$('salaNome').value.replace(/[<>&"'`]/g,'').trim().slice(0,16);save('unotfm-nome',n);OPCOES.meuNome=n||(SALA.papel==='anfitriao'?'Anfitrião':'');
@@ -273,7 +298,9 @@ function onlineInicia(){
   SALA.online=true;SALA.papel='online';telaAcesa();
   redeConvidado();REDE.online=true;REDE.aoSala=onlineMsg;FIM_BOTOES=salaBotoesFim;
   // voltou no meio de uma partida: a sala fecha e a partida aparece
-  REDE.aoVisao=()=>{if(SALA.voltando&&S&&S.players&&S.phase!=='over'){SALA.voltando=false;$('salaOv').classList.remove('show')}};
+  REDE.aoVisao=()=>{if(S&&S.players)$('home').hidden=true;if(SALA.voltando&&S&&S.players&&S.phase!=='over'){SALA.voltando=false;$('salaOv').classList.remove('show')}};
+  // até chegar uma partida, atrás das janelas da sala fica a tela inicial (e não uma mesa vazia)
+  $('home').hidden=false;
   $('salaSair').textContent='Sair da sala';
 }
 // enquanto o servidor não responde: uma tela só de espera (a sala aparece quando chegar a lista dela)
@@ -291,20 +318,22 @@ function onlineConecta(){
   l.aoFechar=e=>onlineCaiu(l,e);
 }
 function onlineCria(){
-  salaGuardaNome();SALA.codigo=null;SALA.chave=null;onlineInicia();
+  if(!salaNomeOk())return;
+  SALA.tentativa='criar';SALA.codigo=null;SALA.chave=null;onlineInicia();
   salaEspera('Criando a sala…');onlineConecta();
 }
-function onlineEntra(texto){
+// entrar numa sala pelo código (da janela de escrever o código, ou do link de um convite)
+function onlineEntra(texto,tentativa='codigo'){
   const codigo=String(texto||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if(!CODIGO_OK.test(codigo)){salaEstado('salaEstadoInicio','O código tem 4 letras ou números. Confira com quem criou a sala.','erro');return}
-  salaGuardaNome();
+  if(!CODIGO_OK.test(codigo)){salaCodigoAbre('O código tem 4 letras ou números (sem 0, O, 1, I nem L). Confira com quem criou a sala.');return}
+  SALA.tentativa=tentativa;
   const salvo=load(ONLINE_KEY,null);
   SALA.codigo=codigo;SALA.chave=salvo&&salvo.codigo===codigo&&salvo.servidor===SERVIDOR?salvo.chave:null;
   onlineInicia();salaEspera(`Entrando na sala ${codigo}…`);onlineConecta();
 }
 // volta para a sala guardada (a página recarregou ou o jogo foi aberto de novo)
 function onlineVolta(salvo){
-  OPCOES.meuNome=load('unotfm-nome','')||'';SALA.codigo=salvo.codigo;SALA.chave=salvo.chave;
+  OPCOES.meuNome=load('unotfm-nome','')||'';SALA.codigo=salvo.codigo;SALA.chave=salvo.chave;SALA.tentativa='volta';
   onlineInicia();salaAbre();salaEspera(`Voltando para a sala ${salvo.codigo}…`);onlineConecta();
 }
 // a conexão fechou: de propósito (sala acabou, tirado, outra aba) ou não (sinal): nesse caso, tenta de novo
@@ -336,7 +365,10 @@ function onlineMsg(m){
       // não entrou: a sala não existe, está cheia, a pessoa foi tirada…
       if(/não encontrada|tirado/.test(m.motivo))onlineEsquece();
       SALA.saindo=true;if(REDE.anfitriao&&REDE.anfitriao.ws)REDE.anfitriao.ws.close();
-      salaAbre();salaEstado('salaEstadoInicio',m.motivo[0].toUpperCase()+m.motivo.slice(1)+'.','erro');
+      const txt=m.motivo[0].toUpperCase()+m.motivo.slice(1)+'.';
+      // pelo código, volta à janela do código (com ele ainda escrito, para corrigir); senão, à primeira tela
+      if(SALA.tentativa==='codigo'){$('salaCodigo').value=SALA.codigo||$('salaCodigo').value;salaCodigoAbre(txt)}
+      else{salaAbre();salaEstado('salaEstadoInicio',txt,'erro')}
       SALA.saindo=false;SALA.codigo=null;SALA.chave=null;REDE.anfitriao=null;
     }else toast(m.motivo);
     return;
@@ -364,7 +396,7 @@ function onlineCompartilha(){
   const salvo=load(ONLINE_KEY,null),valido=salvo&&salvo.servidor===SERVIDOR&&Date.now()-salvo.t<12*3600e3;
   if(!REDE_MODO){
     if(cod&&valido&&salvo.codigo===cod)onlineVolta(salvo);
-    else if(cod){salaAbre();$('salaCodigoBox').hidden=false;$('salaCodigo').value=cod;salaEstado('salaEstadoInicio',`Você foi convidado para a sala ${cod}. Escreva seu nome e toque em Entrar.`,'ok')}
+    else if(cod)salaConviteAbre(cod);
     else if(valido)onlineVolta(salvo);
   }
 }
@@ -374,9 +406,12 @@ $('homeAmigos').onclick=salaAbre;
 $('salaCriar').onclick=salaCria;
 $('salaEntrar').onclick=salaEntra;
 $('salaCriarOnline').onclick=onlineCria;
-$('salaEntrarOnline').onclick=()=>{$('salaCodigoBox').hidden=false;$('salaCodigo').focus()};
-$('salaUsarCodigo').onclick=()=>onlineEntra($('salaCodigo').value);
-$('salaCodigo').onkeydown=e=>{if(e.key==='Enter')onlineEntra($('salaCodigo').value)};
+$('salaEntrarOnline').onclick=()=>{if(salaNomeOk())salaCodigoAbre()};
+$('salaEntrarConvite').onclick=()=>{if(salaNomeOk())onlineEntra(SALA.conviteCodigo,'convite')};
+$('salaCodigo').oninput=salaCodigoConfere;
+$('salaCodigo').onkeydown=e=>{if(e.key==='Enter'&&!$('salaCodigoEntrar').disabled)onlineEntra($('salaCodigo').value)};
+$('salaCodigoEntrar').onclick=()=>onlineEntra($('salaCodigo').value);
+$('salaCodigoVoltar').onclick=()=>{$('salaTitulo').textContent='Jogar com amigos';salaMostra('salaInicio')};
 $('salaCompartilhar').onclick=onlineCompartilha;
 $('salaCopiarLink').onclick=()=>SALA.codigo&&salaCopia(salaLink(SALA.codigo),'Link copiado');
 $('salaSair').onclick=salaSai;

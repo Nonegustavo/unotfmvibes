@@ -55,6 +55,10 @@ try {
   // ---------- o dono cria a sala ----------
   const dono = await abre('dono');
   await dono.click('#homeAmigos');
+  // sem nome não dá: é ele que os outros veem na mesa
+  await dono.fill('#salaNome', '');
+  await dono.click('#salaCriarOnline');
+  confere(/Escreva seu nome/.test(await dono.textContent('#salaEstadoInicio')) && await dono.isVisible('#salaInicio'), 'sem nome, a sala não é criada');
   await dono.fill('#salaNome', 'Gustavo');
   await dono.click('#salaCriarOnline');
   await dono.waitForFunction(() => /^[A-Z0-9]{4}$/.test(document.getElementById('salaCodigoTxt')?.textContent || ''), null, { timeout: 10000 });
@@ -69,13 +73,21 @@ try {
   const bia = await abre('Bia', '&sala=' + codigo);
   await bia.waitForSelector('#salaOv.show', { timeout: 5000 });
   await bia.fill('#salaNome', 'Bia');
+  confere(await bia.isVisible('#salaEntrarConvite') && !(await bia.isVisible('#salaCriarOnline')) && (await bia.textContent('#salaEntrarConvite')).includes(codigo), 'pelo link: só o nome e "Entrar na sala"');
   await foto(bia, 'link');
-  await bia.click('#salaUsarCodigo');
+  await bia.click('#salaEntrarConvite');
   await bia.waitForSelector('#salaDentro:not([hidden])', { timeout: 10000 });
   confere(true, 'a Bia entrou abrindo o link');
   const caio = await abre('Caio');
   await caio.click('#homeAmigos'); await caio.fill('#salaNome', 'Caio');
-  await caio.click('#salaEntrarOnline'); await caio.fill('#salaCodigo', codigo.toLowerCase()); await caio.click('#salaUsarCodigo');
+  await caio.click('#salaEntrarOnline');
+  confere(await caio.isVisible('#salaCodigoTela') && await caio.isDisabled('#salaCodigoEntrar'), 'Entrar com código abre a janela do código, com Entrar apagado até ter 4 caracteres');
+  // código errado: volta à janela do código, com o aviso e o código ainda escrito
+  await caio.fill('#salaCodigo', 'zzzz'); await caio.click('#salaCodigoEntrar');
+  await caio.waitForFunction(() => !document.getElementById('salaCodigoTela').hidden && /não encontrada/.test(document.getElementById('salaEstadoCodigo').textContent), null, { timeout: 8000 });
+  confere(await caio.inputValue('#salaCodigo') === 'ZZZZ', 'código errado: volta à janela do código com o aviso e o código escrito');
+  await foto(caio, 'codigo');
+  await caio.fill('#salaCodigo', codigo.toLowerCase()); await caio.press('#salaCodigo', 'Enter');
   await caio.waitForSelector('#salaDentro:not([hidden])', { timeout: 10000 });
   confere(true, 'o Caio entrou digitando o código');
   await dono.waitForFunction(() => document.querySelectorAll('#salaLugares li:not(.bot)').length === 3, null, { timeout: 5000 });
@@ -118,6 +130,7 @@ try {
   await bia.reload();
   await bia.waitForFunction(() => S && S.players && S.players[0].name === 'Bia' && S.discard.length, null, { timeout: 10000 });
   confere(await bia.evaluate(() => S.players.map(p => p.name).join(',')) === vizinhos || await bia.evaluate(() => S.phase === 'over'), 'a Bia recarregou a página e voltou para a mesma cadeira');
+  confere(await bia.evaluate(() => document.getElementById('home').hidden), 'depois de voltar, ela vê a partida (e não a tela inicial)');
 
   // ---------- o dono tira o Caio e sai ----------
   await dono.click('#menuBtn');

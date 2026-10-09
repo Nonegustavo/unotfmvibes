@@ -647,14 +647,16 @@ body>.handwrap{grid-row:5}
 #salaResposta[hidden],#salaLerConvite[hidden],#salaDentro[hidden]{display:none}
 .sala-sem summary{cursor:pointer;color:var(--muted);font-size:.85rem}
 .sala-sem[open]{display:flex;flex-direction:column;gap:0.5rem}
-.sala-codigo{display:flex;gap:0.5rem;margin-top:0.625rem}
-.sala-codigo .sala-input{flex:1;text-transform:uppercase;letter-spacing:.3em;font-weight:700;text-align:center}
-.sala-codigo .btn{flex:0 0 auto}
+.sala-codigo-campo{text-transform:uppercase;letter-spacing:.4em;font-weight:800;font-size:1.75rem;text-align:center;padding:0.75rem;margin:0.25rem 0 0.25rem}
+.sala-largo{width:100%}
+.sala-largo{margin-top:0.25rem}
+/* linhas de botões e o botão largo também somem com hidden (o display delas passava por cima) */
+.sala-largo[hidden],.row2[hidden]{display:none}
 .sala-online{background:var(--bg);border-radius:1rem;padding:0.75rem;margin-bottom:0.875rem;display:flex;flex-direction:column;gap:0.5rem}
 .sala-cod{display:flex;align-items:baseline;justify-content:space-between;gap:0.5rem}
 .sala-cod b{font-size:2rem;letter-spacing:.25em;font-weight:800;color:var(--accent)}
 .sala-link{word-break:break-all;margin:0}
-.sala-online[hidden],.sala-codigo[hidden],.sala-criando[hidden],.sala-convite[hidden]{display:none}
+.sala-online[hidden],.sala-criando[hidden],.sala-convite[hidden]{display:none}
 .sala-criando{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:2rem 0}
 .sala-roda{width:2.5rem;height:2.5rem;border-radius:50%;border:0.25rem solid var(--line);border-top-color:var(--accent);animation:salaRoda .9s linear infinite}
 @keyframes salaRoda{to{transform:rotate(360deg)}}

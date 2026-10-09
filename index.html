@@ -147,15 +147,20 @@
   <div class="sheet sala">
     <h2 id="salaTitulo">Jogar com amigos</h2>
     <div id="salaInicio">
+      <p class="sub" id="salaConviteTxt" hidden></p>
       <div class="field"><label class="lb" for="salaNome">Seu nome</label><input class="sala-input" id="salaNome" maxlength="16" autocomplete="nickname" placeholder="Como os outros vão te ver"></div>
-      <div class="field"><div class="lb">Pela internet</div><p class="legend">De qualquer lugar: quem cria a sala manda o link ou o código para os outros.</p>
-        <div class="row2"><button type="button" class="btn main" id="salaCriarOnline">Criar sala</button><button type="button" class="btn main" id="salaEntrarOnline">Entrar com código</button></div>
-        <div class="sala-codigo" id="salaCodigoBox" hidden><input class="sala-input" id="salaCodigo" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código" aria-label="Código da sala"><button type="button" class="btn main" id="salaUsarCodigo">Entrar</button></div>
-      </div>
+      <div class="row2" id="salaEscolha"><button type="button" class="btn main" id="salaCriarOnline">Criar sala</button><button type="button" class="btn main" id="salaEntrarOnline">Entrar com código</button></div>
+      <button type="button" class="btn main sala-largo" id="salaEntrarConvite" hidden></button>
       <p class="sala-estado" id="salaEstadoInicio"></p>
       <div class="field" id="salaWifi" hidden><div class="lb">Na mesma Wi-Fi</div><p class="legend">Sem internet: um aparelho cria a sala, e os outros entram lendo um QR code.</p>
         <div class="row2"><button type="button" class="btn" id="salaCriar">Criar sala</button><button type="button" class="btn" id="salaEntrar">Entrar numa sala</button></div>
       </div>
+    </div>
+    <div id="salaCodigoTela" hidden>
+      <p class="sub">Escreva o código de 4 letras ou números que quem criou a sala mandou.</p>
+      <input class="sala-input sala-codigo-campo" id="salaCodigo" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD" aria-label="Código da sala">
+      <p class="sala-estado" id="salaEstadoCodigo"></p>
+      <div class="row2"><button type="button" class="btn" id="salaCodigoVoltar">Voltar</button><button type="button" class="btn main" id="salaCodigoEntrar" disabled>Entrar</button></div>
     </div>
     <div id="salaCriando" class="sala-criando" hidden><div class="sala-roda" aria-hidden="true"></div><p class="sub" id="salaCriandoTxt">Criando a sala…</p></div>
     <div class="sala-online" id="salaOnlineBox" hidden>
@@ -199,7 +204,7 @@
       </div>
       <p class="sala-estado" id="salaEstadoConv"></p>
     </div>
-    <div class="row2 stick"><button type="button" class="btn" id="salaSair">Voltar</button><button type="button" class="btn main" id="salaComecar" hidden>Começar partida</button></div>
+    <div class="row2 stick" id="salaRodape"><button type="button" class="btn" id="salaSair">Voltar</button><button type="button" class="btn main" id="salaComecar" hidden>Começar partida</button></div>
   </div>
 </div>
 <div class="ov sala-cam" id="camOv" role="dialog" aria-modal="true" aria-labelledby="camTitulo">
