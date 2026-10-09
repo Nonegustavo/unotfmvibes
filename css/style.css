@@ -539,6 +539,15 @@ body>.handwrap{padding-bottom:1.5rem}
 .rnone{text-align:center;margin:0.875rem 0}
 .rule[hidden],.group[hidden]{display:none}
 /* telas grandes (computador): coluna central maior, mesmo arranjo do celular */
+/* Telas mais largas que um celular (mais de 3/4 da altura), antes do layout de tela grande: a escala ainda vem da
+   altura, mas sobra largura e altura na mesa. As cartas do centro da mesa crescem até ocupar a altura dela (até 45% a
+   mais, com o centro mais largo que alto) e as da mão 15% (a área da mão cresce junto e a mesa cede o espaço que sobrava). No celular e em telas baixas (menos de 640), nada muda */
+@media (min-aspect-ratio:3/4) and (max-width:899.98px) and (min-height:640px){
+  :root{--cwMao:calc(var(--cw0)*1.15)}
+  .handwrap{--cw:var(--cwMao)}
+  /* o centro da mesa fica mais largo que alto (3,9 por 3 cartas), para as cartas crescerem com a altura que a mesa tem */
+  .arena{--cw:min(calc(var(--cw0)*1.45),calc((100cqh - 3.95rem - var(--bandH))/3));aspect-ratio:3.9/3}
+}
 @media (min-width:900px) and (min-height:560px){
   /* textos, ícones e selos do tamanho que teriam num celular da mesma altura (16px a cada 800px): 20 --u daqui */
   :root{--u:clamp(.55px,min(calc(100dvh/1000),calc(100vw/1222)),1.3px);--cw0:calc(104*var(--u));font-size:calc(20*var(--u));--cwMao:calc(86*var(--u))}
