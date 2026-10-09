@@ -31,7 +31,14 @@ const SONS={
     ],
     modelos:{'Padrão':{},'Copo fino':{tom:4200,quiques:4,intervalo:.09,queda:.55,tinido:.08,brilho:.7},'Copo grosso':{tom:2200,quiques:3,intervalo:.12,queda:.6,tinido:.16,brilho:.35},
       'Um toque só':{quiques:1,tinido:.15}}},
+  misericordia:{bloco:'blocoMisericordia',padrao:SOM_MISERICORDIA,toca:p=>misericordia(contexto(),SAIDA,p),
+    controles:[
+      ['tom','Tom',-6,6,1,'semitons','mais alto ou mais baixo'],
+      ['volume','Volume',.2,2,.05,'',''],
+    ],
+    modelos:{'Coro suave':{modelo:'coro'},'Harpa':{modelo:'harpa'},'Sinos de vento':{modelo:'sinos'},'Martelo (o de hoje)':{modelo:'martelo'}}},
 };
+const NOMES={sineta:'Campainha',gelo:'Gelo',misericordia:'Misericórdia'};
 const casas=(passo)=>{const s=String(passo);return s.includes('.')?s.split('.')[1].length:0};
 for(const [nome,som] of Object.entries(SONS)){
   const bloco=document.getElementById(som.bloco),chave='unotfm-sons-'+nome;
@@ -41,14 +48,16 @@ for(const [nome,som] of Object.entries(SONS)){
   box.innerHTML=som.controles.map(([k,rotulo,min,max,passo,un,dica])=>`<div class="s-ctl"><label for="${nome}-${k}">${rotulo}</label><output id="${nome}-${k}-v"></output><input type="range" id="${nome}-${k}" data-k="${k}" min="${min}" max="${max}" step="${passo}">${dica?`<small>${dica}</small>`:''}</div>`).join('');
   const mostra=()=>{
     som.controles.forEach(([k,,, ,passo,un])=>{const i=document.getElementById(`${nome}-${k}`);i.value=atual[k];document.getElementById(`${nome}-${k}-v`).textContent=(+atual[k]).toFixed(casas(passo))+(un?' '+un:'')});
-    const limpo=Object.fromEntries(som.controles.map(([k,,,,passo])=>[k,+(+atual[k]).toFixed(casas(passo))]));
-    bloco.querySelector('[data-cfg]').value=`${nome==='sineta'?'Campainha':'Gelo'}: ${JSON.stringify(limpo)}`;
+    const limpo={...(atual.modelo?{modelo:atual.modelo}:{}),...Object.fromEntries(som.controles.map(([k,,,,passo])=>[k,+(+atual[k]).toFixed(casas(passo))]))};
+    bloco.querySelector('[data-cfg]').value=`${NOMES[nome]}: ${JSON.stringify(limpo)}`;
+    // o modelo escolhido fica marcado
+    bloco.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',!!atual.modelo&&som.modelos[b.dataset.m].modelo===atual.modelo));
     try{localStorage.setItem(chave,JSON.stringify(limpo))}catch(e){}
   };
   box.addEventListener('input',e=>{const k=e.target.dataset.k;if(!k)return;atual[k]=+e.target.value;mostra()});
   box.addEventListener('change',()=>som.toca(atual,1));
   bloco.querySelector('[data-modelos]').innerHTML=Object.keys(som.modelos).map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('');
-  bloco.querySelector('[data-modelos]').addEventListener('click',e=>{const m=e.target.dataset.m;if(!m)return;atual={...som.padrao,...som.modelos[m]};mostra();som.toca(atual,1)});
+  bloco.querySelector('[data-modelos]').addEventListener('click',e=>{const m=e.target.dataset.m;if(!m)return;atual=atual.modelo?{...atual,...som.modelos[m]}:{...som.padrao,...som.modelos[m]};mostra();som.toca(atual,1)});
   bloco.querySelectorAll('[data-tocar]').forEach(b=>b.addEventListener('click',()=>som.toca(atual,+b.dataset.tocar)));
   bloco.querySelector('[data-copiar]').addEventListener('click',async e=>{
     const t=bloco.querySelector('[data-cfg]');

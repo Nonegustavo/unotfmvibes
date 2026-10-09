@@ -49,7 +49,7 @@ icons/                  ícones do app
 lan-teste.html          prova de conceito da rede local (link em Configurações → Experimental), com
 css/lan-teste.css,      js/lan-teste.js e as bibliotecas de QR code em js/vendor/ (qrcode-generator e jsQR)
 mostruario.html         mostruário de cartas (Configurações → Experimental), com css/mostruario.css e js/mostruario.js
-sons-teste.html         teste de sons (Configurações → Experimental), com css/sons-teste.css e js/sons-teste.js
+sons-teste.html         teste de sons (Configurações → Experimental: campainha, gelo e Misericórdia), com css/sons-teste.css e js/sons-teste.js
 docs/plano-multiplayer.md  plano aprovado do multiplayer (fases 0, 1 e 1.5, hospedagem, lojas)
 ```
 

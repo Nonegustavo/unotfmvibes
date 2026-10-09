@@ -284,7 +284,8 @@ const SND={
   web:()=>{tone(180,.5,{type:'sawtooth',to:120,vol:.07});tone(240,.5,{type:'triangle',to:200,vol:.06,at:.05})},
   wish:()=>{noise(.5,{f:600,fTo:5000,vol:.1,q:3});arp([1046,1318,1568,2093],.07,{vol:.08,d:.3,at:.25})},
   equal:()=>{tone(440,.2,{type:'triangle',vol:.12});tone(440,.25,{type:'triangle',vol:.12,at:.22})},
-  justice:()=>{noise(.08,{f:300,filter:'lowpass',vol:.35});tone(90,.18,{vol:.25});noise(.08,{f:300,filter:'lowpass',vol:.3,at:.28});tone(90,.18,{vol:.2,at:.28})},
+  // Carta da Misericórdia (js/sons.js)
+  justice:()=>{const a=audio();if(a)misericordia(a,MASTER,SOM_MISERICORDIA)},
   magnet:()=>{tone(120,.7,{type:'square',vol:.04,to:240});tone(240,.7,{vol:.06,to:480})},
   recycle:()=>{tone(400,.18,{to:700,vol:.1});tone(700,.18,{to:400,vol:.1,at:.18});tone(400,.2,{to:800,vol:.1,at:.36})},
   luck:()=>arp([1318,1568,2093,1568,2093],.06,{type:'sine',vol:.08,d:.2}),

@@ -11,6 +11,7 @@ html.sons-teste body{display:block;height:auto;overflow:visible;padding:calc(env
 .s-modelos{display:flex;flex-wrap:wrap;gap:0.375rem;margin-bottom:0.875rem}
 .s-modelos button{font:inherit;font-size:.82rem;font-weight:500;color:var(--ink);background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:0.3125rem 0.75rem;cursor:pointer}
 .s-modelos button:hover{border-color:var(--accent)}
+.s-modelos button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .s-controles{display:grid;gap:0.75rem}
 .s-ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0.25rem 0.75rem;align-items:center}
 .s-ctl label{font-weight:600;font-size:.92rem}
