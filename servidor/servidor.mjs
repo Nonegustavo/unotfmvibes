@@ -33,6 +33,8 @@ const LIM = {
   vazia: 10 * 60e3,        // sala sem ninguém ligado acaba
   donoAusente: 30e3,       // dono desligado por esse tempo passa o posto adiante
   foraDaSala: 2 * 60e3,    // fora da partida, quem ficou desligado por esse tempo sai da sala
+  mudo: 30e3,              // conexão sem nenhuma mensagem por esse tempo (o jogo manda um "oi" a cada 2 s) está morta:
+                           // o celular fechou o app ou trocou de rede sem avisar. Ela é fechada, e o jogo volta pela chave
 };
 // nos testes, os limites podem ser trocados (LIMITES={"primeira":1000,...})
 Object.assign(LIM, JSON.parse(process.env.LIMITES || '{}'));
@@ -102,6 +104,7 @@ setInterval(() => {
     const ls = naSala(sala, 'ANF.ligacoes') || [];
     const jogando = naSala(sala, '!!(S && S.phase !== "over")');
     for (const l of ls) {
+      if (l.aberta && l.ws && agora - (l.visto || 0) > LIM.mudo) { try { l.ws.terminate(); } catch (e) {} continue; }
       if (l.aberta) continue;
       const fora = agora - l.fechadaEm;
       if (fora > LIM.donoAusente && naSala(sala, 'ANF.dono') === l) naSala(sala, 'anfNovoDono()');
@@ -218,11 +221,13 @@ const origemOk = o => !o ? DEV : ORIGENS.includes(o) || (DEV && /^http:\/\/(loca
 const ipDe = req => String(req.headers['fly-client-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0] || req.socket.remoteAddress || '').trim();
 const servidor = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end(`unotfm: servidor das salas online (${VERSAO}), ${SALAS.size} sala(s)\n`);
+  let conectadas = 0;
+  for (const sala of SALAS.values()) conectadas += (naSala(sala, "ANF.ligacoes") || []).filter(l => l.aberta).length;
+  res.end(`unotfm: servidor das salas online (${VERSAO}), ${SALAS.size} sala(s), ${conectadas} pessoa(s) conectada(s)\n`);
 });
 const wss = new WebSocketServer({ server: servidor, maxPayload: LIM.mensagem, verifyClient: ({ origin }) => origemOk(origin) });
 wss.on('connection', (ws, req) => aoConectar(ws, ipDe(req)));
 servidor.listen(PORTA, () => log(`servidor das salas na porta ${servidor.address().port} (${VERSAO})${DEV ? ', modo de desenvolvimento' : ''}${VELOCIDADE > 1 ? `, velocidade ${VELOCIDADE}x` : ''}`));
 // ao desligar (atualização do servidor): as salas acabam e quem está nelas fica sabendo
-const desliga = () => { for (const sala of [...SALAS.values()]) fechaSala(sala, 'o servidor foi atualizado'); servidor.close(); setTimeout(() => process.exit(0), 300); };
+const desliga = () => { for (const sala of [...SALAS.values()]) fechaSala(sala, 'o servidor reiniciou'); servidor.close(); setTimeout(() => process.exit(0), 300); };
 process.on('SIGTERM', desliga); process.on('SIGINT', desliga);

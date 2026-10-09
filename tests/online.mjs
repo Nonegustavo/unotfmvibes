@@ -4,6 +4,7 @@
 // - o dono cria a sala e muda lugares, regras e tempo; as outras pessoas entram pelo código e ficam prontas;
 // - o dono começa; durante a partida, uma pessoa cai e volta com a chave dela, para o mesmo lugar;
 // - todos veem o fim; o dono começa outra partida, tira uma pessoa da sala e sai: o posto de dono passa adiante.
+// Antes, uma conexão que fica muda (o app fechado sem avisar) precisa ser fechada pelo servidor.
 // Confere também que cada um se vê na própria cadeira e que nada que ele não pode saber chega a ele.
 // Uso: npm run test:online             (4 salas)
 //      npm run test:online -- 10       (quantas salas)
@@ -23,7 +24,7 @@ const ate = async (f, ms, oque) => { const t0 = Date.now(); while (Date.now() - 
 const REGRAS = [['trade', 'gift', 'chair'], ['web', 'wish', 'rule', 'jumpin'], ['simon', 'theft', 'batata', 'portal'], ['stack', 'dice', 'weather', 'camouflage'], []];
 
 // todas as salas saem deste computador: o limite de salas por endereço fica de fora (ele é conferido no test:trapaca)
-const srv = await sobeServidor({ velocidade: VEL, limites: { salasPorIp: 1000 } });
+const srv = await sobeServidor({ velocidade: VEL, limites: { salasPorIp: 1000, mudo: 5000 } });
 console.log('servidor em ' + srv.url);
 
 // uma pessoa: um robô ligado ao servidor por WebSocket (que pode cair e voltar com a chave)
@@ -114,6 +115,15 @@ async function umaSala(k) {
 }
 
 const t0 = Date.now();
+// conexão muda: entra numa sala e não manda mais nada (nem o "oi" a cada 2 s)
+{
+  const c = await conecta(srv.url);
+  c.manda({ t: 'criar', nome: 'Mudo', versao: VERSAO });
+  await c.espera(m => m && m.t === 'entrou');
+  const t = Date.now(), f = await c.esperaFechar(10000).catch(() => null);
+  if (f) console.log(`conexão muda fechada pelo servidor em ${((Date.now() - t) / 1000).toFixed(1)} s`);
+  else falhou('a conexão muda não foi fechada pelo servidor');
+}
 try {
   await Promise.all(Array.from({ length: SALAS }, (_, k) => umaSala(k).catch(e => falhou(`sala ${k + 1}: ${e.stack || e.message}`))));
 } finally {
