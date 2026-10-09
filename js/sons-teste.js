@@ -34,6 +34,7 @@ const SONS={
   misericordia:{bloco:'blocoMisericordia',padrao:SOM_MISERICORDIA,toca:p=>misericordia(contexto(),SAIDA,p),
     controles:[
       ['tom','Tom',-6,6,1,'semitons','mais alto ou mais baixo'],
+      ['velocidade','Velocidade das notas',.5,2.5,.05,'x','mais alto deixa as notas mais rápidas e juntas'],
       ['volume','Volume',.2,2,.05,'',''],
     ],
     modelos:{'Coro suave':{modelo:'coro'},'Harpa':{modelo:'harpa'},'Sinos de vento':{modelo:'sinos'},'Martelo (o de hoje)':{modelo:'martelo'}}},

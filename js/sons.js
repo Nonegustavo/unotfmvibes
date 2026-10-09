@@ -8,8 +8,9 @@ const SOM_SINETA={tom:1460,duracao:2.1,brilho:.2,batimento:0,clique:.5,volume:.9
 // cubo de gelo caindo num copo seco: uns quiques cada vez mais curtos e fracos, cada um um tinido de vidro
 const SOM_GELO={tom:3200,quiques:1,intervalo:.11,queda:.6,tinido:.15,brilho:.5,volume:1};
 
-// Carta da Misericórdia: um dos modelos (coro, harpa, sinos ou martelo), com o tom em semitons
-const SOM_MISERICORDIA={modelo:'coro',tom:0,volume:1};
+// Carta da Misericórdia: um dos modelos (coro, harpa, sinos ou martelo), com o tom em semitons e a velocidade das notas
+// (2 = notas duas vezes mais rápidas, mais juntas)
+const SOM_MISERICORDIA={modelo:'sinos',tom:1,volume:1,velocidade:1};
 
 // um oscilador com ataque quase instantâneo e decaimento exponencial
 function somParcial(ctx,dest,f,vol,dur,t,cents=0,tipo='sine'){
@@ -65,19 +66,19 @@ function somSuave(ctx,dest,f,vol,dur,t,ataque,tipo='sine',cents=0){
 }
 function misericordia(ctx,dest,p,at=0){
   p={...SOM_MISERICORDIA,...p};
-  const t=ctx.currentTime+at,k=Math.pow(2,p.tom/12),v=p.volume;
+  const t=ctx.currentTime+at,k=Math.pow(2,p.tom/12),v=p.volume,e=1/p.velocidade; // e: espaço entre as notas
   if(p.modelo==='coro'){
     // acorde maior que cresce e se abre, com vozes levemente desafinadas
     [[261.6,.05,0],[329.6,.04,.08],[392,.04,.16],[523.3,.035,.24],[659.3,.02,.32]].forEach(([f,vol,d])=>{
-      somSuave(ctx,dest,f*k,vol*v,1.5,t+d,.35,'triangle',-6);somSuave(ctx,dest,f*k,vol*v*.8,1.5,t+d,.35,'sine',7)});
+      somSuave(ctx,dest,f*k,vol*v,1.5,t+d*e,.35,'triangle',-6);somSuave(ctx,dest,f*k,vol*v*.8,1.5,t+d*e,.35,'sine',7)});
   }else if(p.modelo==='harpa'){
     // harpa descendo uma escala pentatônica, cada corda some rápido
-    [1046.5,880,784,659.3,587.3,523.3,440,392].forEach((f,i)=>{somParcial(ctx,dest,f*k,.09*v,.7,t+i*.055,0,'triangle');somParcial(ctx,dest,f*k*2,.025*v,.35,t+i*.055)});
+    [1046.5,880,784,659.3,587.3,523.3,440,392].forEach((f,i)=>{somParcial(ctx,dest,f*k,.09*v,.7,t+i*.055*e,0,'triangle');somParcial(ctx,dest,f*k*2,.025*v,.35,t+i*.055*e)});
   }else if(p.modelo==='sinos'){
     // sinos de vento: toques agudos e suaves, espalhados
-    [2093,2637,2349,3136,2794,3520].forEach((f,i)=>{const at2=t+i*.09+Math.random()*.04;somParcial(ctx,dest,f*k,.05*v,.9,at2);somParcial(ctx,dest,f*k*2.76,.012*v,.4,at2)});
+    [2093,2637,2349,3136,2794,3520].forEach((f,i)=>{const at2=t+(i*.09+Math.random()*.04)*e;somParcial(ctx,dest,f*k,.05*v,.9,at2);somParcial(ctx,dest,f*k*2.76,.012*v,.4,at2)});
   }else{
     // martelo (o som de antes): duas batidas graves
-    [0,.28].forEach((d,i)=>{somEstalo(ctx,dest,300,(.6-i*.1)*v,.08,t+d,1,'lowpass');somParcial(ctx,dest,90*k,(.25-i*.05)*v,.18,t+d)});
+    [0,.28].forEach((d,i)=>{somEstalo(ctx,dest,300,(.6-i*.1)*v,.08,t+d*e,1,'lowpass');somParcial(ctx,dest,90*k,(.25-i*.05)*v,.18,t+d*e)});
   }
 }
