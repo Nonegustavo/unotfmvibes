@@ -104,6 +104,13 @@ try {
   }
   for (let i = 0; i < 25; i++) { for (const p of [dono, bia, caio]) await joga(p); await dono.waitForTimeout(200); }
   confere(await dono.evaluate(() => S.vezes > 3), 'a partida anda');
+  // quem não é o dono abre a sala no meio da partida e volta ao jogo
+  await caio.click('#openSettings');
+  await caio.waitForSelector('#salaOv.show', { timeout: 5000 });
+  confere(await caio.isVisible('#salaComecar') && (await caio.textContent('#salaComecar')) === 'Voltar ao jogo', 'o Caio abre a sala e vê "Voltar ao jogo"');
+  await caio.click('#salaComecar');
+  await caio.waitForFunction(() => !document.getElementById('salaOv').classList.contains('show'), null, { timeout: 3000 });
+  confere(true, 'o Caio voltou ao jogo');
   await foto(dono, 'jogo');
 
   // ---------- a Bia recarrega a página e volta sozinha ----------

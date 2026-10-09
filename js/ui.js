@@ -1231,7 +1231,18 @@ function showRuleInfo(k){
   const a=(S&&S.added||[]).find(x=>x.k===k);
   notice(k,a?`Nova regra, adicionada por ${texto(a.by)}`:'Em jogo',{info:true,title:RNAME[k],anchor:b});
 }
-$('openConfig').onclick=()=>{updateInstallUI();CFG.sound=!MUTED;buildSettings();$('configOv').classList.add('show');$('cfgClose').focus()};
+$('openConfig').onclick=()=>{updateInstallUI();CFG.sound=!MUTED;buildSettings();
+  // no solo, com a partida na tela: volta ao menu principal (no multiplayer, sai-se pela sala)
+  $('cfgMenu').hidden=!$('home').hidden||typeof SALA!=='undefined'&&!!SALA.papel||!!REDE_MODO;
+  $('configOv').classList.add('show');$('cfgClose').focus()};
+// menu principal: a partida em andamento acaba (as esperas dela deixam de valer) e a tela inicial volta
+$('cfgMenu').onclick=()=>{
+  if(S&&S.phase!=='over'&&!S.players[0].out&&!confirm('Sair da partida e voltar ao menu principal?'))return;
+  if(TB.on)turboStop();
+  if(S){S.gen++;S.phase='over'}
+  closeOverlays();['configOv','endOv','settingsOv'].forEach(id=>$(id).classList.remove('show'));$('fx').innerHTML='';FX3D.reset();render();
+  $('home').hidden=false;
+};
 $('cfgClose').onclick=()=>$('configOv').classList.remove('show');
 document.addEventListener('pointerdown',()=>{if(!MUTED)audio()},{once:true});
 $('closeActive').onclick=()=>$('activeOv').classList.remove('show');

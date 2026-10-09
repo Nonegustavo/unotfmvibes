@@ -169,7 +169,13 @@ function salaCria(){
   $('endRules').textContent='Voltar à sala';$('endRules').onclick=()=>{$('endOv').classList.remove('show');$('salaOv').classList.add('show');salaDesenha()};
 }
 // o botão do topo vira "Sala": abre a sala durante a partida
-function salaBotaoTopo(){const bs=$('openSettings');bs.hidden=false;bs.textContent='Sala';bs.setAttribute('aria-label','Sala');bs.onclick=()=>{$('salaOv').classList.add('show');salaDesenha()}}
+function salaBotaoTopo(){const bs=$('openSettings');bs.hidden=false;bs.textContent='Sala';bs.setAttribute('aria-label','Sala');bs.onclick=()=>{$('salaOv').classList.add('show');salaDesenha();salaBotaoJogo()}}
+// online, quem não é o dono: com a partida andando, o botão da sala volta ao jogo (o dono tem o de começar/voltar)
+function salaBotaoJogo(){
+  if(!SALA.online||SALA.dono){if(SALA.online)$('salaComecar').hidden=false;return}
+  const jogando=!!(S&&S.players&&S.phase!=='over');
+  $('salaComecar').hidden=!jogando;$('salaComecar').disabled=false;$('salaComecar').textContent='Voltar ao jogo';
+}
 async function salaConvida(){
   const b=$('salaConvidar');b.disabled=true;salaEstado('salaEstado','Preparando o convite…');
   $('salaConvite').hidden=true;
@@ -315,7 +321,7 @@ function onlineMsg(m){
   if(dono&&!SALA.dono&&antes)toast('Agora você é o dono da sala');
   SALA.dono=dono;
   $('salaTitulo').textContent=dono?'Sua sala':'Na sala';
-  $('salaComecar').hidden=!dono;
+  salaBotaoJogo();
   $('againBtn').hidden=!dono;$('endRules').hidden=!dono;
   if(dono){
     $('againBtn').onclick=salaComeca;
