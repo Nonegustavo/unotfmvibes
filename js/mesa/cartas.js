@@ -523,7 +523,9 @@ function botSwapTarget(pi){
    pessoa deste aparelho (controlador 'tela') continua na cadeira dela: quando ela troca de lugar, a mesa inteira gira
    junto, o que não muda a ordem de ninguém (só os números das cadeiras) */
 function dancaCadeiras(pi){
-  const n=S.players.length,idx=alive().filter(i=>i!==pi),de=shuffle([...idx]);
+  // sorteia de novo enquanto ninguém mudar de lugar (com 2 adversários, sempre trocam entre si)
+  const n=S.players.length,idx=alive().filter(i=>i!==pi);let de;
+  do de=shuffle([...idx]);while(de.every((x,k)=>x===idx[k]));
   const mapa=[...Array(n).keys()];idx.forEach((i,k)=>mapa[de[k]]=i); // cadeira de antes -> cadeira nova
   const fixa=S.players.findIndex(p=>(p.ctrlReal||p.ctrl)==='tela');
   if(fixa>=0&&mapa[fixa]!==fixa){const d=mapa[fixa]-fixa;for(let i=0;i<n;i++)mapa[i]=(mapa[i]-d+n)%n}

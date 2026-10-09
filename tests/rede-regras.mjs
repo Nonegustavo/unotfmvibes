@@ -73,7 +73,7 @@ try {
     return { probs, h };
   };
   const quemJogou = new Set();
-  let trocas = 0;
+  let trocas = 0, jogadas = 0;
   for (let r = 0; r < 8 && quemJogou.size < 3; r++) {
     if (!(await ate(host, () => S.phase === 'play' && !S.busy && !S.players[S.turn].out, null, 25000))) { falhou('a vez não chegou a ninguém'); break; }
     // as pessoas aqui só jogam a Dança: uma compra acumulada (+2 de um bot) sai da mesa antes
@@ -88,13 +88,13 @@ try {
     let res = await compara();
     for (let k = 0; k < 4 && res.probs.length; k++) { await espera(700); res = await compara(); }
     const depois = res.h.nomes.join(',');
-    if (depois !== ordem) trocas++;
+    jogadas++; if (depois !== ordem) trocas++;
     confere(!res.probs.length, `Dança jogada por ${nome} (${ctrl === 'tela' ? 'anfitrião' : ctrl === 'bot' ? 'bot' : 'convidado'}): ${ordem} → ${depois}${res.probs.length ? ' | ' + res.probs.join('; ') : ''}`);
     confere(res.h.nomes[0] === 'Anfitrião', 'o anfitrião continua na cadeira 0');
     quemJogou.add(ctrl);
   }
   confere(quemJogou.size === 3, `a Dança foi jogada por bot, convidado e anfitrião (${[...quemJogou].join(', ')})`);
-  confere(trocas > 0, `os lugares mudaram em ${trocas} jogada(s)`);
+  confere(trocas === jogadas, `a Dança sempre mudou alguém de lugar (${trocas} de ${jogadas} jogadas)`);
 
   // ---------- Torneio de Sobrevivência ----------
   const fim = async () => { for (const p of [host, ...convs]) await ate(p, () => document.getElementById('endOv').classList.contains('show'), null, 8000); };
