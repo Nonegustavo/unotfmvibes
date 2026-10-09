@@ -101,6 +101,7 @@ export function criaRobo({ nome, id, versao, envia, agenda, sorte }) {
       if (esperado) {
         const me = m.visao.S.players[0], ids = me.hand.map(c => c.id).sort().join(',');
         if (me.name !== esperado.nome) r.errado.push(`se vê como ${me.name}, e não ${esperado.nome}`);
+        else if (m.visao.S.players.some((q, i) => i > 0 && q.name === 'Você')) r.errado.push('um jogador chamado "Você" na mesa');
         else if (ids !== esperado.mao) r.errado.push(`mão diferente da mesa (evento ${m.ev && m.ev.t})`);
       }
     }

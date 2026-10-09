@@ -248,13 +248,18 @@ function newGame(){
   const ctl=i=>(OPCOES.controles&&OPCOES.controles[i])||(i===0?'tela':'bot');
   // nomes das pessoas (no solo, "Você"); as cadeiras de adversários usam os nomes sorteados
   const nome=(i,n)=>(OPCOES.nomes&&OPCOES.nomes[i])||n;
-  const players=[{name:nome(0,'Você'),ctrl:ctl(0),hand:[],called:false,col:(OPCOES.cores&&OPCOES.cores[0])||'var(--accent)'}];
+  const players=[];
   if(sala){
-    // os bots ficam com os nomes sorteados na ordem das cadeiras deles (no torneio, os mesmos em todas as rodadas)
+    // os bots ficam com os nomes sorteados na ordem das cadeiras deles, inclusive a 0 (online, ela pode ser de um bot:
+    // o dono saiu, trocou de lugar ou os lugares foram sorteados); no torneio, os mesmos em todas as rodadas
     let b=0;
-    for(let i=1;i<=R.bots;i++){const bot=ctl(i)==='bot',n=bot?names[b++]:nome(i,'Convidado');
-      players.push({name:n,ctrl:ctl(i),hand:[],called:false,col:bot?AVCOL[BOTNAMES.indexOf(n)]:(OPCOES.cores&&OPCOES.cores[i])||AVCOL[0]})}
-  }else names.forEach((n,k)=>players.push({name:ctl(k+1)==='bot'?n:nome(k+1,n),ctrl:ctl(k+1),hand:[],called:false,col:ctl(k+1)!=='bot'&&OPCOES.cores&&OPCOES.cores[k+1]||AVCOL[BOTNAMES.indexOf(n)]}));
+    const outroBot=()=>BOTNAMES.find(n=>!names.includes(n)&&!players.some(p=>p.name===n));
+    for(let i=0;i<=R.bots;i++){const bot=ctl(i)==='bot',n=bot?(names[b++]||outroBot()):nome(i,i===0?'Você':'Convidado');
+      players.push({name:n,ctrl:ctl(i),hand:[],called:false,col:bot?AVCOL[BOTNAMES.indexOf(n)]:(OPCOES.cores&&OPCOES.cores[i])||(i===0?'var(--accent)':AVCOL[0])})}
+  }else{
+    players.push({name:nome(0,'Você'),ctrl:ctl(0),hand:[],called:false,col:(OPCOES.cores&&OPCOES.cores[0])||'var(--accent)'});
+    names.forEach((n,k)=>players.push({name:ctl(k+1)==='bot'?n:nome(k+1,n),ctrl:ctl(k+1),hand:[],called:false,col:ctl(k+1)!=='bot'&&OPCOES.cores&&OPCOES.cores[k+1]||AVCOL[BOTNAMES.indexOf(n)]}));
+  }
   if(TOUR){TOUR.round++;players.forEach(p=>{TOUR.pts[p.name]=TOUR.pts[p.name]||0;if(TOUR.out.includes(p.name)){p.out=true;p.outIcon='🏅';p.foraTorneio=true}})}
   S={gen,tok:0,players,deck:buildDeck(),discard:[],color:null,turn:0,dir:1,pending:0,pendingType:null,
      phase:'play',comboValue:null,seqDir:null,drawnId:null,skip:false,extra:false,busy:false,
