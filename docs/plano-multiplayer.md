@@ -3,7 +3,8 @@
 Aprovado em 07/10/2026 (versão 2). Versão 2.1: acrescentada a seção 6, segurança no online.
 
 Andamento (09/10/2026): fases 0, 1 e 1.5 feitas no código. Falta testar a sala nos celulares (roteiro na seção 4.3.2);
-o iPhone ainda não foi testado. Próxima: fase 3 sem login (veja a decisão abaixo da tabela de fases).
+o iPhone ainda não foi testado. Próxima: fase 3 sem login (veja a decisão abaixo da tabela de fases e a proposta na
+seção 9).
 
 Objetivo final: partidas online com salas privadas, fila pública e ranking, login e progresso salvo, e o jogo
 publicado também na Play Store e na App Store. O solo offline continua existindo.
@@ -56,7 +57,7 @@ Conferi cada afirmação da versão 1 contra o código. Principais correções e
 
 **Decisão de 09/10/2026: a fase 3 vem antes da 2, sem login.** As salas privadas online não dependem de conta: cada
 pessoa recebe um token da própria cadeira, e a mesa roda no servidor (mais seguro que a rede local). O login continua
-necessário para a fila, o ranking e as lojas, e entra depois.
+necessário para a fila, o ranking e as lojas, e entra depois. Proposta detalhada na seção 9.
 
 A **prova de conceito da rede local** (seção 4.1) é pequena e independente. Dá para fazer antes da fase 0, para
 saber cedo se o caminho escolhido funciona no iPhone.
@@ -629,3 +630,116 @@ não é problema, e já está aceito como limitação (seção 4.4).
    - **Sugestão:** (a). Um comportamento só é mais simples de manter e de testar, e é mais justo.
 7. **Nome e marca:** você já está pesquisando.
    - **Sugestão:** decidir antes do domínio e das lojas.
+
+---
+
+## 9. Fase 3: salas online com amigos, sem login (proposta de 09/10/2026, para aprovar)
+
+Objetivo: jogar com amigos de qualquer lugar, por um código ou um link, sem QR code de ida e volta e sem conta. A
+mesa roda num servidor. A sala da rede local continua existindo para jogar sem internet.
+
+### 9.1 Como funciona para o jogador
+
+- **Botão 👥:** duas opções, **"Pela internet"** (nova) e **"Na mesma Wi-Fi"** (a sala de hoje, que funciona sem internet).
+- **Criar:** a pessoa põe o nome e a sala abre com um **código de 4 caracteres** (por exemplo, `K7QM`) e um **link**
+  (`https://nonegustavo.github.io/unotfmvibes/?sala=K7QM`).
+  - Botões **Compartilhar** (o menu de compartilhar do celular: WhatsApp e outros) e **Copiar**.
+  - Um QR code do link, para quem está perto.
+- **Entrar:** abrir o link (ou digitar o código no 👥) e pôr o nome. Pronto, a pessoa já está na sala: não há resposta
+  para mostrar de volta.
+- **Dono da sala** (quem criou) tem as mesmas opções da sala de hoje: lugares, ordem, sortear, tempo para jogar, regras
+  e começar. Ganha também **remover alguém da sala**. Os outros veem a sala e tocam em "Estou pronto".
+- **Quem cai** (sinal fraco, tela bloqueada, trocou de app) volta sozinho ao abrir o jogo de novo, sem convite novo: o
+  aparelho guarda a chave da cadeira. Enquanto isso, um bot joga por ele, como na rede local.
+- **Se o dono sair**, a partida continua e o posto de dono passa para a próxima pessoa. Na rede local, a saída do
+  anfitrião encerra a partida; aqui não, porque a mesa está no servidor.
+- **A sala acaba** 10 minutos depois que a última pessoa sair.
+
+### 9.2 Por dentro
+
+- **Servidor:** Node, numa pasta `servidor/` deste repositório, com WebSocket (biblioteca `ws`).
+  - Cada sala tem a própria mesa num contexto `vm`, como no `test:mesa`, porque a mesa usa variáveis globais.
+  - Medido em 09/10/2026: cerca de 300 KB por mesa com uma partida em andamento. A menor máquina comporta centenas de salas.
+  - O relógio da mesa é o de verdade, e os bots jogam no servidor.
+- **O mesmo anfitrião na rede local e no servidor.** Hoje o que o anfitrião faz está misturado com a página, no
+  `js/rede.js` e no `js/sala.js`:
+  - lugares, regras e começar;
+  - enviar a cada pessoa os eventos e a visão dela, os pedidos, as ações;
+  - tempo para jogar, queda e volta.
+
+  A etapa 1 passa tudo isso para um arquivo sem página (`js/mesa/anfitriao.js`). Ele roda no navegador do anfitrião
+  (rede local) e no servidor (online). As regras montadas a partir das configurações (`rulesForMode`, hoje no
+  `data.js`) também vão para a mesa.
+- **Mensagens:** as mesmas da rede local, mais as da sala (criar, entrar, comandos do dono). O jogador online é o
+  convidado de hoje com outra ligação (WebSocket em vez de WebRTC).
+  - Da rede local: eventos girados com a visão de cada um, pedidos, ações e respostas.
+- **Quem é quem, sem login:** ao entrar, o servidor dá a cada pessoa uma **chave secreta** (aleatória, 128 bits),
+  guardada no aparelho.
+  - Ela vale só para aquela cadeira daquela sala e substitui, nesta fase, o token do login da seção 6.2.
+  - O código da sala só serve para entrar enquanto houver lugar.
+- **Versão:** o site (GitHub Pages) e o servidor precisam falar a mesma versão. Os dois conferem ao conectar e, se
+  forem diferentes, aparece "Atualize o jogo". Eu publico os dois juntos.
+- **Endereço do servidor:** `wss://<nome>.fly.dev`, com um nome provisório e neutro (sem "uno"), trocado quando
+  houver domínio.
+  - Para testar no computador: `npm run servidor` e o jogo com `?servidor=ws://localhost:8787`.
+  - Os celulares na mesma Wi-Fi também podem usar o servidor do computador.
+
+### 9.3 Segurança nesta fase
+
+É o que a seção 6.4 previa para a fase 3, com a chave da cadeira no lugar do login:
+- **A mesa fica no servidor:** ninguém vê as mãos dos outros nem o monte, nem o dono da sala (na rede local, o anfitrião podia).
+- **Mensagens conferidas:**
+  - formato fixo de cada uma (campos e tipos conferidos; o resto é descartado);
+  - no máximo 4 KB por mensagem e cerca de 20 por segundo (quem insiste é desconectado);
+  - comandos de dono só do dono.
+- **Limites contra abuso:**
+  - poucas salas criadas por endereço por hora;
+  - poucas tentativas de código errado (para ninguém sair adivinhando códigos);
+  - só aceita conexões vindas do site do jogo (e do computador, nos testes).
+- **Teste do "cliente trapaceiro"**, no Node. Ele tenta jogar fora da vez, usar carta que não tem, responder pedido de
+  outra pessoa, mandar comando de dono sem ser dono, mandar mensagens quebradas e inundar o servidor. Tudo precisa ser recusado.
+- **Dados pessoais:** só o nome escolhido, que some com a sala. Nesta fase não há banco de dados nem registro das partidas.
+
+### 9.4 Hospedagem
+
+- **Fly.io, São Paulo** (`gru`), a menor máquina (256 MB).
+  - Desliga sozinha quando não há salas e liga quando alguém cria uma (a primeira sala espera 1 a 3 s).
+  - Custo: cerca de 2 dólares por mês se ficasse ligada o tempo todo; desligando sem uso, bem menos.
+- **Com você:** criar a conta (pede cartão) e instalar o `flyctl`. O login dele é pelo navegador.
+- **Comigo:** preparo `Dockerfile` e `fly.toml` e publico com `fly deploy` quando você autorizar.
+- **Atualizar o servidor encerra as salas abertas**, porque as partidas ficam na memória. Por enquanto, a regra é
+  publicar fora de horário de jogo; esperar as partidas acabarem antes de reiniciar fica para a fase 4.
+
+### 9.5 Etapas
+
+Cada etapa termina com os testes passando e um commit próprio, como nas fases 0 e 1.
+
+1. **Anfitrião sem página (M).** Passar o anfitrião para `js/mesa/anfitriao.js`.
+   - A rede local continua igual: `test:rede`, `test:sala`, `test:tempo` e `test:rede-regras` passando sem mudar o que conferem.
+   - Teste novo no Node: o anfitrião com convidados de mentira, sem navegador.
+2. **Servidor no computador (M).** `servidor/servidor.mjs`: salas com código, chaves, limites e a mesa de cada sala;
+   `npm run servidor`.
+   - `test:online`: abas jogando pelo servidor local, conferindo o mesmo que o `test:rede`.
+   - `test:trapaca`: o cliente trapaceiro.
+3. **Tela (M).** O 👥 com "Pela internet" e "Na mesma Wi-Fi".
+   - Criar, compartilhar e entrar pelo link ou pelo código.
+   - Volta automática, posto de dono passando adiante e remover alguém.
+   - Daqui em diante dá para jogar nos celulares usando o servidor do computador.
+4. **Publicar (P).** Fly.io, com você. Teste com amigos em redes diferentes (Wi-Fi de casas diferentes e 4G).
+
+### 9.6 Decisões (com sugestão)
+
+1. **Código da sala:** 4 caracteres, sem os que se confundem (0 e O, 1, I e L). São cerca de 800 mil combinações, e o
+   limite de tentativas impede adivinhar.
+   - **Sugestão:** 4.
+2. **No 👥:** "Pela internet" em cima e "Na mesma Wi-Fi" embaixo.
+   - **Sugestão:** sim.
+3. **Dono:** pode remover pessoas, e o posto passa adiante se ele sair.
+   - **Sugestão:** sim.
+4. **Sala vazia** acaba depois de 10 minutos.
+   - **Sugestão:** 10 minutos.
+5. **Nome provisório do servidor**, que aparece no endereço (`<nome>.fly.dev`).
+   - **Sugestão:** algo neutro, como `mesa-tfm`, até o nome do jogo ser decidido.
+6. **Mesmo código para o anfitrião da rede local e do servidor** (etapa 1).
+   - **Sugestão:** sim. Dá mais trabalho agora, mas evita duas versões das mesmas regras de sala que vão se separando com o tempo.
+7. **Conta no Fly.io:** só é preciso na etapa 4. As etapas 1 a 3 rodam no computador.
