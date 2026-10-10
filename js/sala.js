@@ -165,7 +165,7 @@ function salaCmd(c,x={}){
   else if(c==='comecar')anfComecaSala();
 }
 // as regras da sala: as das Configurações deste aparelho
-function cfgDaSala(){const c={mode:CFG.mode,diff:CFG.diff,start:CFG.start,combo:CFG.combo,fast:CFG.fast===true};RULES.forEach(x=>{if(CFG[x.k]===true)c[x.k]=true});return c}
+function cfgDaSala(){const c={mode:CFG.mode,diff:CFG.diff,start:CFG.start,combo:CFG.combo};RULES.forEach(x=>{if(CFG[x.k]===true)c[x.k]=true});return c}
 // a partida: cada pessoa no lugar escolhido (ou sorteado entre os lugares das pessoas)
 function salaComeca(){$('salaOv').classList.remove('show');$('endOv').classList.remove('show');salaCmd('comecar')}
 // as regras: as Configurações de sempre, sem a quantidade de adversários (vem dos lugares) e sem começar a partida

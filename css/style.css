@@ -491,6 +491,11 @@ body>.mesabtns{grid-row:4;grid-column:1;align-self:end;position:relative;z-index
 .sino{position:absolute;right:0.5rem;bottom:0;height:3.25rem;aspect-ratio:1;display:grid;place-items:center;padding:0;background:none;border:none;font-size:2.8rem;line-height:1;pointer-events:auto;transition:opacity .2s,filter .2s}
 .sino:disabled{opacity:.3;filter:grayscale(.7);cursor:default}
 .sino.lit{animation:pulse 1s infinite;filter:drop-shadow(0 0 0.5rem var(--cr))}
+/* tocado por você: o botão afunda e volta (sino de mesa, sem girar), aceso por um instante, e duas ondas saem dele */
+.sino.tocou{opacity:1;filter:drop-shadow(0 0 0.625rem var(--cy));transform-origin:50% 100%;animation:sinoBate .45s ease-out}
+@keyframes sinoBate{25%{transform:translateY(0.125rem) scale(1.1,.8)}55%{transform:translateY(-0.125rem) scale(.96,1.06)}}
+.sino-onda{position:absolute;border:3px solid var(--cy);border-radius:50%;pointer-events:none;opacity:0;animation:sinoOnda .75s ease-out forwards}
+@keyframes sinoOnda{from{transform:scale(.6);opacity:.9}to{transform:scale(1.9);opacity:0}}
 /* espaço embaixo da mão, do tamanho que tinham os botões; a barra do tempo fica no alto dele */
 /* a área da mão continua embaixo das cartas (com o mesmo fundo), com a barra do tempo para jogar */
 body>.handwrap{padding-bottom:1.5rem}
@@ -564,11 +569,11 @@ body>.handwrap{padding-bottom:1.5rem}
 .w-snow i{animation-play-state:paused}
 .table[data-weather="blizzard"] .w-snow i{animation-play-state:running}
 /* cada parte na sua linha da grade (a faixa de regras pode sumir sem a mesa perder a linha flexível) */
-/* Altura da mesa compacta (opção): em telas altas e estreitas a mesa tem altura máxima e a sobra fica
-   entre a barra do topo e as cadeiras, aproximando os adversários da mesa */
+/* em telas altas e estreitas a mesa tem altura máxima e a sobra fica entre a barra do topo e as cadeiras,
+   aproximando os adversários da mesa */
 @media (max-aspect-ratio:10/19){
-  :root.compact body{grid-template-rows:1fr auto auto minmax(0,calc(430*var(--u))) auto auto}
-  :root.compact body>.top{align-self:start}
+  body{grid-template-rows:1fr auto auto minmax(0,calc(430*var(--u))) auto auto}
+  body>.top{align-self:start}
 }
 /* Terminar e descobrir vencedor: aviso por cima de tudo enquanto o resto da partida é calculado */
 .turbo{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:1rem;text-align:center;font-weight:600;font-size:1.15rem;background:color-mix(in srgb,var(--bg) 78%,transparent)}

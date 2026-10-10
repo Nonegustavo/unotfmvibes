@@ -29,6 +29,34 @@ const MAGIC=['Tadá!','Essa era a sua carta?','Diante dos seus olhos!','Voilà!'
 const shownW=()=>$('deck').getBoundingClientRect().width;
 const tiltKeys=(dy,rot)=>[{transform:'translateY(0) rotate(0deg)',opacity:1},{transform:`translateY(${dy*.85}px) rotate(${rot}deg)`,opacity:1,offset:.75},{transform:`translateY(${dy}px) rotate(${rot}deg) scale(.9)`,opacity:0}];
 const tilt=()=>(Math.random()<.5?-1:1)*(8+Math.random()*10);
+/* Ímã: as cartas da cor aparecem de frente sobre quem jogou (a sua sai da mão) e, uma de cada vez, são puxadas cada vez
+   mais depressa até o Ímã na mesa, sumindo por baixo dele. Dura IMA_MS (a mesa espera) */
+const IMA_ESPERA=350; // as cartas aparecem enquanto o 🧲 grande ainda está no meio da mesa
+function imaFx(pi,cartas){
+  if(RM||S.turbo||!cartas.length)return;
+  const alvo=discardRect(),w=shownW(),seat=pi===0?null:targetRect(pi);
+  cartas.forEach((c,j)=>{
+    const src=pi===0?document.querySelector(`#hand [data-id="${c.id}"]`):null,r=src&&src.getBoundingClientRect();
+    if(!r&&!seat)return;
+    const cw=r?r.width:w,x0=r?r.left:Math.max(4,Math.min(innerWidth-w-4,seat.left+seat.width/2-w/2+(j-(cartas.length-1)/2)*w*.4)),y0=r?r.top:seat.bottom+4;
+    const el=makeCard(c);el.className=`card c-${c.chosen||c.color} flyclone`;el.disabled=true;
+    Object.assign(el.style,{position:'fixed',left:x0+'px',top:y0+'px',width:cw+'px',margin:'0',zIndex:21,pointerEvents:'none'});el.style.setProperty('--cw',cw+'px');
+    document.body.appendChild(el);if(src)src.style.visibility='hidden';
+    const s=alvo.width/cw,dx=alvo.left+alvo.width/2-(x0+cw/2)+(j%2?1:-1)*alvo.width*.12,dy=alvo.top+alvo.height/2-(y0+cw*.75),rot=(Math.random()<.5?-1:1)*(6+Math.random()*10);
+    const fim=`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(${s})`;
+    el.animate([
+      {transform:'scale(.6)',opacity:0},
+      {transform:'scale(1.06)',opacity:1,offset:.12},
+      {transform:'scale(1)',offset:.2},
+      // treme um pouco, já puxada na direção do Ímã
+      {transform:`translate(${dx*.03}px,${dy*.03}px) rotate(-3deg)`,offset:.32},
+      {transform:`translate(${dx*.06}px,${dy*.06}px) rotate(3deg)`,offset:.42,easing:'cubic-bezier(.6,0,.95,.5)'},
+      {transform:fim,opacity:1,offset:.9},
+      {transform:fim,opacity:0}
+    ],{duration:900,delay:IMA_ESPERA+j*160,fill:'both'});
+    setTimeout(()=>{el.remove();sfx('play')},IMA_ESPERA+j*160+830);
+  });
+}
 function vanishCards(target,cards,sp=1){
   if(RM||!cards.length)return 0;
   if(target===0){

@@ -1,5 +1,5 @@
 // Regras que mudam com várias pessoas, na rede de mentira (o anfitrião e dois convidados em abas): Segunda Chance de
-// cada pessoa, Dança das Cadeiras com pessoas trocando de lugar (jogada por bot, convidado e anfitrião) e Torneio de
+// cada pessoa (o botão só na vez dela), Dança das Cadeiras com pessoas trocando de lugar (jogada por bot, convidado e anfitrião) e Torneio de
 // Sobrevivência com pessoas saindo do torneio. A partida é montada à mão (cartas postas na mão de quem está com a vez,
 // pontos do torneio ajustados) e o teste confere o que cada tela mostra.
 // Uso: npm run test:rede-regras   (--ver abre o navegador visível)
@@ -46,14 +46,17 @@ try {
   confere(await ate(host, () => S && S.phase === 'play' && S.players.length === 5 && !S.busy), 'a partida começou com 5 cadeiras');
   await espera(800);
 
-  // ---------- Segunda Chance: cada pessoa tem a sua ----------
+  // ---------- Segunda Chance: cada pessoa tem a sua, e o botão só aparece na vez dela ----------
   const mull = p => p.evaluate(() => !document.getElementById('mullBtn').hidden);
-  confere(await mull(host) && await mull(ana) && await mull(bia), 'as três pessoas veem "Trocar mão"');
+  const vezDe = nome => host.evaluate(n => { S.turn = S.players.findIndex(p => p.name === n); S.tok++; atualiza(); }, nome);
+  await vezDe('Ana');
+  confere(await ate(ana, () => !document.getElementById('mullBtn').hidden, null, 5000) && !(await mull(host)) && !(await mull(bia)), 'só quem está com a vez (Ana) vê "Trocar mão"');
   const antes = await ana.evaluate(() => S.players[0].hand.map(c => c.id).sort().join(','));
   await ana.click('#mullBtn');
   confere(await ate(ana, a => S.players[0].hand.map(c => c.id).sort().join(',') !== a && document.getElementById('mullBtn').hidden, antes, 5000), 'Ana trocou a mão e o botão sumiu para ela');
-  await espera(600);
-  confere(await mull(host) && await mull(bia), 'o anfitrião e Bia continuam com a Segunda Chance');
+  await vezDe('Bia');
+  confere(await ate(bia, () => !document.getElementById('mullBtn').hidden, null, 5000) && !(await mull(ana)), 'na vez de Bia, ela vê "Trocar mão" (e Ana não)');
+  confere(await host.evaluate(() => S.players.filter(p => p.name === 'Anfitrião' || p.name === 'Bia').every(p => p.mull)), 'o anfitrião e Bia continuam com a Segunda Chance');
 
   // ---------- Dança das Cadeiras ----------
   // compara cada convidado com a mesa: ele se vê embaixo, a ordem é a da mesa girada, mão, vez e o outro lado do Portal

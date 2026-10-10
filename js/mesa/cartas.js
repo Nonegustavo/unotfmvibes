@@ -1,5 +1,7 @@
 /* unotfm, mesa: efeitos das cartas especiais (applySpecial), desafio, Carta da Regra, troca/carrossel e corte.
    Os desenhos e as janelas dessas cartas ficam em js/cards.js. Não usa nada da página */
+// quanto dura o Ímã puxando n cartas (a tela anima nesse tempo: imaFx)
+const IMA_MS=n=>1250+(n-1)*160;
 function discardCard(i,c,k=0){
   const p=S.players[i];p.hand=p.hand.filter(x=>x!==c);
   S.discard.splice(S.discard.length-1,0,c);
@@ -242,6 +244,8 @@ function autoPlay(pi,card){
   if(S.busy&&S.autoResolve)agendar(()=>S.autoResolve&&S.autoResolve(),800);
   else if(S.phase==='combo'&&S.players[S.turn]===me)endTurn();
 }
+// regras que o computador (bot, ou escolhendo por uma pessoa) nunca escolhe no Mix e na Carta da Regra
+const BOT_EVITA=['satisfaction'];
 const CARD_RULES=()=>RULES.filter(r=>r.g==='Cartas especiais').map(r=>r.k);
 function ruleOptions(n=2,pre){
   const pool=[...RULE_POOL,...CARD_RULES(),...Object.keys(DEF_RULES).filter(k=>DEF_RULES[k]!==R.combo),...(pre?['noaction','mess','mulligan','mini','maxi','twohands']:[])].filter(k=>!R[k]&&!(CONFLICT[k]||[]).some(x=>R[x])&&!(k==='bg'&&S&&S.side==='b')&&!(k==='nou'&&comboMode()==='none')&&!(k==='portal'&&!pre)
@@ -359,11 +363,17 @@ function applySpecial(pi,card){
       const r=massCheck();if(r==='win')return r;return selfCheck(pi)}
     case 'justice':{
       const k=Math.max(0,Math.min(opp.filter(i=>S.players[i].hand.length<p.hand.length).length,p.hand.length-1));
+      // funcionou: uma nota subindo por carta, junto com cada carta que voa; o som da Misericórdia só quando não funciona
+      if(k)emit({t:'som',k:'notasSobem',n:k});
       for(let j=0;j<k;j++)discardCard(pi,rand(p.hand),j);
-      emit({t:'fx',g:'🙏',txt:k?`${J(pi)} descartou ${k} carta${k>1?'s':''}`:'Ninguém tem menos cartas',cor:col,modo:'stamp'});log(`Misericórdia: ${J(pi)} descartou ${k}.`);
+      emit({t:'fx',g:'🙏',txt:k?`${J(pi)} descartou ${k} carta${k>1?'s':''}`:'Ninguém tem menos cartas',cor:col,modo:'stamp',...(k?{mudo:true}:{})});log(`Misericórdia: ${J(pi)} descartou ${k}.`);
       return selfCheck(pi)}
     case 'magnet':{emit({t:'3d',k:'sparks',onde:pi,args:[col]});
-      const same=p.hand.filter(c=>c.color===card.color);same.forEach((c,j)=>discardCard(pi,c,j));
+      const same=p.hand.filter(c=>c.color===card.color);
+      if(same.length){
+        p.hand=p.hand.filter(c=>!same.includes(c));same.forEach(c=>S.discard.splice(S.discard.length-1,0,c));
+        emit({t:'ima',p:pi,cartas:same.map(c=>({...c}))});emit({t:'pausa',ms:anim(IMA_MS(same.length))});
+      }
       emit({t:'fx',g:'🧲',txt:same.length?`${J(pi)} descartou ${same.length} carta${same.length>1?'s':''}`:'Nenhuma carta da cor',cor:col,modo:'stamp'});
       log(`Imã: ${J(pi)} descartou ${same.length}.`);return selfCheck(pi)}
     case 'tornado':{emit({t:'3d',k:'swirl',args:['tornado']});
@@ -405,7 +415,7 @@ function applySpecial(pi,card){
       return 'defer'}
     case 'oddeven':{const antes=S.traffic;S.traffic=S.traffic==='odd'?'even':S.traffic==='even'?'odd':rand(['odd','even']);
       emit({t:'fx',g:'🚦',txt:`Proibido vencer com cartas ${S.traffic==='odd'?'ímpares':'pares'}`,cor:col,modo:'stamp'});
-      seloVoa('🚦','mesa',antes?{de:`🚦${antes==='odd'?'ímpar':'par'}`,troca:true}:{});log(`Semáforo: proibido vencer com ${S.traffic==='odd'?'ímpares':'pares'}.`);return 'done'}
+      seloVoa('🚦','mesa',antes?{de:`🚦: 🔴 ${antes==='odd'?'ímpar':'par'}`,troca:true}:{});log(`Semáforo: proibido vencer com ${S.traffic==='odd'?'ímpares':'pares'}.`);return 'done'}
     case 'death':S.death=true;emit({t:'fx',g:'☠️',txt:'Morte súbita! Quem comprar ou errar é eliminado',cor:'#0d0a14',modo:'slam'});log('Morte súbita ativada.');return 'done';
     case 'share':{
       const copies=shuffle([...p.hand]).slice(0,10).map(c=>{const n=mk(c.color,c.type,c.value);n.extra=true;return n});
@@ -471,7 +481,9 @@ function applySpecial(pi,card){
       const opts=ruleOptions(3);
       if(!opts.length){emit({t:'fx',g:'📜',txt:'Nenhuma regra nova disponível',cor:col,modo:'stamp'});return 'done'}
       // a pessoa vê 3 opções sorteadas de novo quando a janela abre
-      return pedeEspecial(pi,card,'regra',{opcoes:()=>ruleOptions(3)},()=>({e:rand(opts),lista:opts,ver:'rule'}),
+      // o computador nunca escolhe a Compra Implacável (se só sobrar ela, não escolhe nada)
+      const doBot=opts.filter(k=>!BOT_EVITA.includes(k));
+      return pedeEspecial(pi,card,'regra',{opcoes:()=>ruleOptions(3)},()=>({e:doBot.length?rand(doBot):null,lista:opts,ver:'rule'}),
         (k,fim)=>{if(k==null)return 'done';addRule(pi,k,false,()=>fim('done'));return 'defer'})}
     case 'sun':case 'fog':case 'storm':case 'blizzard':{
       const w=WEATHER[T],antes=S.weather;S.weather=T;S.passes=0;
@@ -565,7 +577,7 @@ function doJumpIn(pi,card){
     if(humano(pi)&&ASK_TYPES.includes(card.type))S.preLanded=card;
     const r=playCard(pi,card,null);
     if(r==='win'||r==='defer')return;
-    if(r==='combo'){S.tok++;atualiza();pedirJogada(S.turn);return}
+    if(r==='combo'){S.tok++;atualiza();pedirJogada(S.turn,'extra');return}
     endTurn();
   };
   if(card.type!=='num'){announce(pi,card,go,fastMode()?250:480);return}

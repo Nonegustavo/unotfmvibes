@@ -11,6 +11,17 @@ const acao=a=>{
   if(!ok&&pv)desfazPrevia('recusada');
   return ok;
 };
+// quem toca o sino vê o botão ser batido (afunda e volta, como um sino de mesa) e duas ondas saindo dele
+function sinoFx(){
+  const b=$('unoBtn');if(RM||!b)return;
+  b.classList.remove('tocou');void b.offsetWidth;b.classList.add('tocou');
+  clearTimeout(sinoFx.t);sinoFx.t=setTimeout(()=>b.classList.remove('tocou'),900);
+  for(let k=0;k<2;k++){
+    const o=document.createElement('i');o.className='sino-onda';
+    Object.assign(o.style,{left:b.offsetLeft+'px',top:b.offsetTop+'px',width:b.offsetWidth+'px',height:b.offsetHeight+'px',animationDelay:(k*.18)+'s'});
+    b.parentElement.appendChild(o);setTimeout(()=>o.remove(),1100);
+  }
+}
 function fazPrevia(a){
   if(!S||S.phase==='over')return null;
   const me=S.players[0];
@@ -18,7 +29,7 @@ function fazPrevia(a){
   if(a.t==='sineta'){
     if(me.called||me.sinoAntes||me.out||S.weather==='fog'||!(me.hand.length===target()||sinoAntesOk(0)))return null;
     VIS.sineta={desde:Date.now()};setTimeout(()=>{if(VIS.sineta&&Date.now()-VIS.sineta.desde>=3900){VIS.sineta=null;render()}},4000);
-    sfx('bell');render();return null;
+    sfx('bell');sinoFx();render();return null;
   }
   if(a.t==='jogar'){
     const c=me.hand.find(x=>x.id===a.id);if(!c)return null;
@@ -153,7 +164,7 @@ function TELA(ev){
     case 'fx':return fx(ev.g,texto(ev.txt),ev.cor,ev.modo,ev.ms,ev.mudo);
     case 'tada':return fx('🎩',randVis(MAGIC),ev.cor,'stamp',ev.ms,true);
     case 'selo':return stampOn(ev.p,ev.ic,ev.cor);
-    case 'som':return sfx(ev.k);
+    case 'som':return sfx(ev.k,ev.n);
     // som das cartas compradas: no máximo um a cada 70 ms
     case 'somCompra':if(Date.now()-lastDrawSnd>70){lastDrawSnd=Date.now();sfx('draw')}return;
     case 'pensa':return pensaFx(ev);
@@ -184,6 +195,7 @@ function TELA(ev){
     case 'espia':return ev.p===0?revealCard(0,ev.carta):peek(ev.p,ev.carta);
     case 'revela':return revealCard(ev.p,ev.carta);
     case 'some':return vanishCards(ev.p,ev.cartas,ev.sp);
+    case 'ima':return imaFx(ev.p,ev.cartas);
     case 'magica':return ev.p===0?morphMine(ev.carta,ev.antes,ev.depois,ev.sp):showCards(ev.p,[ev.antes],'morph',ev.sp,[ev.depois]);
     case 'magicaFim':{const el=document.querySelector(`#hand [data-id="${ev.carta.id}"]`);if(el){el.innerHTML=faceHTML(ev.carta);el.setAttribute('aria-label',cardName(ev.carta))}return}
     case 'mostra4':
@@ -620,7 +632,7 @@ function tableStatus(){
   if(S.curse){const c=CURSES[S.curse.k];L.push({short:`${c.g}${S.curse.left}`,ic:c.g,name:`Maldição ${c.nm}`,txt:`${c.t.toLowerCase()}. Faltam ${S.curse.left} turno${S.curse.left===1?'':'s'}`,warn:1})}
   if(S.peace>0)L.push({short:`🌼${S.peace}`,ic:'🌼',name:'Paz',txt:`cartas de ação não têm efeito. Faltam ${S.peace} turno${S.peace===1?'':'s'}`});
   if(S.death)L.push({short:'☠️',ic:'☠️',name:'Morte súbita',txt:'quem precisar comprar ou cometer um erro é eliminado',warn:1});
-  if(S.traffic)L.push({short:`🚦${S.traffic==='odd'?'ímpar':'par'}`,ic:'🚦',name:'Semáforo',txt:`proibido vencer com carta ${S.traffic==='odd'?'ímpar':'par'}`});
+  if(S.traffic)L.push({short:`🚦: 🔴 ${S.traffic==='odd'?'ímpar':'par'}`,ic:'🚦',name:'Semáforo',txt:`proibido vencer com carta ${S.traffic==='odd'?'ímpar':'par'}`});
   if(R.overload)L.push({short:`🏋️${limit()}`,ic:'🏋️',name:'Sobrecarga',txt:`quem passar de ${limit()} cartas na mão é eliminado`});
   if(TOUR){const nm=TOUR.mode==='tournament'?'Torneio':'Torneio de Sobrevivência',head={ic:tourIc(),name:`${nm}, rodada ${TOUR.round}`,txt:TOUR.mode==='tournament'?`o primeiro a ${tourGoal()} pontos vence`:`quem chega a ${tourGoal()} pontos sai. Vence quem sobrar`};
     L.push({...head,short:`${tourIc()}${TOUR.round}ª`,rows:[head,...tourRanking()]})}
@@ -907,7 +919,8 @@ function desenha(){
   $('unoBtn').classList.toggle('lit',unoOk&&me.hand.length===target());
   dicaVez('sino',unoOk&&cedo,$('unoBtn'),`Toque o sino antes de ficar com ${target()} carta${target()>1?'s':''}!`,'esq');
   dicaVez('comprar',$('deck').classList.contains('chama'),$('deck'),'Nenhuma carta pode ser jogada: toque no monte para comprar!');
-  $('mullBtn').hidden=!(me.mull&&S.phase!=='over');
+  // Segunda Chance: só na sua vez
+  $('mullBtn').hidden=!(me.mull&&turn&&S.phase!=='over');
   $('chalBtn').hidden=!(turn&&S.phase==='play'&&S.pending>0&&S.chal&&S.chal.by!==0);
 }
 
@@ -1026,8 +1039,7 @@ setTimeout(()=>{const mb=document.querySelector('.seg[data-key=diff] [data-v=mas
         else hardClicks.n=0}
       if(k==='sound'){MUTED=!CFG.sound;save('unotfm-solo-mute',MUTED);if(!MUTED)sfx('special')}
       if(k==='vibrate'&&CFG.vibrate)buzz(40);
-      if(k==='compact')applyCompact();
-      if(k==='fx3d'||k==='sound'||k==='vibrate'||k==='ruleInfo'||k==='fast'||k==='compact'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
+      if(k==='fx3d'||k==='sound'||k==='vibrate'||k==='ruleInfo'){save('unotfm-solo-cfg',CFG);if(k==='fx3d'&&S){if(!CFG.fx3d)FX3D.reset();render()}}
       buildSettings()};
   });
   $('comboLegend').textContent=COMBO_DESC[CFG.combo]||'';$('modeLegend').textContent=MODE_DESC[CFG.mode]||'';$('rulesField').hidden=CFG.mode!=='custom';$('botsField').hidden=CFG.mode!=='custom';$('startField').hidden=CFG.mode!=='custom';
@@ -1307,15 +1319,6 @@ $('endRules').onclick=openSettings;
 $('closeSettings').onclick=()=>{$('settingsOv').classList.remove('show');voltaAoMenu()};
 $('startBtn').onclick=()=>{if(MENU_ABERTO){MENU_ABERTO=false;tbContinua()}save('unotfm-solo-cfg',CFG);R=rulesForMode();TOUR=null;$('settingsOv').classList.remove('show');newGame()};
 $('againBtn').onclick=()=>{$('endOv').classList.remove('show');R=rulesForMode();newGame()};
-/* Altura da mesa: a Compacta limita a mesa em telas altas e estreitas (o CSS decide pela proporção, TALL);
-   nas outras telas a opção não muda nada, e as Configurações avisam */
-const TALL=matchMedia('(max-aspect-ratio:10/19)');
-function applyCompact(){
-  document.documentElement.classList.toggle('compact',CFG.compact!==false);
-  $('compactWarn').hidden=TALL.matches;
-  if(S){render();if(S.turn!==0&&S.phase!=='over')placeMarker(S.turn,false)}
-}
-applyCompact();TALL.addEventListener('change',applyCompact);
 window.addEventListener('resize',()=>{if(!S)return;render();if(S.turn!==0&&S.phase!=='over')placeMarker(S.turn,false)});
 /* PWA: instalação dentro do jogo */
 let installEvt=null;

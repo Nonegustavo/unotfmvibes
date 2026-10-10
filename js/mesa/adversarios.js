@@ -1,14 +1,15 @@
 /* unotfm, mesa: inteligência dos adversários (inclui o nível Mestre) e o controlador deles (CONTROLES.bot).
    Não usa nada da página */
 /* ---------- bots ---------- */
-// quick: compra seguida (Compra Implacável), sem o tempo de pensar de uma jogada
+// quick: compra seguida (Compra Implacável), sem o tempo de pensar de uma jogada; 'extra': carta a mais da mesma vez
+// (combo, Perfeição, depois de comprar), com bem menos tempo de pensar
 function scheduleBot(quick){
   const g=S.gen,tok=S.tok;
   agendar(()=>{
     if(g!==S.gen||tok!==S.tok||S.phase==='over'||!deBot(S.turn)||S.busy)return;
     if(cur().out){endTurn();return}
     botAct();
-  },quick?(fastMode()?120:300):fastMode()?Math.max(350+rng()*250,Math.min(700,(S.fxUntil||0)-RELOGIO.agora())):Math.max(1400+rng()*700,(S.fxUntil||0)-RELOGIO.agora()+400));
+  },quick==='extra'?(fastMode()?200:Math.max(450+rng()*250,(S.fxUntil||0)-RELOGIO.agora()+300)):quick?(fastMode()?120:300):fastMode()?Math.max(350+rng()*250,Math.min(700,(S.fxUntil||0)-RELOGIO.agora())):Math.max(1400+rng()*700,(S.fxUntil||0)-RELOGIO.agora()+400));
 }
 function colorCounts(hand){const o={r:0,y:0,g:0,b:0};hand.forEach(c=>{if(c.color!=='w')o[c.color]++});return o}
 /* ---------- Mestre: memória e decisões ---------- */

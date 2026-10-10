@@ -286,6 +286,9 @@ const SND={
   equal:()=>{tone(440,.2,{type:'triangle',vol:.12});tone(440,.25,{type:'triangle',vol:.12,at:.22})},
   // Carta da Misericórdia (js/sons.js)
   justice:()=>{const a=audio();if(a)misericordia(a,MASTER,SOM_MISERICORDIA)},
+  // Misericórdia que funcionou: uma nota subindo por carta descartada, no ritmo das cartas voando para a mesa
+  notasSobem:n=>{const esc=[523.3,587.3,659.3,784,880,1046.5,1174.7,1318.5,1568,1760];
+    for(let i=0;i<(n||1);i++){const f=esc[Math.min(i,esc.length-1)];tone(f,.4,{type:'triangle',vol:.12,at:i*.09});tone(f*2,.22,{vol:.03,at:i*.09})}},
   magnet:()=>{tone(120,.7,{type:'square',vol:.04,to:240});tone(240,.7,{vol:.06,to:480})},
   recycle:()=>{tone(400,.18,{to:700,vol:.1});tone(700,.18,{to:400,vol:.1,at:.18});tone(400,.2,{to:800,vol:.1,at:.36})},
   luck:()=>arp([1318,1568,2093,1568,2093],.06,{type:'sine',vol:.08,d:.2}),
@@ -318,7 +321,7 @@ const SND={
   portal:()=>{noise(.9,{f:200,fTo:3000,vol:.14,q:4});arp([392,523,659,880,1175],.08,{type:'sine',vol:.09,d:.35,at:.15});tone(110,.9,{to:55,vol:.12})},
   siren:()=>{tone(700,.25,{type:'square',vol:.08,to:1000});tone(1000,.25,{type:'square',vol:.08,to:700,at:.25})},
 };
-function sfx(k){if(MUTED||!SND[k])return;try{SND[k]()}catch(e){}}
+function sfx(k,n){if(MUTED||!SND[k])return;try{SND[k](n)}catch(e){}}
 function sfxGlyph(g){
   const s=String(g);
   if(s===ARROWS)return sfx('rev');

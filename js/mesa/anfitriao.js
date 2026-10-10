@@ -236,7 +236,6 @@ function limpaCfg(c){
   r.diff=um(c.diff,Object.keys(DIFF),'normal');
   r.start=um(c.start,[3,4,5,6,7,8,9,10],7);
   r.combo=um(c.combo,['normal','rise','super','none'],'normal');
-  r.fast=c.fast===true;
   for(const x of RULES)r[x.k]=c[x.k]===true&&!DEF_RULES[x.k];
   for(const [a,b] of CONFLICT_PAIRS)if(r[a]&&r[b])r[b]=false;
   if(r.nou&&r.combo==='none')r.nou=false;

@@ -109,7 +109,9 @@ function balaoPessoa(pi,ped){
     return r0(e,...resto);
   };
 }
-// a vez (ou a continuação dela, no combo e depois de comprar) é de pi: o adversário pensa e joga; a pessoa usa a tela
+// a vez (ou a continuação dela, no combo e depois de comprar) é de pi: o adversário pensa e joga; a pessoa usa a tela.
+// rapido: true na Compra Implacável; 'extra' nas cartas a mais da mesma vez (combo, Perfeição, depois de comprar),
+// em que o bot pensa bem menos
 function pedirJogada(pi,rapido){
   ctrl(pi).jogada(pi,rapido);
   if(humano(pi))poeRelogio(pi,'jogada',()=>esgotouJogada(pi));
@@ -274,12 +276,12 @@ function newGame(){
     S.busy=true;emit({t:'seguraFaixa'});atualiza();
     // as pessoas escolhem uma de cada vez (cada uma já vê as regras de quem escolheu antes), depois os adversários
     const pessoas=S.players.map((p,i)=>i).filter(i=>humano(i)&&!S.players[i].out);
-    const adversarios=()=>{S.players.forEach((p,i)=>{if(humano(i)||p.out)return;const b=ruleOptions(4,true).filter(k=>k!=='mess');if(b.length)addRule(i,b[0],true)});listaMix(pessoas)};
+    const adversarios=()=>{S.players.forEach((p,i)=>{if(humano(i)||p.out)return;const b=ruleOptions(4,true).filter(k=>k!=='mess'&&!BOT_EVITA.includes(k));if(b.length)addRule(i,b[0],true)});listaMix(pessoas)};
     const escolhe=(k,op)=>{
       if(k>=pessoas.length)return adversarios();
       const pi=pessoas[k];op=op||ruleOptions(3,true);
       if(!op.length)return escolhe(k+1);
-      pedir(pi,{tipo:'regra',mix:true,bot:()=>({e:op[0],lista:op,ver:'rule'}),
+      pedir(pi,{tipo:'regra',mix:true,bot:()=>({e:op.find(k=>!BOT_EVITA.includes(k))??null,lista:op,ver:'rule'}),
         tela:{opcoes:()=>op,titulo:'Mix de Regras',sub:k===0?'Você escolhe primeiro. Depois cada adversário escolhe a regra dele. As cartas só são distribuídas depois.':'Escolha a sua regra. Ela entra junto com as que já foram escolhidas.'},
         responde:r=>{if(r!=null)addRule(pi,r,true);escolhe(k+1)}});
     };
@@ -533,6 +535,7 @@ function endTurn(){
   if(!crossed&&endTurnHook(S.turn))return;
   S.phase='play';S.drawnId=null;S.comboValue=null;S.seqDir=null;S.busy=false;
   let steps=S.extra?0:1;steps+=S.skip===true?1:(S.skip||0);
+  S.deNovo=S.extra; // Perfeição: quem jogou joga de novo (o bot, mais depressa)
   S.extra=false;S.skip=false;
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
   if(S.pending>0&&comboMode()==='none'&&!R.nou){
@@ -562,8 +565,9 @@ function startTurn(){
   if(cp.ctrlReal&&!cp.caiu&&(cp.esgotou||0)<3)devolve(S.turn);
   atualiza();
   // a pessoa confusa joga ao acaso (a mesa joga por ela); o adversário confuso joga ao acaso no botAct
+  const deNovo=S.deNovo;S.deNovo=false;
   if(humano(S.turn)&&confused(S.turn))autoHuman(S.turn);
-  else pedirJogada(S.turn);
+  else pedirJogada(S.turn,deNovo?'extra':false);
   scheduleJumps();
 }
 function takeDraw(pi){
@@ -680,7 +684,7 @@ function afterDraw(pi,drawn,count,wasCalled){
     agendar(()=>{if(g!==S.gen||S.phase!=='drawn'||S.turn!==pi)return;S.busy=false;endTurn()},700);return;
   }
   S.tok++;atualiza();
-  pedirJogada(pi);
+  pedirJogada(pi,'extra');
 }
 function endRound(pi){
   S.phase='over';emit({t:'fechaJanelas'});
@@ -806,6 +810,6 @@ function termina(pi,card,col){
   S.busy=false;
   const r=playCard(pi,card,col);
   if(r==='win'||r==='defer')return;
-  if(r==='combo'){S.tok++;atualiza();pedirJogada(S.turn);return} // S.turn: a Dança das Cadeiras pode ter mudado o número da cadeira
+  if(r==='combo'){S.tok++;atualiza();pedirJogada(S.turn,'extra');return} // S.turn: a Dança das Cadeiras pode ter mudado o número da cadeira
   endTurn();
 }

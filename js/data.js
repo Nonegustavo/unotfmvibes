@@ -2,8 +2,8 @@
    Os dados das regras ficam em js/mesa/dados.js */
 const $=id=>document.getElementById(id);
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-// opções da mesa que vêm da página: movimento reduzido e a velocidade escolhida nas configurações
-OPCOES.semAnimacao=RM;Object.defineProperty(OPCOES,'acelerada',{get:()=>CFG.fast===true});
+// opções da mesa que vêm da página: movimento reduzido (a velocidade é sempre a normal)
+OPCOES.semAnimacao=RM;
 // cores do lado do Portal e da regra Azul e Verde na página (os nomes das cores ficam com a mesa: nomesCor)
 function applyBg(){
   const sb=!!(S&&S.side==='b');
@@ -39,8 +39,6 @@ const SEGS={
   mode:[['classic','Clássico'],['mix','Mix de Regras'],['custom','Personalizado']],
   fx3d:[[true,'Ligados'],[false,'Desligados']],
   vibrate:[[true,'Ligada'],[false,'Desligada']],
-  fast:[[false,'Normal'],[true,'Acelerada']],
-  compact:[[false,'Livre'],[true,'Compacta']],
   ruleInfo:[[true,'Ligado'],[false,'Desligado']],
   bots:[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']],
   diff:[['easy','Fácil'],['normal','Normal'],['hard','Difícil'],['master','Mestre']],
@@ -49,14 +47,14 @@ const SEGS={
 };
 const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.vibrate=true;DEF.ruleInfo=true;DEF.fast=false;DEF.compact=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DEF={bots:3,diff:'normal',start:7,combo:'normal'};RULES.forEach(r=>DEF[r.k]=false);DEF.poker=true;DEF.vibrate=true;DEF.ruleInfo=true;DEF.fx3d=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 let CFG=Object.assign({},DEF,load('unotfm-solo-cfg',{}));
 // configuração salva com duas regras incompatíveis (conflito novo): mantém só a primeira
 CONFLICT_PAIRS.forEach(([a,b])=>{if(CFG[a]&&CFG[b])CFG[b]=false});
 let MESTRE=load('unotfm-solo-master',false);if(CFG.diff==='master'&&!MESTRE)CFG.diff='hard';
 let hardClicks={n:0,t:0};
-// regras que não existem mais, guardadas em configurações antigas
-['flash','time','limbo','addrules','hard','limitless','drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise','red','blue','yellow','green'].forEach(k=>{delete CFG[k]});
+// regras e opções que não existem mais (Velocidade do jogo e Altura da mesa), guardadas em configurações antigas
+['fast','compact','flash','time','limbo','addrules','hard','limitless','drekkemaus','jingle','papaille','charlotte','elisah','buffy','snowy','icemice','elise','red','blue','yellow','green'].forEach(k=>{delete CFG[k]});
 RULES.forEach(r=>{if(CFG[r.k]&&(CONFLICT[r.k]||[]).some(x=>CFG[x]&&RULES.findIndex(q=>q.k===x)<RULES.findIndex(q=>q.k===r.k)))CFG[r.k]=false});
 const NOU_OFF='Incompatível com a defesa contra compras desativada';if(CFG.combo==='none')CFG.nou=false;
 if(!CFG.mode)CFG.mode=RULES.some(r=>r.k!=='poker'&&CFG[r.k])?'custom':'mix';

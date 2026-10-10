@@ -44,7 +44,7 @@ async function cenarioNaPagina(c) {
   for (const [, t] of TB.live) nativeClear(t.h);
   TB.live.clear();
   MUTED = true;
-  CFG = Object.assign({}, DEF, { mode: 'custom', poker: false, fx3d: false, fast: false, diff: c.dif || 'normal' }, c.regras);
+  CFG = Object.assign({}, DEF, { mode: 'custom', poker: false, fx3d: false, diff: c.dif || 'normal' }, c.regras);
   R = rulesForMode(); TOUR = null;
   window.SEMENTE = c.semente;
   // o registro completo da partida (o do jogo guarda só as últimas linhas)

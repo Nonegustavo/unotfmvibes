@@ -51,9 +51,7 @@ function novaMesa(sala) {
   const ct = h => { clearTimeout(h); timers.delete(h); };
   const ctx = vm.createContext({ console, setTimeout: st, clearTimeout: ct });
   for (const s of ARQUIVOS) s.runInContext(ctx);
-  // jogada acelerada: a da configuração de quem criou a sala (na página, vem das Configurações do aparelho)
-  vm.runInContext(`function TELA() {} ANF.sala = true; ANF.manterCaidos = true; anfInicia();
-    Object.defineProperty(OPCOES, 'acelerada', { get: () => !!(ANF.cfg && ANF.cfg.fast) });`, ctx);
+  vm.runInContext(`function TELA() {} ANF.sala = true; ANF.manterCaidos = true; anfInicia();`, ctx);
   sala.parar = () => { for (const h of timers) clearTimeout(h); timers.clear(); };
   return ctx;
 }
