@@ -119,7 +119,7 @@ try {
     confere(barra, 'o convidado vê a barra do tempo na vez dele');
     confere(substituido, 'tempo esgotado: o computador jogou pelo convidado');
     confere(fixo, 'depois de 3 tempos esgotados seguidos, o computador ficou na cadeira');
-    confere(await host.evaluate(g => seatStatus(g).some(x => x.ic === '🤖'), g), 'a cadeira dele mostra 🤖 para o anfitrião');
+    confere(await host.evaluate(g => seatStatus(g).some(x => x.ic === '💤'), g), 'a cadeira dele mostra 💤 (Ausente) para o anfitrião');
     // ele toca numa carta (ou compra) na vez dele: volta a jogar
     let voltou = false;
     for (let k = 0; k < 400 && !voltou; k++) {

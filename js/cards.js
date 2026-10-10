@@ -288,7 +288,7 @@ function flyRules(src,done=()=>{}){
   });
 }
 function openRuleChoice(opts,cb,title='Carta da Regra',sub='Escolha uma regra para adicionar à partida.'){
-  $('swaps').classList.remove('row');$('swapTitle').textContent=title;$('swapSub').textContent=sub;
+  fechaAlvos();$('swaps').classList.remove('row');$('swapTitle').textContent=title;$('swapSub').textContent=sub;
   const desc=k=>(RULES.find(r=>r.k===k)||{}).d||'';
   const icon=ruleIcon;
   $('swaps').innerHTML=opts.map(k=>`<button data-k="${k}" style="flex-direction:column;align-items:flex-start;gap:4px"><span style="display:flex;align-items:center;gap:10px"><span class="av" style="background:var(--accent);font-size:1.05rem">${icon(k)}</span>${RNAME[k]}</span><small style="margin:0;font-weight:400">${desc(k)}</small></button>`).join('');

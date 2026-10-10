@@ -976,7 +976,7 @@ function abrirPedido(pi,ped){
   if(!ped.mix&&!ped.ja&&S.auto&&S.autoResolve)setTimeout(()=>S.autoResolve&&S.autoResolve(),800);
 }
 /* ---------- overlays ---------- */
-function closeOverlays(){['colorOv','pickOv','swapOv','simonOv','pokerOv','histOv'].forEach(id=>$(id).classList.remove('show'));if(S)S.autoResolve=null}
+function closeOverlays(){['colorOv','pickOv','swapOv','simonOv','pokerOv','histOv'].forEach(id=>$(id).classList.remove('show'));fechaAlvos();if(S)S.autoResolve=null}
 function placeLite(){const t=$('handwrap').getBoundingClientRect().top;document.documentElement.style.setProperty('--liteBottom',Math.max(80,innerHeight-t+4)+'px')}
 function openColors(cb,preview){
   placeLite();
@@ -1011,7 +1011,50 @@ function openSimon(n,cb){
     sfx('tick');
     if(taps.length>=n)setTimeout(done,250)};
 }
+/* Escolher um jogador: as cadeiras descem do topo até a janela (embaixo, acima da mão), na mesma ordem e do mesmo jeito,
+   e a pessoa toca na de quem quer escolher. Os eliminados (e quem a carta não deixa escolher) aparecem apagados; se a
+   carta deixar escolher a si mesmo, há "Eu mesmo" embaixo. Depois da escolha, as cadeiras sobem de volta e só então a
+   ação acontece (cb) */
+const ALVO_MS=380;
 function openTarget(title,sub,opts,cb){
+  const ids=S.players.map((p,i)=>i).filter(i=>i>0),orig=Object.fromEntries(ids.map(i=>[i,document.querySelector(`#seatrow [data-seat="${i}"]`)]));
+  if(ids.some(i=>!orig[i]))return openTargetLista(title,sub,opts,cb);
+  placeLite();
+  $('swapTitle').textContent=title;$('swapSub').textContent=sub;$('swaps').classList.remove('row');
+  const ov=$('swapOv');ov.classList.add('lite','alvos');
+  const fila=document.createElement('div');fila.className=`rail alvo-rail ${$('rail').classList.contains('many')?'many':''}`;
+  const row=document.createElement('div');row.className='seatrow';fila.appendChild(row);
+  ids.forEach(i=>{
+    const c=orig[i].cloneNode(true);c.removeAttribute('data-seat');c.dataset.i=i;c.classList.remove('on');c.querySelectorAll('.catch').forEach(x=>x.remove());
+    if(opts.includes(i)){c.setAttribute('role','button');c.tabIndex=0;c.setAttribute('aria-label',`Escolher ${S.players[i].name}`)}
+    else{c.classList.add('nao');c.setAttribute('aria-disabled','true')}
+    row.appendChild(c);
+  });
+  $('swaps').innerHTML='';$('swaps').appendChild(fila);
+  if(opts.includes(0))$('swaps').insertAdjacentHTML('beforeend','<button type="button" class="btn alvo-eu" data-i="0">Eu mesmo</button>');
+  ov.classList.add('show');$('rail').classList.add('escolhendo');
+  // descem: cada cópia sai do lugar da cadeira de verdade
+  const voa=(c,de,para,ms,atraso)=>c.animate([{transform:`translate(${de.left-para.left}px,${de.top-para.top}px)`},{transform:'none'}],{duration:ms,delay:atraso,easing:'cubic-bezier(.3,.8,.3,1)',fill:'backwards'});
+  if(!RM)[...row.children].forEach((c,k)=>voa(c,orig[c.dataset.i].getBoundingClientRect(),c.getBoundingClientRect(),ALVO_MS,k*40));
+  let feito=false;
+  const done=i=>{
+    if(feito)return;feito=true;S.autoResolve=null;
+    if(RM){fechaAlvos();cb(i);return}
+    // sobem de volta até as cadeiras e só então a ação acontece
+    [...row.children].forEach(c=>{const de=c.getBoundingClientRect(),dest=document.querySelector(`#seatrow [data-seat="${c.dataset.i}"]`);if(!dest)return;const para=dest.getBoundingClientRect();
+      c.animate([{transform:'none'},{transform:`translate(${para.left-de.left}px,${para.top-de.top}px)`}],{duration:ALVO_MS*.85,easing:'cubic-bezier(.5,0,.7,.4)',fill:'forwards'})});
+    ov.classList.add('voltando');
+    setTimeout(()=>{fechaAlvos();cb(i)},ALVO_MS*.85);
+  };
+  S.autoResolve=()=>done(fewest(0,opts));
+  $('swaps').onclick=e=>{const b=e.target.closest('[data-i]');if(b&&!b.classList.contains('nao'))done(+b.dataset.i)};
+  $('swaps').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const b=e.target.closest('[data-i]');if(b&&!b.classList.contains('nao')){e.preventDefault();done(+b.dataset.i)}};
+  const primeiro=row.querySelector('[role=button]');if(primeiro)primeiro.focus({preventScroll:true});
+}
+// fecha a escolha pelas cadeiras: as de verdade voltam a aparecer
+function fechaAlvos(){$('swapOv').classList.remove('show','lite','alvos','voltando');$('rail').classList.remove('escolhendo')}
+// sem as cadeiras na tela (não deveria acontecer): a lista de antes
+function openTargetLista(title,sub,opts,cb){
   $('swapTitle').textContent=title;$('swapSub').textContent=sub;$('swaps').classList.add('row');
   $('swaps').innerHTML=opts.map(i=>{const p=S.players[i];return `<button data-i="${i}"><span class="av" style="background:${p.col}">${p.name[0]}</span>${p.name}${partner(i)===0?' (dupla)':''}<small>${handHidden(i)?'? cartas':p.hand.length+' carta'+(p.hand.length===1?'':'s')}</small></button>`}).join('');
   $('swapOv').classList.add('show');

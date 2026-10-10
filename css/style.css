@@ -173,6 +173,16 @@
 #simonBtns button{height:4rem;font-size:.85rem}
 .hand .card.revealed{transform:translateY(-1.375rem) scale(1.08)!important;box-shadow:0 0 0 3px var(--cg),0 0 1.125rem var(--cg)!important;z-index:3}
 .swaps.row{flex-direction:row;flex-wrap:wrap;justify-content:center}
+/* escolher um jogador: as cadeiras descem até a janela (as de verdade somem enquanto isso) */
+#swapOv.alvos .sheet{overflow:visible;width:min(98vw,40rem);padding-left:0.375rem;padding-right:0.375rem;text-align:center}
+.alvo-rail{padding:0.75rem 0 0.25rem;overflow:visible}
+.alvo-rail .seat{cursor:pointer}
+.alvo-rail .seat[role=button]:hover,.alvo-rail .seat[role=button]:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);outline:none}
+.alvo-rail .seat.nao{opacity:.4;filter:grayscale(.7);cursor:default}
+#swapOv.voltando .sheet h2,#swapOv.voltando .sheet .sub,#swapOv.voltando .alvo-eu{opacity:0;transition:opacity .15s}
+#swapOv.voltando .sheet{background:transparent;box-shadow:none;transition:background .2s,box-shadow .2s}
+.rail.escolhendo .seat{visibility:hidden}
+.alvo-eu{display:block;margin:0.75rem auto 0;min-width:9rem;text-align:center;justify-content:center}
 .swaps.row button{flex-direction:column;align-items:center;gap:0.25rem;min-width:5.375rem;flex:0 1 6.875rem;text-align:center;padding:0.625rem 0.5rem}
 .swaps.row small{margin:0}
 .seat.webbed::after,.handwrap.webbed::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:.8;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%237d7896' stroke-width='1.6'%3E%3Cpath d='M50 0V100M0 50H100M5 5L95 95M95 5L5 95'/%3E%3Cpath d='M50 12L77 23 88 50 77 77 50 88 23 77 12 50 23 23Z'/%3E%3Cpath d='M50 26L67 33 74 50 67 67 50 74 33 67 26 50 33 33Z'/%3E%3Cpath d='M50 38L58 42 62 50 58 58 50 62 42 58 38 50 42 42Z'/%3E%3C/svg%3E") center/cover no-repeat}
