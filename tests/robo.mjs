@@ -45,7 +45,8 @@ function __decide(sorte, feitas) {
   if (me.out) return null;
   const uma = (k, a) => feitas.has(k) ? null : (feitas.add(k), a);
   if (me.mull && sorte() < 0.3) return uma('mull', { t: 'trocarMao' });
-  if (!me.called && S.weather !== 'fog' && (me.hand.length === target() || (me.hand.length === target() + 1 && S.turn === 0)) && sorte() < 0.85)
+  // o sino: como o botão da tela (no alvo, ou antes de jogar, com carta jogável)
+  if (!me.called && !me.sinoAntes && S.weather !== 'fog' && (me.hand.length === target() || sinoAntesOk(0)) && sorte() < 0.85)
     return uma('sineta' + S.tok, { t: 'sineta' });
   for (let i = 1; i < S.players.length; i++) {
     const q = S.players[i];

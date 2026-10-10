@@ -5,7 +5,7 @@
 // - nenhum erro nas abas e nenhuma partida travada; as partidas terminam em todas as abas;
 // - a mão de cada convidado é a que a mesa tem para ele, e todas as abas mostram a mesma vez, pilha e monte;
 // - nenhum convidado recebe o que não pode saber (mãos dos outros, monte, memória dos adversários, blefe do +4, semente);
-// - a carta tocada sai da mão na hora (resposta instantânea), a sineta não toca duas vezes e o anfitrião vê o balão de
+// - a carta tocada sai da mão na hora (resposta instantânea), o sino de quem tocou não volta da mesa (nem som nem aviso) e o anfitrião vê o balão de
 //   quem está escolhendo.
 // Uso: npm run test:rede              (3 partidas, 1 convidado, rede de mentira)
 //      npm run test:rede -- 5 --regras=trade,gift,simon,rule,jumpin   (regras do modo Personalizado; "mix" para o Mix)
@@ -63,10 +63,10 @@ if (WEBRTC) {
     await host.evaluate(t => redeResposta(t), resposta);
   }
 }
-// conta os avisos da sineta de cada convidado: o dele não pode tocar duas vezes (na prévia e na confirmação)
-for (const c of convs) await c.evaluate(() => { const t0 = toast; window.__sinos = []; window.__sinosDe = []; window.toast = (m, cor) => { if (/Você tocou a sineta/.test(m)) { window.__sinos.push(Date.now()); window.__sinosDe.push({ t: Date.now(), de: new Error().stack.split(/\n/).slice(2, 6).join(' < '), mao: S.players[0].hand.length, vez: S.turn, called: S.players[0].called, sineta: !!VIS.sineta }); } return t0(m, cor); }; });
+// o sino de cada convidado: quem tocou já ouviu na prévia; o som e o aviso da mesa não podem voltar para ele
+for (const c of convs) await c.evaluate(() => { window.__sinos = 0; const t0 = toast, T0 = TELA; window.toast = (m, cor) => { if (/Você tocou o sino/.test(m)) window.__sinos++; return t0(m, cor); }; window.TELA = ev => { if (ev && ev.p === 0 && ((ev.t === 'som' && ev.k === 'bell') || (ev.t === 'aviso' && /sino/.test(ev.txt)))) window.__sinos++; return T0(ev); }; });
 
-// um passo de uma pessoa: resolve janelas, toca a sineta, joga uma carta jogável ou compra/passa
+// um passo de uma pessoa: resolve janelas, toca o sino, joga uma carta jogável ou compra/passa
 const passo = p => p.evaluate(() => {
   if (!S || !S.players) return 'esperar';
   const shown = id => document.getElementById(id)?.classList.contains('show');
@@ -76,7 +76,7 @@ const passo = p => p.evaluate(() => {
   if (shown('pokerOv')) return click(document.getElementById('pokerGo')) && 'mix';
   for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps'], ['simonOv', 'simonBtns']])
     if (shown(ov)) { const b = [...document.querySelectorAll(`#${box} button, #${box} .card`)].filter(x => !x.disabled); return click(pick(b)) && ov; }
-  // sineta: quem toca vê o botão marcado na hora
+  // sino: quem toca vê o botão marcado na hora
   if (document.querySelectorAll('#hand .card').length === 2 && !S.players[0].called && !document.getElementById('unoBtn').disabled) { document.getElementById('unoBtn')?.click(); if (S.players[0].hand.length === 2 && (S.turn === 0 || S.players[0].hand.length === target()) && !VIS.sineta && !S.players[0].called) window.__sinetaLenta = (window.__sinetaLenta || 0) + 1; }
   const ok = [...document.querySelectorAll('#hand .card.ok')];
   // na vez, a carta tocada sai da mão na hora (resposta instantânea), antes de a mesa confirmar
@@ -174,10 +174,9 @@ for (let g = 1; g <= PARTIDAS; g++) {
   if (resultado === 'TRAVOU') break;
 }
 for (const c of convs) {
-  const sino = await c.evaluate(() => ({ lenta: window.__sinetaLenta || 0, duplos: window.__sinos.filter((t, i, l) => i && t - l[i - 1] < 1200).length, total: window.__sinos.length }));
-  if (sino.duplos) console.log(JSON.stringify(await c.evaluate(() => window.__sinosDe.filter((x, i, l) => (i && x.t - l[i - 1].t < 1200) || (l[i + 1] && l[i + 1].t - x.t < 1200))), null, 1));
-  if (sino.duplos) problemas.push(`a sineta de ${c.nome} tocou duas vezes ${sino.duplos} vez(es)`);
-  if (sino.lenta) problemas.push(`a sineta de ${c.nome} não respondeu na hora ${sino.lenta} vez(es)`);
+  const sino = await c.evaluate(() => ({ lenta: window.__sinetaLenta || 0, eco: window.__sinos }));
+  if (sino.eco) problemas.push(`o sino de ${c.nome} voltou da mesa para ele ${sino.eco} vez(es)`);
+  if (sino.lenta) problemas.push(`o sino de ${c.nome} não respondeu na hora ${sino.lenta} vez(es)`);
 }
 await browser.close(); server.close();
 const todos = [...new Set([...problemas, ...erros])];

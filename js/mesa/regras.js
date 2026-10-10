@@ -142,11 +142,11 @@ function give(pi,c){
     return;
   }
   p.hand.push(c);
-  if(p.hand.length>target())p.called=false;
+  if(p.hand.length>target()){p.called=false;p.sinoAntes=false}
   emit({t:'compra',p:pi,id:c.id});
 }
 function drawOne(pi){if(S.weather==='blizzard'&&S.phase!=='deal')return null;if(thornHit(pi))return null;const c=popDeck();if(c)give(pi,c);return c}
-// Maldição do espinho: qualquer compra (dado, chuva, desafio, sol, pego sem tocar a sineta…) marca o jogador, que não recebe a carta
+// Maldição do espinho: qualquer compra (dado, chuva, desafio, sol, pego sem tocar o sino…) marca o jogador, que não recebe a carta
 // e é eliminado no fim do efeito (massCheck/checkLimits/endTurn), sem interromper o efeito no meio
 function thornHit(pi){
   const p=S.players[pi];
@@ -331,7 +331,7 @@ function buildSideB(startOf){
   const saved=captureSide();
   R={...saved.R,bg:false};
   S.deck=buildDeck();
-  S.players.forEach(p=>{p.hand=[];p.hand2=[];p.called=false;p.luck=false;p.webbed=false;p.confuse=false;p.confuseNext=false;p.treasure=0;p.batata=0;p.escaped=false});
+  S.players.forEach(p=>{p.hand=[];p.hand2=[];p.called=false;p.sinoAntes=false;p.luck=false;p.webbed=false;p.confuse=false;p.confuseNext=false;p.treasure=0;p.batata=0;p.escaped=false});
   for(let r=0;r<10;r++)S.players.forEach((p,i)=>{if(r<startOf(i)&&!p.out){const c=popDeck();if(c&&c.type==='bomb'){S.deck.unshift(c);const d=popDeck();if(d)p.hand.push(d)}else if(c)p.hand.push(c)}});
   if(R.twohands)S.players.forEach((p,i)=>{if(p.out)return;for(let r=0;r<startOf(i);r++){const c=popDeck();if(c&&c.type!=='bomb')p.hand2.push(c)}});
   let first;S.discard=[];
@@ -458,8 +458,20 @@ function playCard(pi,card,chosen){
 function afterOneCard(pi){
   const p=S.players[pi];
   if(S.weather==='fog')return;
-  if(deBot(pi)&&!p.called){p.called=rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called){emit({t:'som',k:'bell'});log(`${J(pi)} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou a sineta!`,cor:'var(--cr)'})}}
+  // quem tocou o sino antes de jogar: os outros só ouvem agora, com a carta já na mesa (como com os bots)
+  if(p.sinoAntes){p.sinoAntes=false;p.called=true;anunciaSino(pi,true);return}
+  if(deBot(pi)&&!p.called){p.called=rng()<(S.death?Math.max(.96,DIFF[R.diff].call):DIFF[R.diff].call);if(p.called)anunciaSino(pi)}
   if(!p.called)scheduleCatch(pi);
+}
+// o som e o aviso do sino; quem tocou com as próprias mãos (pessoa) já ouviu na hora, pela prévia da tela
+function anunciaSino(pi,pessoa){
+  const so=pessoa?{exceto:pi}:{};
+  emit({t:'som',k:'bell',p:pi,...so});log(`${J(pi)} tocou o sino.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou o sino!`,cor:'var(--cr)',p:pi,...so});
+}
+// tocar o sino antes de jogar a carta que deixa no alvo: só na vez, sem nada em andamento, com alguma carta jogável
+function sinoAntesOk(pi){
+  const p=S.players[pi];
+  return S.phase!=='over'&&S.turn===pi&&!S.busy&&!S.auto&&S.discard.length>0&&p.hand.length===target()+1&&p.hand.some(c=>canPlay(p,c));
 }
 function scheduleCatch(pi){
   const g=S.gen,d=DIFF[R.diff],p=S.players[pi];
@@ -476,16 +488,16 @@ function penalize(pi,by){
   if(S.weather==='fog'||p.out)return;
   emit({t:'som',k:'caught'});p.called=false;
   if(S.death){
-    log(`${J(by)} pegou ${V(pi,'você',J(pi))} sem tocar a sineta na morte súbita: eliminado!`);
-    emit({t:'fx',g:'🚨',txt:`${V(pi,'Você foi pego',J(pi)+' foi pego')} sem tocar a sineta!`,cor:'var(--cr)',modo:'slam'});emit({t:'selo',p:pi,ic:'🚨',cor:'var(--cr)'});
-    if(markOut(pi,'foi pego sem tocar a sineta na morte súbita'))return;
+    log(`${J(by)} pegou ${V(pi,'você',J(pi))} sem tocar o sino na morte súbita: eliminado!`);
+    emit({t:'fx',g:'🚨',txt:`${V(pi,'Você foi pego',J(pi)+' foi pego')} sem tocar o sino!`,cor:'var(--cr)',modo:'slam'});emit({t:'selo',p:pi,ic:'🚨',cor:'var(--cr)'});
+    if(markOut(pi,'foi pego sem tocar o sino na morte súbita'))return;
     if(pi===S.turn){endTurn();return}
     atualiza();return;
   }
   const n=S.weather==='blizzard'?0:drawAmt(pi,2);
   if(n)drawN(pi,n);
-  log(`${J(by)} pegou ${V(pi,'você',J(pi))} sem tocar a sineta${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
-  emit({t:'aviso',txt:`${V(pi,'Você foi pego',J(pi)+' foi pego')} sem tocar a sineta!${n?` +${n}`:''}`,cor:'var(--cy)'});
+  log(`${J(by)} pegou ${V(pi,'você',J(pi))} sem tocar o sino${n?`: +${n}`:' (nevasca: ninguém compra)'}.`);
+  emit({t:'aviso',txt:`${V(pi,'Você foi pego',J(pi)+' foi pego')} sem tocar o sino!${n?` +${n}`:''}`,cor:'var(--cy)'});
   if(overloaded(pi)){if(markOut(pi))return;if(pi===S.turn){endTurn();return}}
   atualiza();
 }
@@ -512,6 +524,7 @@ function endTurnHook(pi){
 }
 function endTurn(){
   if(S.phase==='over')return;
+  S.players.forEach(q=>q.sinoAntes=false);
   tiraRelogio(S.turn);
   emit({t:'fimJogada'});
   S.auto=false;
@@ -644,7 +657,7 @@ function drawn99(pi,then){
     then();
   },N*step+450);
 }
-// wasCalled: se o jogador já tinha tocado a sineta antes de comprar (a Compra Rápida mantém o pedido)
+// wasCalled: se o jogador já tinha tocado o sino antes de comprar (a Compra Rápida mantém o pedido)
 function afterDraw(pi,drawn,count,wasCalled){
   const p=S.players[pi];
   log(`${J(pi)} comprou ${count} carta${count===1?'':'s'}.`);
@@ -657,7 +670,7 @@ function afterDraw(pi,drawn,count,wasCalled){
   S.phase='drawn';S.drawnId=drawn.id;
   if(fast){
     S.forcedPlay=true;emit({t:'aviso',txt:'Compra Rápida!'});
-    // quem já tinha tocado a sineta e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
+    // quem já tinha tocado o sino e volta a ter a mesma quantidade depois de jogar a carta comprada não precisa pedir de novo
     if(wasCalled&&p.hand.length-1<=target())p.called=true;
     emit({t:'jogaDoMonte',p:pi,id:drawn.id});
     jogar(pi,drawn);return}
@@ -722,7 +735,7 @@ function announce(pi,card,cont,wait){
 }
 /* ---------- ações de uma pessoa ----------
    Tudo o que uma pessoa faz chega aqui, seja deste aparelho ou de outro: jogar uma carta (na vez ou cortando),
-   comprar/passar (botão principal), tocar a sineta, pegar quem esqueceu, desafiar o +4 e trocar a mão no início.
+   comprar/passar (botão principal), tocar o sino, pegar quem esqueceu, desafiar o +4 e trocar a mão no início.
    A mesa confere se a ação vale antes de fazer qualquer coisa e devolve se ela foi aceita */
 function agir(pi,a){
   if(!S||S.phase==='over'||!a||!S.players[pi])return false;
@@ -747,10 +760,12 @@ function agirValida(pi,a){
       if(S.phase==='combo'||S.phase==='drawn'){endTurn();return true}
       takeDraw(pi);return true;
     case 'sineta':
-      if(p.called||p.out)return false;
-      if(!(p.hand.length===target()||(p.hand.length===target()+1&&S.turn===pi)))return false;
-      // o som e o aviso dizem de quem são (p): quem tocou já ouviu e viu na hora, pela prévia da tela
-      p.called=true;emit({t:'som',k:'bell',p:pi});log(`${J(pi)} tocou a sineta.`);emit({t:'aviso',txt:`🛎️ ${J(pi)} tocou a sineta!`,cor:'var(--cr)',p:pi});atualiza();return true;
+      if(p.called||p.sinoAntes||p.out||S.weather==='fog')return false;
+      // já no alvo (tocou atrasado): os outros ouvem na hora
+      if(p.hand.length===target()){p.called=true;anunciaSino(pi,true);atualiza();return true}
+      // antes de jogar: fica guardado em segredo até a carta sair (afterOneCard); sem jogar, o toque se perde (endTurn)
+      if(!sinoAntesOk(pi))return false;
+      p.sinoAntes=true;atualiza();return true;
     case 'pegar':{
       const q=S.players[a.alvo];if(!q||a.alvo===pi||p.out||q.hand.length!==target()||q.called)return false;
       penalize(a.alvo,pi);return true}

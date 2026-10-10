@@ -187,8 +187,7 @@ function notice(k,by,opts={}){
   el.innerHTML=`<div class="ni">${ic}</div><div class="nt">${opts.title||(opts.gone?'Regra removida: ':'Nova regra: ')+RNAME[k]}</div><div class="nb">${by||''}</div><div class="nd">${ruleDesc(k)}${ruleListHtml(k)}</div>`;
   el.onclick=()=>{el.remove();document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'))};
   if(opts.anchor){box.innerHTML='';const r=opts.anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);el.classList.add('pointed');
-    requestAnimationFrame(()=>{const a=$('rulestrip').querySelector(`[data-k="${k}"]`)||opts.anchor;const rr=a.getBoundingClientRect(),br=el.getBoundingClientRect();box.style.top=(rr.bottom+12)+'px';el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
-    const br=el.getBoundingClientRect();el.classList.add('pointed');el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,r.left+r.width/2-br.left))+'px')}
+    requestAnimationFrame(()=>{const a=$('rulestrip').querySelector(`[data-k="${k}"]`)||opts.anchor;box.style.top=(a.getBoundingClientRect().bottom+12)+'px'})}
   else{box.style.top='';box.appendChild(el)}
   while(box.children.length>3)box.firstElementChild.remove();
   if(!opts.info)sfx('rule');

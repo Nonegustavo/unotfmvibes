@@ -29,6 +29,7 @@
 <section class="rail" id="rail" aria-label="Ordem de jogada"><div class="seatrow" id="seatrow"></div><div class="marker" id="marker"></div></section>
 <section class="rulestrip" id="rulestrip" aria-label="Regras em jogo"></section>
 <div class="notices" id="notices" aria-live="polite"></div>
+<div class="dica" id="dica" role="status" hidden></div>
 <main class="table">
   <div class="wxl" aria-hidden="true"><div class="w-sun"><i></i></div><div class="w-storm"></div><div class="w-fog"><div class="fg-lado fg-esq"><i></i><i></i><i></i></div><div class="fg-lado fg-dir"><i></i><i></i><i></i></div></div><div class="w-snow"></div></div>
   <div class="toast" id="toast" role="status"></div>
@@ -54,10 +55,10 @@
 </main>
 <!-- setas do sentido: fora da mesa para ficarem na frente dos climas (inclusive das partículas 3D) -->
 <div class="chevs" id="chevs" aria-hidden="true"><i class="chev ctop"></i><i class="chev cbot"></i></div>
-<!-- botões da mesa, acima das setas de baixo: os da vez no meio e a sineta no canto direito -->
+<!-- botões da mesa, acima das setas de baixo: os da vez no meio e o sino no canto direito -->
 <div class="mesabtns" id="mesaBtns">
   <div class="mb-meio"><button class="btn mull" id="mullBtn" hidden>Trocar mão</button><button class="btn mull" id="chalBtn" hidden>Desafiar</button><button class="btn main" id="drawBtn" hidden>Passar</button></div>
-  <button class="sino" id="unoBtn" aria-label="Tocar a sineta" title="Tocar a sineta">🛎️</button>
+  <button class="sino" id="unoBtn" aria-label="Tocar o sino" title="Tocar o sino">🛎️</button>
 </div>
 <section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><button type="button" class="tag stat mystat" id="mystat" hidden></button><div class="hand" id="hand" aria-label="Sua mão"></div><div class="tempo" id="tempoBar" hidden aria-hidden="true"><b></b></div></section>
 

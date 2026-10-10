@@ -475,7 +475,7 @@ function applySpecial(pi,card){
         (k,fim)=>{if(k==null)return 'done';addRule(pi,k,false,()=>fim('done'));return 'defer'})}
     case 'sun':case 'fog':case 'storm':case 'blizzard':{
       const w=WEATHER[T],antes=S.weather;S.weather=T;S.passes=0;
-      // a neblina acabou: quem está com a carta da sineta (1, ou 2 com o Duas!) conta como quem já tocou (ninguém pode ser pego)
+      // a neblina acabou: quem está com a carta do sino (1, ou 2 com o Duas!) conta como quem já tocou (ninguém pode ser pego)
       if(antes==='fog'&&T!=='fog')alive().forEach(i=>{const q=S.players[i];if(q.hand.length===target())q.called=true});if(T==='blizzard'){S.pending=0;S.pendingType=null;S.chal=null}
       emit({t:'fx',g:w.g,txt:`${w.n}: ${w.t}`,cor:w.c,modo:'slam'});seloVoa(w.g,'mesa');log(`O clima mudou para ${w.n.toLowerCase()}.`);
       if(T==='storm')emit({t:'relampago'});

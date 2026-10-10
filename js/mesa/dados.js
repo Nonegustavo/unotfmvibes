@@ -64,7 +64,7 @@ const RULES=[
   {g:'Baralho e mão',k:'maxi',n:'Maxi',d:'Todos começam com 9 cartas (ignora a quantidade de cartas iniciais escolhida).'},
   {g:'Baralho e mão',k:'twohands',n:'Duas Mãos',d:'Você tem duas mãos de cartas para jogar. Termine uma primeiro para poder usar a outra e ganhar o jogo!'},
   {g:'Baralho e mão',k:'overload',n:'Sobrecarga',d:'Quem ficar com mais de 10 cartas na mão será eliminado.'},
-  {g:'Baralho e mão',k:'dos',n:'Duas!',d:'Você precisa tocar a sineta quando tiver duas cartas na mão, e não quando tiver uma.'},
+  {g:'Baralho e mão',k:'dos',n:'Duas!',d:'Você precisa tocar o sino quando tiver duas cartas na mão, e não quando tiver uma.'},
   {g:'Baralho e mão',k:'shiny',n:'Mão Colorida',d:'Se um jogador segurar todas as cores ou um curinga, este ícone aparecerá.'},
   {g:'Jogadas',k:'stack',n:'Empilhar',d:'Você pode jogar várias cartas do mesmo número de uma só vez.'},
   {g:'Jogadas',k:'sequence',n:'Sequência',d:'Você pode jogar várias cartas da mesma cor, desde que formem uma sequência numérica.'},
@@ -104,7 +104,7 @@ const SP={
   dice:{n:'Carta do Dado',g:'🎲',d:'Ao jogar esta carta, force o próximo jogador a rolar o dado, sofrer uma consequência e perder a vez.',deck:C4},
   oddeven:{n:'Carta do Semáforo',g:'🚦',d:'Ao jogar esta carta, será proibido vencer com cartas pares ou ímpares (escolhido aleatoriamente). Ao jogar isso de novo, mude.',deck:C8},
   half:{n:'Carta do Rei',g:'👑',d:'Compre apenas metade das cartas enquanto segurar esta carta na mão. Ao jogar, escolha a cor.',deck:['w']},
-  death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem tocar a sineta, ter o blefe de um +4 desafiado ou desafiar um +4 quando a jogada era legal.',deck:['r','b']},
+  death:{n:'Carta da Morte Súbita',g:'☠️',d:'Após jogar esta carta, quem não puder jogar cartas ou cometer um erro será eliminado. Erros: ser pego sem tocar o sino, ter o blefe de um +4 desafiado ou desafiar um +4 quando a jogada era legal.',deck:['r','b']},
   share:{n:'Carta da Partilha',g:'🤲',d:'Ao jogar esta carta, dê cópias das suas cartas aleatoriamente aos outros jogadores (máximo 10 cartas).',deck:['g','y']},
   simon:{n:'Carta da Memória',g:'🧠',d:'Ao jogar esta carta, repita as cores escolhidas por outras cartas desta. Se errar, compre 1 carta. Se acertar, escolha a próxima cor.',deck:['w','w','w','w','w','w','w','w']},
   chair:{n:'Carta da Dança das Cadeiras',g:'🪑',d:'Ao jogar esta carta, seus adversários trocam de posições aleatoriamente.',deck:C8},
@@ -141,7 +141,7 @@ RULES.push(
 );
 const WEATHER={
   sun:{g:'☀️',n:'Ensolarado',t:'Pode jogar fora da cor, mas compra 1',c:'#e8a317'},
-  fog:{g:'☁️',n:'Neblina',t:'Cartas dos adversários ocultas, sem sineta',c:'#8a86a0'},
+  fog:{g:'☁️',n:'Neblina',t:'Cartas dos adversários ocultas, sem sino',c:'#8a86a0'},
   storm:{g:'⛈️',n:'Tempestade',t:'Quando um jogador mudar de cor, um adversário aleatório compra 1 carta',c:'#4b4f8f'},
   blizzard:{g:'❄️',n:'Nevasca',t:'Ninguém compra. Acaba se todos passarem a vez.',c:'#5aa9d6'},
 };

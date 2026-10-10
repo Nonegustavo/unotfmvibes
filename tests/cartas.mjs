@@ -35,7 +35,7 @@ const URL_BASE = `http://127.0.0.1:${server.address().port}/`;
 // Roda dentro da página: prepara a partida no tempo virtual, joga e devolve o resultado.
 // c = {regras:{...}, carta, quem (0 = você, 1 = adversário), turnos, semente, dif}
 async function cenarioNaPagina(c) {
-  // situação de cada jogador além das cartas (sineta, teia, confusão, sorte, batata, busca)
+  // situação de cada jogador além das cartas (sino, teia, confusão, sorte, batata, busca)
   const marcas = p => ['called', 'webbed', 'confuse', 'confuseNext', 'luck', 'escaped', 'thorned'].filter(k => p[k]).map(k => ' [' + k + ']').join('') +
     (p.batata ? ` [batata ${p.batata}]` : '') + (p.treasure ? ` [busca ${p.treasure}]` : '');
   const fmt = x => x ? `${x.color}:${x.type}${x.value ?? ''}${x.chosen ? '>' + x.chosen : ''}${x.lock ? '#' : ''}` : '-';
@@ -61,7 +61,7 @@ async function cenarioNaPagina(c) {
   const erros = [];
   const shown = id => document.getElementById(id)?.classList.contains('show');
   const OVS = ['colorOv', 'pickOv', 'swapOv', 'simonOv', 'pokerOv'];
-  // a sua vez: resolve janelas, toca a sineta, joga a primeira carta jogável ou compra/passa
+  // a sua vez: resolve janelas, toca o sino, joga a primeira carta jogável ou compra/passa
   function jogarPorVoce() {
     if (S.players[0].out) return false;
     if (S.autoResolve && OVS.some(shown)) { const f = S.autoResolve; f(); return true; }

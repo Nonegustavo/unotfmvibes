@@ -17,6 +17,8 @@ const mascara=(mao,dono,escondida)=>{
 function jogadorVisto(q,dono,escondida){
   const v={};
   for(const k of ['name','col','ctrl','mull','foraTorneio','ctrlReal','caiu','esgotou','called','out','outAt','outPts','outIcon','luck','webbed','confuse','confuseNext','treasure','batata','escaped','thorned'])if(q[k]!==undefined)v[k]=q[k];
+  // o sino tocado antes de jogar é segredo até a carta sair
+  if(dono&&q.sinoAntes)v.sinoAntes=true;
   v.hand=mascara(q.hand,dono,escondida);v.hand2=mascara(q.hand2,dono);
   // Mão Colorida (R.shiny) é pública: se ele segura todas as cores ou um curinga
   v.colorida=colorful(q);

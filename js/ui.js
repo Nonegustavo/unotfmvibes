@@ -14,11 +14,11 @@ const acao=a=>{
 function fazPrevia(a){
   if(!S||S.phase==='over')return null;
   const me=S.players[0];
-  // sineta: o som, o aviso e o botão marcado na hora (separada das outras prévias: dá para tocar e jogar em seguida)
+  // sino: o som e o botão marcado na hora, sem aviso para quem tocou (separada das outras prévias: dá para tocar e jogar em seguida)
   if(a.t==='sineta'){
-    if(me.called||me.out||!(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0)))return null;
+    if(me.called||me.sinoAntes||me.out||S.weather==='fog'||!(me.hand.length===target()||sinoAntesOk(0)))return null;
     VIS.sineta={desde:Date.now()};setTimeout(()=>{if(VIS.sineta&&Date.now()-VIS.sineta.desde>=3900){VIS.sineta=null;render()}},4000);
-    sfx('bell');toast('🛎️ Você tocou a sineta!','var(--cr)');render();return null;
+    sfx('bell');render();return null;
   }
   if(a.t==='jogar'){
     const c=me.hand.find(x=>x.id===a.id);if(!c)return null;
@@ -64,7 +64,7 @@ function desfazPrevia(como){
 function comPrevia(s){
   const pv=VIS.previa||{};if(!VIS.previa&&!VIS.sineta)return s;
   const v={...s};
-  if(VIS.sineta&&!s.players[0].called)v.players=s.players.map((q,i)=>i===0?{...q,called:true}:q);
+  if(VIS.sineta&&!s.players[0].called&&!s.players[0].sinoAntes)v.players=s.players.map((q,i)=>i===0?{...q,called:true}:q);
   if(pv.t==='jogar'){
     v.players=(v.players||s.players).map((q,i)=>i===0?{...q,hand:q.hand.filter(c=>c.id!==pv.id)}:q);
     if(!s.discard.some(c=>c.id===pv.id))v.discard=[...s.discard,pv.carta];
@@ -147,8 +147,6 @@ function TELA(ev){
   // no solo, esta tela é a do jogador 0: o que é só de outro jogador não aparece
   if(ev.a!=null&&ev.a!=='todos'&&ev.a!==0)return;
   if(ev.exceto===0)return;
-  // a confirmação da sineta de quem tocou não repete o som nem o aviso
-  if(VIS.sineta&&ev.p===0&&((ev.t==='som'&&ev.k==='bell')||ev.t==='aviso')){if(ev.t==='aviso')VIS.sineta=null;return}
   confirmaPrevia(ev);
   switch(ev.t){
     case 'pausa':return;
@@ -631,31 +629,18 @@ function tableStatus(){
 function infoPopup(key,head,items,anchor,up,force){
   const box=$('notices');const open=box.querySelector(`[data-info="${key}"]`);box.innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));
   if(open||(!items.length&&!force))return;
-  const arrow=!key.startsWith('card');
-  const el=document.createElement('div');el.className='notice seatinfo'+(arrow?' pointed':'');el.dataset.info=key;
+  const el=document.createElement('div');el.className='notice seatinfo'+(key.startsWith('card')?'':' pointed');el.dataset.info=key;
   el.innerHTML=`${head}${items.map(x=>`<div class="si-row"><span class="si-ic">${x.ic}</span><span><b>${x.name}:</b> ${x.txt}</span></div>`).join('')}`;
   el.onclick=()=>el.remove();
   const r=anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);
   // usa a posição do ícone no momento da abertura: o render() pode trocar o elemento antes do próximo quadro
-  requestAnimationFrame(()=>{const rr=r;let br=el.getBoundingClientRect();
-    if(up||br.bottom>innerHeight-8){box.style.top=Math.max(8,rr.top-12-br.height)+'px';el.classList.add('up');br=el.getBoundingClientRect()}
-    el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
+  requestAnimationFrame(()=>{const br=el.getBoundingClientRect();
+    if(up||br.bottom>innerHeight-8){box.style.top=Math.max(8,r.top-12-br.height)+'px';el.classList.add('up')}});
 }
 function showSeatInfo(i,anchor){
   const p=S.players[i];
   const items=i===0?seatStatus(0).filter(x=>x.ic!=='😶‍🌫️'&&x.ic!=='☁️'):seatInfoItems(i);
   infoPopup('seat'+i,i===0?'<div class="si-head"><b>Você</b></div>':`<div class="si-head"><span class="si-av" style="background:${p.col}">${p.name[0]}</span><b>${p.name}</b>${p.out?'<em>eliminado</em>':''}</div>`,items,anchor,i===0);
-}
-function showSeatInfoOld(i,anchor){
-  const items=seatInfoItems(i);if(!items.length)return;
-  const box=$('notices');const open=box.querySelector(`[data-seat-info="${i}"]`);box.innerHTML='';document.querySelectorAll('.ri.on').forEach(x=>x.classList.remove('on'));
-  if(open)return;
-  const p=S.players[i];
-  const el=document.createElement('div');el.className='notice seatinfo pointed';el.dataset.seatInfo=i;
-  el.innerHTML=`<div class="si-head"><span class="si-av" style="background:${p.col}">${p.name[0]}</span><b>${p.name}</b>${p.out?'<em>eliminado</em>':''}</div>${items.map(x=>`<div class="si-row"><span class="si-ic">${x.ic}</span><span><b>${x.name}:</b> ${x.txt}</span></div>`).join('')}`;
-  el.onclick=()=>el.remove();
-  const r=anchor.getBoundingClientRect();box.style.top=(r.bottom+12)+'px';box.appendChild(el);
-  requestAnimationFrame(()=>{const rr=anchor.getBoundingClientRect(),br=el.getBoundingClientRect();el.style.setProperty('--ax',Math.max(18,Math.min(br.width-18,rr.left+rr.width/2-br.left))+'px')});
 }
 /* Número de cartas nas cadeiras: anda uma unidade por vez até a quantidade real (a contagem inteira leva até ~0,7 s,
    então quanto mais cartas, mais rápido), pulsando verde ao diminuir e vermelho ao aumentar. Oculto (Neblina,
@@ -722,7 +707,7 @@ function renderRail(){
     const near=!p.out&&!hidden&&lim<999&&rem<thr;const lv=near?Math.min(1,1-rem/thr):0;
     const v=p.out?n:cntShown(i,n,hidden);
     const badge=hidden?'?':said?'🛎️':near?`${v}/${lim}`:String(v);
-    // a sineta do balão só pula quando aparece; depois só pulsa, no ritmo do relógio (o redesenho não recomeça a animação)
+    // o sino do balão só pula quando aparece; depois só pulsa, no ritmo do relógio (o redesenho não recomeça a animação)
     const vistos=VIS.saidVisto||(VIS.saidVisto=new Set()),saidNovo=said&&!vistos.has(p.name);if(said)vistos.add(p.name);else vistos.delete(p.name);
     const ctCls=said?(saidNovo?'said novo':'said'):hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
@@ -914,12 +899,34 @@ function desenha(){
   const watching=me.out&&S.phase!=='over';
   if(watching&&!semTurbo){main.textContent='Terminar e descobrir vencedor';main.hidden=false;main.disabled=TB.on}
   $('unoBtn').hidden=watching;
-  const unoOk=S.weather!=='fog'&&!me.called&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||(me.hand.length===target()+1&&S.turn===0));
+  // o sino: já no alvo (atrasado), ou na vez, antes de jogar a carta que deixa no alvo, se houver carta jogável
+  // (com uma jogada a caminho da mesa, ainda não)
+  const cedo=!VIS.previa&&sinoAntesOk(0);
+  const unoOk=S.weather!=='fog'&&!me.called&&!me.sinoAntes&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||cedo);
   $('unoBtn').disabled=!unoOk;
   $('unoBtn').classList.toggle('lit',unoOk&&me.hand.length===target());
+  dicaVez('sino',unoOk&&cedo,$('unoBtn'),`Toque o sino antes de ficar com ${target()} carta${target()>1?'s':''}!`,'esq');
+  dicaVez('comprar',$('deck').classList.contains('chama'),$('deck'),'Nenhuma carta pode ser jogada: toque no monte para comprar!');
   $('mullBtn').hidden=!(me.mull&&S.phase!=='over');
   $('chalBtn').hidden=!(turn&&S.phase==='play'&&S.pending>0&&S.chal&&S.chal.by!==0);
 }
+
+/* Dicas da primeira vez (uma vez por aparelho, em unotfm-dicas): o sino antes de ficar com a última carta e o monte
+   para comprar. O balão fica ao lado do sino (à esquerda) ou acima do monte e some quando a situação passa ou com um toque */
+const DICAS=load('unotfm-dicas',{})||{};
+function dicaVez(k,quando,alvo,txt,lado){
+  const el=$('dica');
+  if(el.dataset.k===k&&!quando){el.hidden=true;el.dataset.k='';return}
+  if(!quando||el.dataset.k||DICAS[k]||S.turbo||S.spectate||!alvo||alvo.hidden)return;
+  DICAS[k]=1;save('unotfm-dicas',DICAS);
+  el.dataset.k=k;el.textContent=txt;el.hidden=false;
+  requestAnimationFrame(()=>{
+    const r=alvo.getBoundingClientRect(),b=el.getBoundingClientRect();
+    const x=lado==='esq'?r.left-b.width-10:r.left+r.width/2-b.width/2,y=lado==='esq'?r.top+r.height/2-b.height/2:r.top-b.height-10;
+    el.style.left=Math.max(8,Math.min(innerWidth-b.width-8,x))+'px';el.style.top=Math.max(8,y)+'px';
+  });
+}
+$('dica').onclick=()=>{$('dica').hidden=true;$('dica').dataset.k=''};
 
 /* ---------- controlador da tela: a pessoa deste aparelho responde aos pedidos pelas janelas ----------
    A jogada é pelos toques nas cartas e no botão principal (myTurn). Nos pedidos de carta especial, a janela abre logo
