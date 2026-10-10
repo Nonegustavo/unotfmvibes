@@ -350,7 +350,8 @@ function roletaFx(ev){
 }
 // Chuva: a carta cai do céu até a cadeira; em você, cai exatamente no lugar da carta nova (escondida até chegar)
 function chuvaFx(p,ms,id){
-  if(p!==0)return rainDrop(p,ms,()=>{});
+  // no adversário, a carta cai do tamanho das cartinhas do leque da cadeira dele, até o leque
+  if(p!==0){const f=document.querySelector(`[data-seat="${p}"] .fan i:last-of-type`);return rainDrop(p,ms,()=>{},f?f.getBoundingClientRect():null)}
   const el=id!=null&&document.querySelector(`#hand [data-id="${id}"]`);
   if(el){el.scrollIntoView({block:'nearest',inline:'nearest'});el._flip?.cancel();el.style.visibility='hidden'}
   rainDrop(0,ms,()=>{},el?el.getBoundingClientRect():null);
@@ -578,7 +579,7 @@ function seatStatus(i){
   const shiny=R.shiny&&(p.colorida??colorful(p));
   const camo=R.camouflage&&n!==1&&S.phase!=='over',fog=S.weather==='fog'&&S.phase!=='over';
   if(p.caiu)L.push({ic:'📵',short:'📵',name:'Caiu',txt:'a conexão caiu; um bot joga até ele voltar'});
-  else if(p.ctrlReal)L.push({ic:'🤖',short:'🤖',name:'Bot',txt:i===0?'o seu tempo acabou e um bot está jogando por você. Toque numa carta ou no monte para voltar':'o tempo dele acabou; um bot joga até ele voltar'});
+  else if(p.ctrlReal)L.push({ic:'💤',short:'💤',name:'Ausente',txt:i===0?'o seu tempo acabou e um bot está jogando por você. Toque numa carta ou no monte para voltar':'o tempo dele acabou; um bot joga até ele voltar'});
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
   if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
   if(p.treasure)L.push({ic:'🧭',short:`🧭${p.treasure}`,name:'Busca',txt:`jogou ${p.treasure}/3, na terceira ganha a Carta do Tesouro`});
@@ -601,6 +602,7 @@ function seatInfoItems(i){
   const L=seatStatus(i);
   if(TOUR)L.unshift(tourItem(p.name));
   if(partner(i)===0)L.unshift({ic:'🤝',name:'Sua dupla',txt:'se ele vencer, você vence junto'});
+  if(emRede()&&p.ctrl==='bot'&&!p.ctrlReal)L.unshift({ic:'🤖',name:'Bot',txt:'jogado pelo computador'});
   return L;
 }
 /* Torneio e Torneio de Sobrevivência: pontos de cada jogador (selo na cadeira e no seu selo) e classificação (selo da mesa) */
@@ -730,7 +732,7 @@ function renderRail(){
       <div class="av" style="background:${p.col}">${p.name[0]}</div>
       ${p.out?'<div class="ct">eliminado</div>':`<div class="fan ${hidden?'fog':''}" style="--n:${fanN}" aria-label="${hidden?'quantidade oculta':n+' cartas'}">${Array.from({length:fanN},(_,k)=>`<i style="--k:${k}"></i>`).join('')}${hidden?'<b class="mist"></b>':''}<span class="cnt ${ctCls}"${said&&!saidNovo?` style="animation-delay:-${(performance.now()%1000).toFixed(0)}ms"`:''}>${badge}</span></div>`}
       ${canCatch?`<button class="catch" data-catch="${i}">Pegar!</button>`:p.out?`<span class="tag outic" aria-label="eliminado">${p.outIcon||'✖'}</span>`:(()=>{const sv=comVoo(seatStatus(i),i),st=sv.map(seloHTML),vazio=sv.every(x=>x.voo==='oculto');
-        return st.length?`<span class="tag stat ${vazio?'oculto':''}">${st.join(' ')}</span>`:''})()}${(()=>{const t=[];if(!p.out&&partner(i)===0)t.push('🤝');if(TOUR)t.push(tourItem(p.name).short);
+        return st.length?`<span class="tag stat ${vazio?'oculto':''}">${st.join(' ')}</span>`:''})()}${(()=>{const t=[];if(emRede()&&p.ctrl==='bot'&&!p.ctrlReal)t.push('🤖');if(!p.out&&partner(i)===0)t.push('🤝');if(TOUR)t.push(tourItem(p.name).short);
         return t.length?`<span class="tops">${t.map(x=>`<span class="tag top">${x}</span>`).join('')}</span>`:''})()}</div>`);
   });
   row.innerHTML=parts.join('');
@@ -917,6 +919,8 @@ function desenha(){
   const unoOk=S.weather!=='fog'&&!me.called&&!me.sinoAntes&&!me.out&&S.phase!=='over'&&(me.hand.length===target()||cedo);
   $('unoBtn').disabled=!unoOk;
   $('unoBtn').classList.toggle('lit',unoOk&&me.hand.length===target());
+  // já tocou (ou tocou antes de jogar): o sino fica colorido e com brilho dourado enquanto a quantidade não mudar
+  $('unoBtn').classList.toggle('avisado',!me.out&&S.phase!=='over'&&(me.sinoAntes||(me.called&&me.hand.length===target())));
   dicaVez('sino',unoOk&&cedo,$('unoBtn'),`Toque o sino antes de ficar com ${target()} carta${target()>1?'s':''}!`,'esq');
   dicaVez('comprar',$('deck').classList.contains('chama'),$('deck'),'Nenhuma carta pode ser jogada: toque no monte para comprar!');
   // Segunda Chance: só na sua vez

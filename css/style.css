@@ -491,6 +491,7 @@ body>.mesabtns{grid-row:4;grid-column:1;align-self:end;position:relative;z-index
 .sino{position:absolute;right:0.5rem;bottom:0;height:3.25rem;aspect-ratio:1;display:grid;place-items:center;padding:0;background:none;border:none;font-size:2.8rem;line-height:1;pointer-events:auto;transition:opacity .2s,filter .2s}
 .sino:disabled{opacity:.3;filter:grayscale(.7);cursor:default}
 .sino.lit{animation:pulse 1s infinite;filter:drop-shadow(0 0 0.5rem var(--cr))}
+.sino.avisado:disabled{opacity:1;filter:drop-shadow(0 0 0.5rem #f5c542) drop-shadow(0 0 0.125rem #ffe08a)}
 /* tocado por você: o botão afunda e volta (sino de mesa, sem girar), aceso por um instante, e duas ondas saem dele */
 .sino.tocou{opacity:1;filter:drop-shadow(0 0 0.625rem var(--cy));transform-origin:50% 100%;animation:sinoBate .45s ease-out}
 @keyframes sinoBate{25%{transform:translateY(0.125rem) scale(1.1,.8)}55%{transform:translateY(-0.125rem) scale(.96,1.06)}}
