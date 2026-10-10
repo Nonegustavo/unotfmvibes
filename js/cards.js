@@ -40,7 +40,7 @@ function imaFx(pi,cartas){
     if(!r&&!seat)return;
     const cw=r?r.width:w,x0=r?r.left:Math.max(4,Math.min(innerWidth-w-4,seat.left+seat.width/2-w/2+(j-(cartas.length-1)/2)*w*.4)),y0=r?r.top:seat.bottom+4;
     const el=makeCard(c);el.className=`card c-${c.chosen||c.color} flyclone`;el.disabled=true;
-    Object.assign(el.style,{position:'fixed',left:x0+'px',top:y0+'px',width:cw+'px',margin:'0',zIndex:21,pointerEvents:'none'});el.style.setProperty('--cw',cw+'px');
+    Object.assign(el.style,{position:'fixed',left:x0+'px',top:y0+'px',width:cw+'px',margin:'0',zIndex:27,pointerEvents:'none'});el.style.setProperty('--cw',cw+'px');
     document.body.appendChild(el);if(src)src.style.visibility='hidden';
     const s=alvo.width/cw,dx=alvo.left+alvo.width/2-(x0+cw/2)+(j%2?1:-1)*alvo.width*.12,dy=alvo.top+alvo.height/2-(y0+cw*.75),rot=(Math.random()<.5?-1:1)*(6+Math.random()*10);
     const fim=`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(${s})`;
@@ -68,7 +68,7 @@ function vanishCards(target,cards,sp=1){
       sfx('vanishUp');
       const a=src.getBoundingClientRect();
       const fly=makeCard(c);fly.className=`card c-${c.chosen||c.color} flyclone`;fly.disabled=true;
-      Object.assign(fly.style,{position:'fixed',left:a.left+'px',top:a.top+'px',width:a.width+'px',margin:'0',zIndex:21,pointerEvents:'none'});fly.style.setProperty('--cw',a.width+'px');
+      Object.assign(fly.style,{position:'fixed',left:a.left+'px',top:a.top+'px',width:a.width+'px',margin:'0',zIndex:27,pointerEvents:'none'});fly.style.setProperty('--cw',a.width+'px');
       document.body.appendChild(fly);src.style.visibility='hidden';
       fly.animate(tiltKeys(-a.width*1.6,tilt()),{duration:DROP*sp,easing:'ease-in',fill:'forwards'});
       setTimeout(()=>fly.remove(),DROP*sp+80);
@@ -113,7 +113,7 @@ function morphMine(card,before,after,sp=1){
   if(RM||!src)return RM?0:total;
   const a=src.getBoundingClientRect(),hr=$('hand').getBoundingClientRect();
   const fly=makeCard(before);fly.className=`card c-${before.color} flyclone`;fly.disabled=true;
-  Object.assign(fly.style,{position:'fixed',left:a.left+'px',top:a.top+'px',width:a.width+'px',margin:'0',zIndex:21,pointerEvents:'none'});fly.style.setProperty('--cw',a.width+'px');
+  Object.assign(fly.style,{position:'fixed',left:a.left+'px',top:a.top+'px',width:a.width+'px',margin:'0',zIndex:27,pointerEvents:'none'});fly.style.setProperty('--cw',a.width+'px');
   document.body.appendChild(fly);src.style.visibility='hidden';
   const mid={x:hr.left+hr.width/2-a.width/2,y:hr.top-a.height*1.15};
   const at=(x,y,extra='')=>`translate(${x-a.left}px,${y-a.top}px) ${extra}`;

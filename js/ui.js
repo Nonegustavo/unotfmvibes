@@ -54,7 +54,7 @@ function cartaPuxada(cls){
   const d=$('deck');if(!d||RM||(S&&S.turbo))return;
   const r=d.getBoundingClientRect(),el=document.createElement('div');
   el.className='card back flyclone '+cls;el.innerHTML=versoHTML();
-  Object.assign(el.style,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',margin:'0',zIndex:21,pointerEvents:'none'});el.style.setProperty('--cw',r.width+'px');
+  Object.assign(el.style,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',margin:'0',zIndex:27,pointerEvents:'none'});el.style.setProperty('--cw',r.width+'px');
   document.body.appendChild(el);
   el.animate([{transform:'none'},{transform:'translate(0.5rem,-0.9rem) rotate(7deg)'}],{duration:220,easing:'ease-out',fill:'forwards'});
 }
@@ -108,7 +108,7 @@ function flyClone(target,from,o={}){
   const r=target.getBoundingClientRect(),w=target.offsetWidth,h=target.offsetHeight;if(!w)return;
   const cx=r.left+r.width/2,cy=r.top+r.height/2;
   const g=target.cloneNode(true);g.classList.add('flyclone');g.querySelectorAll('.cb').forEach(x=>x.remove());g.removeAttribute('data-id');
-  Object.assign(g.style,{position:'fixed',left:(cx-w/2)+'px',top:(cy-h/2)+'px',width:w+'px',height:h+'px',margin:'0',zIndex:6,pointerEvents:'none',transition:'none',visibility:'visible'});
+  Object.assign(g.style,{position:'fixed',left:(cx-w/2)+'px',top:(cy-h/2)+'px',width:w+'px',height:h+'px',margin:'0',zIndex:27,pointerEvents:'none',transition:'none',visibility:'visible'});
   g.style.setProperty('--cw',w+'px'); // fora da mesa a cópia herdaria o --cw da mão: mantém as proporções da carta de destino
   document.body.appendChild(g);
   target.style.visibility='hidden';
