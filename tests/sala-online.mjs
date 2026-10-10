@@ -162,7 +162,7 @@ try {
   const fimVisto = p => p.evaluate(() => document.getElementById('endOv').classList.contains('show'));
   for (let i = 0; i < 600 && !(await fimVisto(dono) && await fimVisto(bia)); i++) { for (const p of [dono, bia, caio]) await joga(p); await dono.waitForTimeout(150); }
   for (const p of [dono, bia, dani]) {
-    const b = await p.evaluate(() => ({ voltar: !document.getElementById('endRules').hidden && document.getElementById('endRules').textContent, outra: !document.getElementById('againBtn').hidden, menu: !document.getElementById('endMenu').hidden }));
+    const b = await p.evaluate(() => ({ voltar: !document.getElementById('endRules').hidden && document.getElementById('endRules').textContent, outra: !document.getElementById('againBtn').hidden, menu: getComputedStyle(document.getElementById('endMenu')).display !== 'none' }));
     confere(b.voltar === 'Voltar à sala' && !b.outra && !b.menu, `${p.nome}: no fim, só "Voltar à sala" (${JSON.stringify(b)})`);
   }
   await foto(dani, 'fim');
@@ -183,6 +183,9 @@ try {
   await dono.click('#salaLugares li[data-nome="Caio"] [data-tirar]');
   await caio.waitForFunction(() => /tirad/.test(document.getElementById('salaEstado')?.textContent + document.getElementById('toast')?.textContent + document.body.textContent), null, { timeout: 8000 });
   confere(true, 'o Caio foi tirado da sala e ficou sabendo');
+  await caio.waitForFunction(() => !document.getElementById('home').hidden && document.getElementById('confirmOv').classList.contains('show') && /tirado da sala/.test(document.getElementById('confirmTitulo').textContent), null, { timeout: 8000 });
+  confere(true, 'o Caio foi para a tela inicial, com o aviso numa janela do jogo');
+  await foto(caio, 'tirado');
   await dono.waitForFunction(() => ![...document.querySelectorAll('#salaLugares li .nm')].some(e => e.textContent === 'Caio'), null, { timeout: 5000 });
   confere(true, 'o Caio saiu da lista do dono');
   await dono.click('#salaSair');

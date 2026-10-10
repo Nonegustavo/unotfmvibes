@@ -363,7 +363,7 @@ function rainDrop(pi,ms,cb,to){
   const r=to||targetRect(pi);if(RM||!r){cb();return}
   const cw=to?to.width:Math.min(pi===0?$('deck').getBoundingClientRect().width:r.width*.42,r.height*.8),ch=to?to.height:cw*1.5;
   const x=r.left+r.width/2,y=r.top+r.height/2;
-  const c=document.createElement('div');c.className='card back raincard';c.innerHTML='<span class="face">unotfm</span>';
+  const c=document.createElement('div');c.className='card back raincard';
   Object.assign(c.style,{left:(x-cw/2)+'px',top:(y-ch/2)+'px',width:cw+'px'});c.style.setProperty('--cw',cw+'px');
   document.body.appendChild(c);
   const fall=y+ch;

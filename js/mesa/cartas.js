@@ -38,7 +38,13 @@ function webOn(pi,t){
   if(t==null||t<0)return;
   S.players[t].webbed=true;emit({t:'selo',p:t,ic:'🕸️',cor:'var(--muted)'});
   emit({t:'fx',g:'🕸️',txt:V(t,'Você perde a próxima vez',`${J(t)} perde a próxima vez`),cor:'var(--muted)',modo:'stamp'});
-  log(`${J(pi)} prendeu ${V(t,'você',J(t))} na teia.`);
+  log(t===pi?`${J(pi)} se prendeu na teia.`:`${J(pi)} prendeu ${V(t,'você',J(t))} na teia.`);
+}
+// o Mestre se prende na própria teia na Morte súbita quando não sobra curinga nem carta da cor da Teia: assim ele não
+// precisa jogar (nem comprar e ser eliminado) na próxima vez
+function teiaEmSi(pi,card){
+  const p=S.players[pi];
+  return R.diff==='master'&&S.death&&p.hand.length>0&&!p.hand.some(c=>c.color==='w'||c.color===card.color);
 }
 function wishOptions(){return shuffle(S.discard.slice(0,-1)).slice(0,3)}
 function wishSwap(pi,c){
@@ -333,8 +339,8 @@ function applySpecial(pi,card){
       return pedeEspecial(pi,card,'alvo',{titulo:'Doar uma carta para…',sub:'Uma carta aleatória da sua mão vai para quem você escolher.',opcoes:()=>outros(pi)},
         ()=>{const o=opponents(pi);if(!o.length)return null;return {e:R.diff==='easy'?rand(o):fewest(pi,o),lista:outros(pi),ver:'player'}},t=>giftCard(pi,t));
     case 'web':
-      return pedeEspecial(pi,card,'alvo',{titulo:'Prender na teia…',sub:'Quem você escolher perde a próxima vez.',opcoes:()=>outros(pi)},
-        ()=>{const t=botTarget(pi,true);return t<0?null:{e:t,lista:outros(pi),ver:'player'}},t=>{webOn(pi,t);return 'done'});
+      return pedeEspecial(pi,card,'alvo',{titulo:'Prender na teia…',sub:'Quem você escolher perde a próxima vez (pode ser você mesmo).',opcoes:()=>[pi,...outros(pi)]},
+        ()=>{const t=teiaEmSi(pi,card)?pi:botTarget(pi,true);return t<0?null:{e:t,lista:[pi,...outros(pi)],ver:'player'}},t=>{webOn(pi,t);return 'done'});
     case 'wish':if(!p.hand.length||S.discard.length<2)return 'done';
       return pedeEspecial(pi,card,'carta',{titulo:'Carta do Desejo',sub:'Escolha uma carta da pilha. Uma carta aleatória sua vai para a pilha no lugar.',opcoes:()=>wishOptions()},
         ()=>{const opts=wishOptions();return {e:opts.find(c=>c.color==='w')||opts.find(c=>c.color===S.color)||opts[0],lista:opts,ver:'down'}},c=>{wishSwap(pi,c);return 'done'});

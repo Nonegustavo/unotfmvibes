@@ -312,7 +312,7 @@ function onlineInicia(){
 function salaEspera(txt){$('salaCriandoTxt').textContent=txt;salaMostra('salaCriando');$('salaOv').classList.add('show')}
 // mensagem com que se entra: criar a sala, entrar pelo código, ou voltar com a chave
 function onlinePrimeira(){
-  const base={nome:OPCOES.meuNome||'',versao:VERSAO_REDE};
+  const base={nome:OPCOES.meuNome||'',versao:VERSAO_REDE,aparelho:OPCOES.meuId};
   if(SALA.codigo)return {t:'entrar',codigo:SALA.codigo,chave:SALA.chave||undefined,...base};
   return {t:'criar',cfg:cfgDaSala(),tempo:CFG.tempoRede||'normal',...base};
 }
@@ -378,7 +378,8 @@ function onlineMsg(m){
     }else toast(m.motivo);
     return;
   }
-  if(m.t==='removido'){SALA.saindo=true;onlineEsquece();$('endOv').classList.remove('show');salaAbre();$('salaSair').textContent='Voltar';salaEstado('salaEstadoInicio','Você foi tirado da sala.','erro');return}
+  // tirado da sala: a página recomeça na tela inicial e avisa (a partida e a sala ficam para trás)
+  if(m.t==='removido'){SALA.saindo=true;onlineEsquece();try{sessionStorage.setItem('unotfm-tirado','1')}catch(e){}location.replace(semSala());return}
   if(m.t==='versao'){salaAbre();salaEstado('salaEstadoInicio','O servidor está com outra versão do jogo. Feche o jogo e abra de novo, com internet, para atualizar.','erro');return}
   if(m.t!=='sala')return;
   const antes=SALA.ultima;SALA.ultima=m;ASSISTINDO=m.assistindo||0;mostraAssistindo();
@@ -399,7 +400,9 @@ function onlineCompartilha(){
 {
   const q=new URLSearchParams(location.search),cod=(q.get('sala')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
   const salvo=load(ONLINE_KEY,null),valido=salvo&&salvo.servidor===SERVIDOR&&Date.now()-salvo.t<12*3600e3;
-  if(!REDE_MODO){
+  let tirado=false;try{tirado=!!sessionStorage.getItem('unotfm-tirado');sessionStorage.removeItem('unotfm-tirado')}catch(e){}
+  if(tirado)confirmaJogo({titulo:'Você foi tirado da sala',texto:'Quem manda na sala tirou você. Você só pode entrar nela de novo daqui a 5 minutos.',sim:'Ok'});
+  else if(!REDE_MODO){
     if(cod&&valido&&salvo.codigo===cod)onlineVolta(salvo);
     else if(cod)salaConviteAbre(cod);
     else if(valido)onlineVolta(salvo);

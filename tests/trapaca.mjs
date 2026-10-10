@@ -2,7 +2,8 @@
 // mensagens que a tela nunca mandaria. Tudo precisa ser recusado, sem derrubar o servidor nem atrapalhar a partida:
 // site de origem errado, conexão que não entra em sala, versão errada, códigos chutados, salas demais, regras e nomes
 // malformados, comandos de dono sem ser dono, jogar fora da vez ou com carta que não tem, responder pedido alheio,
-// mensagens quebradas, enxurrada de mensagens, mensagem grande demais, chave inventada e chave de quem foi tirado.
+// mensagens quebradas, enxurrada de mensagens, mensagem grande demais, chave inventada e chave (e aparelho, por 5 minutos)
+// de quem foi tirado.
 // Uso: npm run test:trapaca
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,7 +65,7 @@ try {
   dono.manda({ t: 'criar', nome: 'Dono', versao: VERSAO, cfg: { mode: 'custom', trade: true } });
   const codigo = (await dono.espera(m => m && m.t === 'entrou')).codigo;
   const ana = await conecta(srv.url);
-  ana.manda({ t: 'entrar', codigo, nome: controle + 'Ana' + marcador + 'Sil<va>', versao: VERSAO });
+  ana.manda({ t: 'entrar', codigo, nome: controle + 'Ana' + marcador + 'Sil<va>', versao: VERSAO, aparelho: 'aparelhoDaAna' });
   const anaChave = (await ana.espera(m => m && m.t === 'entrou')).chave;
   await espera(300);
   const nomes = () => (ultima(dono, 'sala') || { lugares: [] }).lugares.filter(x => x.nome).map(x => x.nome);
@@ -145,6 +146,10 @@ try {
     a2.manda({ t: 'entrar', codigo, chave: anaChave, nome: 'Ana', versao: VERSAO });
     confere(/tirado desta sala/.test(await erroDe(a2)), 'com a chave de antes, ela não entra de novo');
     a2.ws.close();
+    const a3 = await conecta(srv.url);
+    a3.manda({ t: 'entrar', codigo, nome: 'Ana', versao: VERSAO, aparelho: 'aparelhoDaAna' });
+    confere(/Tente de novo em 5 min/.test(await erroDe(a3)), 'sem a chave, pelo mesmo aparelho, ela só entra de novo depois de 5 minutos');
+    a3.ws.close();
   }
   // o servidor continua de pé e a partida do dono continua
   const v2 = ultima(dono, 'evento').visao.S.vezes;

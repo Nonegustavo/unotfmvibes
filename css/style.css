@@ -174,7 +174,7 @@
 .hand .card.revealed{transform:translateY(-1.375rem) scale(1.08)!important;box-shadow:0 0 0 3px var(--cg),0 0 1.125rem var(--cg)!important;z-index:3}
 .swaps.row{flex-direction:row;flex-wrap:wrap;justify-content:center}
 /* escolher um jogador: as cadeiras descem até a janela (as de verdade somem enquanto isso) */
-#swapOv.alvos .sheet{overflow:visible;width:min(98vw,40rem);padding-left:0.375rem;padding-right:0.375rem;text-align:center}
+#swapOv.alvos .sheet{animation:none;overflow:visible;width:min(98vw,40rem);padding-left:0.375rem;padding-right:0.375rem;text-align:center}
 .alvo-rail{padding:0.75rem 0 0.25rem;overflow:visible}
 .alvo-rail .seat{cursor:pointer}
 .alvo-rail .seat[role=button]:hover,.alvo-rail .seat[role=button]:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);outline:none}
@@ -182,6 +182,7 @@
 #swapOv.voltando .sheet h2,#swapOv.voltando .sheet .sub,#swapOv.voltando .alvo-eu{opacity:0;transition:opacity .15s}
 #swapOv.voltando .sheet{background:transparent;box-shadow:none;transition:background .2s,box-shadow .2s}
 .rail.escolhendo .seat{visibility:hidden}
+.seat.alvo-voando{position:fixed;margin:0;z-index:32;pointer-events:none;transform-origin:0 0;box-sizing:border-box}
 .alvo-eu{display:block;margin:0.75rem auto 0;min-width:9rem;text-align:center;justify-content:center}
 .swaps.row button{flex-direction:column;align-items:center;gap:0.25rem;min-width:5.375rem;flex:0 1 6.875rem;text-align:center;padding:0.625rem 0.5rem}
 .swaps.row small{margin:0}
@@ -503,7 +504,7 @@ body>.mesabtns{grid-row:4;grid-column:1;align-self:end;position:relative;z-index
 .sino:disabled{opacity:.3;filter:grayscale(.7);cursor:default}
 .sino.lit{animation:pulse 1s infinite;filter:drop-shadow(0 0 0.5rem var(--cr))}
 /* emojis (multiplayer): o botão acima do sino e o menu que rola, subindo dele */
-.emojis{position:absolute;right:0.875rem;bottom:3.5rem;pointer-events:auto;display:flex;flex-direction:column;align-items:center}
+.emojis{position:absolute;right:0.5rem;width:3.25rem;bottom:3.5rem;pointer-events:auto;display:flex;flex-direction:column;align-items:center}
 .emojis[hidden],.emoji-menu[hidden]{display:none}
 .emoji-btn{width:2.5rem;height:2.5rem;border-radius:50%;border:1.5px solid var(--line);background:var(--panel);font-size:1.35rem;line-height:1;display:grid;place-items:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .emoji-btn.txt,.emoji-menu .txt{font-size:.85rem;font-weight:800;letter-spacing:.02em}
@@ -699,6 +700,7 @@ body>.handwrap{grid-row:5}
 #confirmOv{z-index:31}
 .menu-btns{display:flex;flex-direction:column;gap:0.625rem}
 .menu-btns .btn[hidden]{display:none}
+.fim-menu[hidden]{display:none}
 .fim-menu{display:block;width:100%;margin-top:0.625rem;background:none;border:none;color:var(--muted);font:inherit;font-weight:600;font-size:.9rem;padding:0.5rem;cursor:pointer}
 .sala-regras{list-style:none;margin:0.625rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:0.375rem}
 .sala-regras li{background:var(--bg);border-radius:999px;padding:0.25rem 0.625rem;font-size:.8rem;font-weight:600}

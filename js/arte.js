@@ -55,7 +55,7 @@ function faceHTML(c){
   return `<span class="cn">${s}</span>${centro}<span class="cn br">${s}</span>`;
 }
 // verso: a marca do jogo no meio (o baralho pode trocar o verso inteiro por uma imagem)
-const versoHTML=()=>'<span class="face">unotfm</span>';
+const versoHTML=()=>'';
 
 /* ---------- baralho ----------
    As camadas do baralho viram variáveis do CSS (veja "cards" no style.css). As cores valem só no lado normal: o outro

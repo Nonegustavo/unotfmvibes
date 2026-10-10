@@ -29,6 +29,7 @@ const LIM = {
   errosCodigo: 10, errosJanela: 60e3,        // códigos errados por endereço por minuto
   salas: 500,              // salas ao mesmo tempo
   cadeiras: 6,
+  tirado: 5 * 60e3,        // quem o dono tirou não entra de novo nesta sala por esse tempo (pelo número do aparelho)
   primeira: 10e3,          // tempo para mandar "criar" ou "entrar" depois de conectar
   vazia: 10 * 60e3,        // sala sem ninguém ligado acaba
   donoAusente: 30e3,       // dono desligado por esse tempo passa o posto adiante
@@ -74,7 +75,7 @@ function novoCodigo() {
 }
 function criaSala() {
   const codigo = novoCodigo(); if (!codigo) return null;
-  const sala = { codigo, criada: Date.now(), vaziaDesde: Date.now(), removidos: new Set() };
+  const sala = { codigo, criada: Date.now(), vaziaDesde: Date.now(), removidos: new Set(), tirados: new Map() };
   sala.ctx = novaMesa(sala);
   SALAS.set(codigo, sala);
   log('sala nova', codigo, '| salas:', SALAS.size);
@@ -90,8 +91,9 @@ function fechaSala(sala, motivo) {
 function novaLigacao(ws) {
   const l = { id: 'p' + (++SEQ), aberta: true, enviouEm: 0, visto: Date.now(), ws, chave: crypto.randomBytes(16).toString('base64url'), aoReceber: null, aoFechar: null, fechadaEm: 0 };
   l.enviar = m => { if (l.ws && l.ws.readyState === 1) { l.enviouEm = Date.now(); l.ws.send(JSON.stringify(m)); } };
-  // tirada da sala pelo dono: a conexão fecha, e a chave dela não entra mais nesta sala
-  l.fechar = () => { if (l.sala) l.sala.removidos.add(l.chave); const ws = l.ws; l.ws = null; l.aberta = false; if (ws) setTimeout(() => { try { ws.close(4002, 'removido'); } catch (e) {} }, 50); };
+  // tirada da sala pelo dono: a conexão fecha, a chave dela não entra mais nesta sala e o aparelho dela, só depois de
+  // LIM.tirado
+  l.fechar = () => { if (l.sala) { l.sala.removidos.add(l.chave); if (l.aparelho) l.sala.tirados.set(l.aparelho, Date.now() + LIM.tirado); } const ws = l.ws; l.ws = null; l.aberta = false; if (ws) setTimeout(() => { try { ws.close(4002, 'removido'); } catch (e) {} }, 50); };
   return l;
 }
 // a cada segundo: o sinal de cada sala, o dono ausente, quem saiu da sala e as salas vazias
@@ -142,6 +144,7 @@ function confere(m) {
   }
   return null;
 }
+const aparelhoLimpo = a => String(a == null ? '' : a).replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
 const nomeLimpo = n => String(n == null ? '' : n).replace(/[\u0000-\u001f\u007f\u2028\u2029\ue000-\ue004<>&"'`]/g, '').trim().slice(0, 16);
 
 function aoConectar(ws, ip) {
@@ -182,7 +185,7 @@ function aoConectar(ws, ip) {
       criadas.push(Date.now());
       sala = criaSala(); if (!sala) return recusa('o servidor está cheio. Tente daqui a pouco');
       sala.parse = vm.runInContext('JSON.parse', sala.ctx);
-      l = novaLigacao(ws); l.sala = sala;
+      l = novaLigacao(ws); l.sala = sala; l.aparelho = aparelhoLimpo(m.aparelho);
       naSala(sala, `anfNovaLigacao(__x.l); ANF.dono = __x.l; ANF.n = 4; ANF.lugares = [__x.l, null, null, null];
         ANF.cfg = limpaCfg(__x.cfg); ANF.tempo = TEMPOS_REDE.hasOwnProperty(__x.tempo) ? __x.tempo : 'normal';`, { l, cfg: sala.parse(JSON.stringify(m.cfg || {})), tempo: m.tempo });
       l.enviar({ t: 'entrou', codigo: sala.codigo, chave: l.chave });
@@ -208,7 +211,9 @@ function aoConectar(ws, ip) {
     const ocupadas = naSala(sala, 'ANF.ligacoes.filter(x => x.nome).length');
     if (ocupadas >= LIM.cadeiras) return recusa('a sala está cheia');
     if (typeof m.chave === 'string' && sala.removidos.has(m.chave)) { sala = null; return recusa('você foi tirado desta sala'); }
-    l = novaLigacao(ws); l.sala = sala;
+    const aparelho = aparelhoLimpo(m.aparelho), falta = (sala.tirados.get(aparelho) || 0) - Date.now();
+    if (aparelho && falta > 0) { sala = null; return recusa(`você foi tirado desta sala. Tente de novo em ${Math.ceil(falta / 60e3)} min`); }
+    l = novaLigacao(ws); l.sala = sala; l.aparelho = aparelho;
     naSala(sala, 'anfNovaLigacao(__x)', l);
     l.enviar({ t: 'entrou', codigo: sala.codigo, chave: l.chave });
     naSala(sala, '__x.l.aoReceber(__x.m)', { l, m: sala.parse(JSON.stringify({ t: 'ola', nome, versao: VERSAO, id: l.chave })) });

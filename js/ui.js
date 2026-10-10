@@ -918,6 +918,8 @@ function desenha(){
   $('unoBtn').hidden=watching;
   // emojis: só no multiplayer, para quem tem cadeira; quem está assistindo vê quantos assistem ao lado do menu
   $('emojis').hidden=!(emRede()&&!me.espectador&&S.phase!=='over');if($('emojis').hidden)emojiFecha();
+  // o botão e o menu dos emojis com o centro no centro do sino (a largura do sino vem do desenho do emoji)
+  else{const sb=$('unoBtn'),em=$('emojis');if(sb.offsetWidth)em.style.right=(em.parentElement.clientWidth-(sb.offsetLeft+sb.offsetWidth/2)-em.offsetWidth/2)+'px'}
   mostraAssistindo();
   // o sino: já no alvo (atrasado), ou na vez, antes de jogar a carta que deixa no alvo, se houver carta jogável
   // (com uma jogada a caminho da mesa, ainda não)
@@ -1038,21 +1040,35 @@ function openTarget(title,sub,opts,cb){
   });
   $('swaps').innerHTML='';$('swaps').appendChild(fila);
   if(opts.includes(0))$('swaps').insertAdjacentHTML('beforeend','<button type="button" class="btn alvo-eu" data-i="0">Eu mesmo</button>');
-  ov.classList.add('show');$('rail').classList.add('escolhendo');
-  // descem: cada cópia sai do lugar da cadeira de verdade
-  const voa=(c,de,para,ms,atraso)=>c.animate([{transform:`translate(${de.left-para.left}px,${de.top-para.top}px)`},{transform:'none'}],{duration:ms,delay:atraso,easing:'cubic-bezier(.3,.8,.3,1)',fill:'backwards'});
-  if(!RM)[...row.children].forEach((c,k)=>voa(c,orig[c.dataset.i].getBoundingClientRect(),c.getBoundingClientRect(),ALVO_MS,k*40));
+  ov.classList.add('show');
+  // descem: uma cópia solta de cada cadeira voa do lugar dela (no topo) até o lugar na janela, por cima de tudo; a da
+  // janela só aparece quando a cópia chega (a janela não sobe, para o movimento ser só o das cadeiras)
+  const voa=(de,para,c,atraso,ida)=>{
+    const f=c.cloneNode(true);f.classList.add('alvo-voando');
+    Object.assign(f.style,{left:de.left+'px',top:de.top+'px',width:de.width+'px',height:de.height+'px',visibility:'visible'});document.body.appendChild(f);
+    const a=f.animate([{transform:'none'},{transform:`translate(${para.left-de.left}px,${para.top-de.top}px) scale(${para.width/de.width},${para.height/de.height})`}],
+      {duration:ALVO_MS,delay:atraso,easing:ida?'cubic-bezier(.3,.8,.3,1)':'cubic-bezier(.5,0,.6,1)',fill:'both'});
+    // (com uma garantia, se a animação não avisar o fim)
+    return new Promise(r=>{let ok=false;const fim=()=>{if(ok)return;ok=true;f.remove();r()};a.onfinish=fim;a.oncancel=fim;setTimeout(fim,atraso+ALVO_MS+250)});
+  };
+  const semVoo=RM||S.turbo;
+  if(!semVoo){
+    const filhos=[...row.children],de=filhos.map(c=>orig[c.dataset.i].getBoundingClientRect()),para=filhos.map(c=>c.getBoundingClientRect());
+    filhos.forEach(c=>c.style.visibility='hidden');$('rail').classList.add('escolhendo');
+    filhos.forEach((c,k)=>voa(de[k],para[k],c,k*45,true).then(()=>{c.style.visibility=''}));
+  }else $('rail').classList.add('escolhendo');
   let feito=false;
   const done=i=>{
     if(feito)return;feito=true;S.autoResolve=null;
-    if(RM){fechaAlvos();cb(i);return}
-    // sobem de volta até as cadeiras e só então a ação acontece
-    [...row.children].forEach(c=>{const de=c.getBoundingClientRect(),dest=document.querySelector(`#seatrow [data-seat="${c.dataset.i}"]`);if(!dest)return;const para=dest.getBoundingClientRect();
-      c.animate([{transform:'none'},{transform:`translate(${para.left-de.left}px,${para.top-de.top}px)`}],{duration:ALVO_MS*.85,easing:'cubic-bezier(.5,0,.7,.4)',fill:'forwards'})});
+    if(semVoo){fechaAlvos();cb(i);return}
+    // sobem de volta voando até as cadeiras, e só então a ação acontece
     ov.classList.add('voltando');
-    setTimeout(()=>{fechaAlvos();cb(i)},ALVO_MS*.85);
+    const voltas=[...row.children].map((c,k)=>{const dest=document.querySelector(`#seatrow [data-seat="${c.dataset.i}"]`);if(!dest)return null;
+      const de=c.getBoundingClientRect();c.style.visibility='hidden';return voa(de,dest.getBoundingClientRect(),c,k*30,false)});
+    Promise.all(voltas).then(()=>{fechaAlvos();cb(i)});
   };
-  S.autoResolve=()=>done(fewest(0,opts));
+  // escolha automática (Confusão, testes): nunca a si mesmo, se houver outro
+  S.autoResolve=()=>{const o=opts.filter(i=>i!==0);done(fewest(0,o.length?o:opts))};
   $('swaps').onclick=e=>{const b=e.target.closest('[data-i]');if(b&&!b.classList.contains('nao'))done(+b.dataset.i)};
   $('swaps').onkeydown=e=>{if(e.key!=='Enter'&&e.key!==' ')return;const b=e.target.closest('[data-i]');if(b&&!b.classList.contains('nao')){e.preventDefault();done(+b.dataset.i)}};
   const primeiro=row.querySelector('[role=button]');if(primeiro)primeiro.focus({preventScroll:true});
@@ -1310,7 +1326,8 @@ function abreOpcoes(){updateInstallUI();CFG.sound=!MUTED;buildSettings();$('conf
 // pergunta com a janela do próprio jogo (no lugar do confirm do navegador); devolve true se a pessoa confirmar
 function confirmaJogo({titulo,texto,sim,nao}){
   return new Promise(res=>{
-    $('confirmTitulo').textContent=titulo;$('confirmTexto').textContent=texto;$('confirmSim').textContent=sim;$('confirmNao').textContent=nao;
+    // sem "nao": só um botão (um aviso)
+    $('confirmTitulo').textContent=titulo;$('confirmTexto').textContent=texto;$('confirmSim').textContent=sim;$('confirmNao').textContent=nao||'';$('confirmNao').hidden=!nao;
     const fim=v=>{$('confirmOv').classList.remove('show');res(v)};
     $('confirmSim').onclick=()=>fim(true);$('confirmNao').onclick=()=>fim(false);
     // tocar fora da janela é o mesmo que não
@@ -1331,8 +1348,8 @@ function mostraAssistindo(){
   const el=$('assistindo'),n=emRede()&&S&&S.players&&S.phase!=='over'?ASSISTINDO:0;
   el.hidden=!n;el.textContent=`👁️ ${n}`;el.setAttribute('aria-label',`${n} ${n===1?'pessoa assistindo':'pessoas assistindo'}`);el.title=el.getAttribute('aria-label');
 }
-/* Emojis (multiplayer): o botão acima do sino mostra o último usado e abre um menu que rola, com os 4 últimos no
-   topo. Quem manda vê o emoji acima das próprias cartas; os outros, no lugar do avatar dele, por EMOJI_VER ms */
+/* Emojis (multiplayer): o botão acima do sino mostra o último usado e abre um menu que rola, com todos em ordem de
+   uso (o mais recente no topo). Quem manda vê o emoji acima das próprias cartas; os outros, no lugar do avatar dele, por EMOJI_VER ms */
 const EMOJI_VER=2500;
 let EMOJI_RECENTES=load('unotfm-emojis',[]);if(!Array.isArray(EMOJI_RECENTES))EMOJI_RECENTES=[];
 EMOJI_RECENTES=EMOJI_RECENTES.filter(i=>Number.isInteger(i)&&i>=0&&i<EMOJIS.length);
@@ -1340,15 +1357,16 @@ let emojiUltimo=0;
 const emojiTexto=e=>EMOJIS[e]||'';
 function emojiBotao(){$('emojiBtn').textContent=EMOJI_RECENTES.length?emojiTexto(EMOJI_RECENTES[0]):'😊';$('emojiBtn').classList.toggle('txt',/^[A-Z]+$/.test($('emojiBtn').textContent))}
 function emojiAbre(){
-  const rec=EMOJI_RECENTES.slice(0,4),item=i=>`<button type="button" role="menuitem" data-e="${i}" class="${/^[A-Z]+$/.test(EMOJIS[i])?'txt':''}">${EMOJIS[i]}</button>`;
-  $('emojiMenu').innerHTML=(rec.length?rec.map(item).join('')+'<hr>':'')+EMOJIS.map((x,i)=>item(i)).join('');
+  // os já usados primeiro, do mais recente ao mais antigo; depois os outros, na ordem de sempre
+  const ordem=[...EMOJI_RECENTES,...EMOJIS.map((x,i)=>i).filter(i=>!EMOJI_RECENTES.includes(i))];
+  $('emojiMenu').innerHTML=ordem.map(i=>`<button type="button" role="menuitem" data-e="${i}" class="${/^[A-Z]+$/.test(EMOJIS[i])?'txt':''}">${EMOJIS[i]}</button>`).join('');
   $('emojiMenu').hidden=false;$('emojiMenu').scrollTop=0;$('emojiBtn').setAttribute('aria-expanded','true');
 }
 function emojiFecha(){$('emojiMenu').hidden=true;$('emojiBtn').setAttribute('aria-expanded','false')}
 function emojiManda(e){
   emojiFecha();
   const agora=Date.now();if(agora-emojiUltimo<EMOJI_MS)return;emojiUltimo=agora;
-  EMOJI_RECENTES=[e,...EMOJI_RECENTES.filter(x=>x!==e)].slice(0,4);save('unotfm-emojis',EMOJI_RECENTES);emojiBotao();
+  EMOJI_RECENTES=[e,...EMOJI_RECENTES.filter(x=>x!==e)];save('unotfm-emojis',EMOJI_RECENTES);emojiBotao();
   emojiMostra(0,e);
   if(REDE.anfitriao)REDE.anfitriao.enviar({t:'emoji',e});else if(REDE.papel==='anfitriao')anfEmoji('eu',e);
 }
