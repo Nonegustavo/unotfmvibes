@@ -9,7 +9,7 @@ const SOM_SINETA={tom:1460,duracao:2.1,brilho:.2,batimento:0,clique:.5,volume:.9
 const SOM_GELO={tom:3200,quiques:1,intervalo:.11,queda:.6,tinido:.15,brilho:.5,volume:1};
 
 // Carta da Misericórdia: um dos modelos (coro, harpa, sinos ou martelo), com o tom em semitons e a velocidade das notas
-// (2 = notas duas vezes mais rápidas, mais juntas)
+// (2 = notas duas vezes mais rápidas, mais juntas). Quando a carta funciona, as mesmas notas tocam subindo (sobe)
 const SOM_MISERICORDIA={modelo:'harpa',tom:0,volume:1,velocidade:.5};
 
 // um oscilador com ataque quase instantâneo e decaimento exponencial
@@ -72,8 +72,9 @@ function misericordia(ctx,dest,p,at=0){
     [[261.6,.05,0],[329.6,.04,.08],[392,.04,.16],[523.3,.035,.24],[659.3,.02,.32]].forEach(([f,vol,d])=>{
       somSuave(ctx,dest,f*k,vol*v,1.5,t+d*e,.35,'triangle',-6);somSuave(ctx,dest,f*k,vol*v*.8,1.5,t+d*e,.35,'sine',7)});
   }else if(p.modelo==='harpa'){
-    // harpa descendo uma escala pentatônica, cada corda some rápido
-    [1046.5,880,784,659.3,587.3,523.3,440,392].forEach((f,i)=>{somParcial(ctx,dest,f*k,.09*v,.7,t+i*.055*e,0,'triangle');somParcial(ctx,dest,f*k*2,.025*v,.35,t+i*.055*e)});
+    // harpa descendo uma escala pentatônica (subindo, com p.sobe), cada corda some rápido
+    const notas=[1046.5,880,784,659.3,587.3,523.3,440,392];
+    (p.sobe?notas.slice().reverse():notas).forEach((f,i)=>{somParcial(ctx,dest,f*k,.09*v,.7,t+i*.055*e,0,'triangle');somParcial(ctx,dest,f*k*2,.025*v,.35,t+i*.055*e)});
   }else if(p.modelo==='sinos'){
     // sinos de vento: toques agudos e suaves, espalhados
     [2093,2637,2349,3136,2794,3520].forEach((f,i)=>{const at2=t+(i*.09+Math.random()*.04)*e;somParcial(ctx,dest,f*k,.05*v,.9,at2);somParcial(ctx,dest,f*k*2.76,.012*v,.4,at2)});

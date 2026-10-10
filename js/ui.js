@@ -1378,7 +1378,7 @@ function emojiMostra(p,e){
   if(EMOJI_BALOES[p])EMOJI_BALOES[p].remove();
   const b=document.createElement('div');b.className='emo-balao'+(p===0?' meu':'')+(/^[A-Z]+$/.test(emojiTexto(e))?' txt':'');b.textContent=emojiTexto(e);
   b.setAttribute('role','status');b.setAttribute('aria-label',p===0?`Você mandou ${emojiTexto(e)}`:`${S.players[p].name} mandou ${emojiTexto(e)}`);
-  document.body.appendChild(b);EMOJI_BALOES[p]=b;
+  document.body.appendChild(b);EMOJI_BALOES[p]=b;sfx('emoji');
   const w=b.offsetWidth,h=b.offsetHeight;
   if(p===0){b.style.left=(innerWidth/2-w/2)+'px';b.style.top=(alvo.top-h-6)+'px'}
   else{b.style.left=(alvo.left+alvo.width/2-w/2)+'px';b.style.top=(alvo.top+alvo.height/2-h/2)+'px'}

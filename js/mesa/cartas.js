@@ -369,8 +369,8 @@ function applySpecial(pi,card){
       const r=massCheck();if(r==='win')return r;return selfCheck(pi)}
     case 'justice':{
       const k=Math.max(0,Math.min(opp.filter(i=>S.players[i].hand.length<p.hand.length).length,p.hand.length-1));
-      // funcionou: uma nota subindo por carta, junto com cada carta que voa; o som da Misericórdia só quando não funciona
-      if(k)emit({t:'som',k:'notasSobem',n:k});
+      // funcionou: as notas da Misericórdia subindo; descendo (o som do 🙏) só quando não funciona
+      if(k)emit({t:'som',k:'notasSobem'});
       for(let j=0;j<k;j++)discardCard(pi,rand(p.hand),j);
       emit({t:'fx',g:'🙏',txt:k?`${J(pi)} descartou ${k} carta${k>1?'s':''}`:'Ninguém tem menos cartas',cor:col,modo:'stamp',...(k?{mudo:true}:{})});log(`Misericórdia: ${J(pi)} descartou ${k}.`);
       return selfCheck(pi)}
