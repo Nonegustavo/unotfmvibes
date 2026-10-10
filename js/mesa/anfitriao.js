@@ -11,13 +11,17 @@
    Quem roda o anfitrião chama anfInicia() uma vez e anfSinal() a cada segundo, e liga ANF.aoMudar (a sala mudou),
    ANF.aoEntrar (uma pessoa sentou), ANF.aoComecar (uma partida vai começar) e ANF.aviso (textos de teste) se quiser
    saber das mudanças */
-const VERSAO_REDE='rede-2'; // os aparelhos comparam ao entrar: com versões diferentes, aparece "atualize o jogo"
+const VERSAO_REDE='rede-3'; // os aparelhos comparam ao entrar: com versões diferentes, aparece "atualize o jogo"
 const ANF={ligacoes:[],lugares:['eu',null,null,null],n:4,sortear:false,tempo:'livre',cfg:null,pedidos:{},seq:0,lugarConvite:null,
   sala:false,     // com a sala, quem criou começa a partida; sem ela (testes), começa sozinha quando chegam ANF.automatico pessoas
   automatico:1,
   dono:null,      // nas salas online, a ligação de quem manda na sala (comandos); na rede local, é quem roda a mesa ('eu')
   manterCaidos:false, // online: quem desligou continua com o lugar na sala até voltar (ou o servidor tirar)
-  agora:()=>Date.now(),aoMudar:null,aoEntrar:null,aoComecar:null,aviso:null};
+  agora:()=>Date.now(),aoMudar:null,aoEntrar:null,aoComecar:null,aviso:null,
+  aoEmoji:null};  // um emoji de alguém, para a tela de quem roda a mesa (rede local)
+// emojis do multiplayer: cada pessoa manda o número de um deles (a tela desenha); no máximo um a cada EMOJI_MS
+const EMOJIS=['👍','👎','👏','🙌','😂','🤣','😊','😍','😎','🤔','😮','😱','😭','😡','🤬','😴','🥳','🤯','🙏','💪','🔥','❤️','💀','👀','🎉','🤡','🐢','⚡','🍀','GG'];
+const EMOJI_MS=2000;
 // tempo para jogar (ms): jogada, cor e alvo, carta, e o que precisa de leitura (Memória, Carta da Regra, Mix)
 const TEMPOS_REDE={normal:{jogada:20000,cor:15000,alvo:15000,carta:15000,regra:30000,memoria:30000,mix:30000},
   longo:{jogada:40000,cor:30000,alvo:30000,carta:30000,regra:60000,memoria:60000,mix:60000},livre:null,
@@ -34,6 +38,17 @@ const anfPessoas=()=>ANF.ligacoes.filter(l=>l.aberta&&l.nome);
 const ligDaCadeira=pi=>ANF.ligacoes.find(l=>l.cadeira===pi);
 // a primeira cadeira que se pode mexer: a 0 é de quem roda a mesa, quando há um ('eu'); online, todas
 const anfMin=()=>ANF.lugares[0]==='eu'?1:0;
+// espectadores: pessoas na sala sem cadeira na partida que está andando (entraram depois, ou saíram da Sobrevivência)
+const anfJogando=()=>!!(S&&S.players&&S.phase!=='over');
+const anfEspectador=l=>ANF.sala&&anfJogando()&&l.nome&&l.aberta&&(l.cadeira==null||!S.players[l.cadeira]);
+const anfAssistindo=()=>ANF.ligacoes.filter(anfEspectador).length;
+// de onde o espectador vê a mesa: a cadeira do dono (ou a 0)
+const anfRef=()=>{const d=ANF.dono;return d&&d!=='eu'&&d.cadeira!=null&&S.players[d.cadeira]?d.cadeira:0};
+const anfVisaoEsp=l=>visaoEspectador(anfRef(),l.nome);
+// todos prontos para começar: as pessoas ligadas sentadas na sala, menos quem manda nela
+const anfProntos=()=>ANF.lugares.every(x=>!x||x==='eu'||x===ANF.dono||!ANF.ligacoes.includes(x)||!x.aberta||x.pronto);
+// a próxima rodada de um torneio que não acabou: começa sem esperar os prontos
+const anfTorneioSegue=()=>!!(TOUR&&!TOUR.done&&S&&S.phase==='over');
 
 /* ---------- partida ---------- */
 // a pessoa de outro aparelho responde aos pedidos de lá: a janela abre lá, e a resposta volta para cá (respondePedido)
@@ -82,7 +97,8 @@ function anfOuvinte(ev){
   if(!S||!S.players)return;
   // partida nova (a partir do primeiro evento dela): cada pessoa vai para o lugar dela nesta partida. Antes disso, os
   // eventos ainda são da partida anterior e vão para a cadeira de lá
-  if(S.gen!==ANF.gen){ANF.gen=S.gen;for(const l of ANF.ligacoes)l.cadeira=l.lugar}
+  const nova=S.gen!==ANF.gen;
+  if(nova){ANF.gen=S.gen;for(const l of ANF.ligacoes)l.cadeira=l.lugar}
   // na Dança das Cadeiras, cada pessoa vai para a cadeira nova (e os pedidos abertos dela também)
   if(ev.t==='cadeirasTrocadas'){
     for(const l of ANF.ligacoes)if(l.cadeira!=null)l.cadeira=ev.mapa[l.cadeira];
@@ -94,6 +110,16 @@ function anfOuvinte(ev){
     if(ev.exceto===pi)continue;
     l.enviar({t:'evento',ev:eventoPara(pi,ev),visao:visao(pi)});
   }
+  // quem assiste: só o que é de todos, a partir da cadeira de referência
+  for(const l of ANF.ligacoes){
+    if(!anfEspectador(l)&&!(ev.t==='fim'&&ANF.sala&&l.nome&&l.aberta&&(l.cadeira==null||!S.players[l.cadeira])))continue;
+    if(ev.a!=null&&ev.a!=='todos')continue;
+    const ref=anfRef();l.enviar({t:'evento',ev:eventoPara(ref,ev,true),visao:visaoEspectador(ref,l.nome)});
+  }
+  if(!ANF.sala)return;
+  // partida nova: quem assistia ganhou cadeira (o contador muda); fim: todos precisam dar pronto de novo
+  if(ev.t==='fim'){for(const l of ANF.ligacoes)l.pronto=false;OPCOES.assistindo=0;anfMudou()}
+  else if(nova)anfMudou();
 }
 function anfInicia(){if(!OUVINTES.includes(anfOuvinte))OUVINTES.push(anfOuvinte)}
 /* Começa uma partida. mapa: quem senta em cada cadeira ('eu', uma ligação ou null para um bot). Sem mapa (testes), a
@@ -102,6 +128,11 @@ function anfComeca(mapa){
   const ls=anfPessoas();
   R=regrasDe(ANF.cfg); // o torneio continua de uma rodada para a outra (newGame recomeça quando ele acaba ou o modo muda)
   if(!mapa){R.bots=Math.max(R.bots,ls.length);const n=R.bots+1,cads=cadeirasConvidados(n,ls.length);mapa=Array(n).fill(null);mapa[0]='eu';ls.forEach((l,k)=>mapa[cads[k]]=l)}
+  if(TOUR&&!TOUR.done&&TOUR.mode==='survivor'&&R.survivor){
+    let botsFora=(TOUR.names||[]).filter(n=>TOUR.out.includes(n)).length;
+    mapa=mapa.filter(x=>!(x&&x!=='eu'&&TOUR.out.includes(x.nome)));
+    for(let i=mapa.length-1;i>0&&botsFora>0;i--)if(mapa[i]===null){mapa.splice(i,1);botsFora--}
+  }
   R.bots=mapa.length-1;
   OPCOES.tempos=TEMPOS_REDE[ANF.tempo]||null;
   ANF.ligacoes.forEach(l=>l.lugar=null);
@@ -136,7 +167,7 @@ function anfDoConvidado(l,m){
     // nomes repetidos ganham um número (os textos do jogo usam o nome para saber quem é "Você")
     const usados=[OPCOES.meuNome||'Anfitrião',...ANF.ligacoes.filter(x=>x!==l&&x.nome).map(x=>x.nome)];
     if(novo&&usados.includes(l.nome)){let k=2;while(usados.includes(l.nome+' '+k))k++;l.nome=l.nome+' '+k}
-    if(ANF.sala){anfMudou();if(S&&S.phase!=='over'&&l.cadeira!=null)l.enviar({t:'evento',ev:{t:'atualiza'},visao:visao(l.cadeira)});return}
+    if(ANF.sala){anfMudou();if(anfJogando())l.enviar({t:'evento',ev:{t:'atualiza'},visao:l.cadeira!=null&&S.players[l.cadeira]?visao(l.cadeira):anfVisaoEsp(l)});return}
     if(novo&&ANF.aviso)ANF.aviso(`Anfitrião: ${ANF.ligacoes.filter(x=>x.nome).length} convidado(s) na sala`);
     if((!S||S.phase==='over')&&ANF.ligacoes.filter(x=>x.nome).length>=ANF.automatico)anfComeca();
     else if(S&&l.cadeira!=null)l.enviar({t:'evento',ev:{t:'atualiza'},visao:visao(l.cadeira)});
@@ -144,6 +175,7 @@ function anfDoConvidado(l,m){
   }
   if(m.t==='pronto'){l.pronto=!!m.pronto;anfMudou();return}
   if(m.t==='comando'){if(l===ANF.dono)anfComando(m);return}
+  if(m.t==='emoji'){anfEmoji(l,m.e);return}
   if(l.cadeira==null||!S)return;
   // ação de uma pessoa: a mesa confere; se recusar, ela fica sabendo na hora (e a prévia dela sai)
   if(m.t==='acao'&&m.acao){const a={...m.acao};if(typeof a.alvo==='number')a.alvo=giraDe(l.cadeira,a.alvo);if(!agir(l.cadeira,a))l.enviar({t:'recusada',n:m.n});return}
@@ -167,6 +199,7 @@ function anfSinal(){
 // alguém entrou, saiu, caiu ou ficou pronto, ou quem criou mudou alguma coisa: arruma os lugares e avisa todos
 function anfMudou(){
   if(!ANF.sala)return;
+  OPCOES.assistindo=anfAssistindo(); // com alguém assistindo, os bots não aceleram (S.spectate)
   anfSentaNovos();anfEnviaSala();
   if(ANF.aoMudar)ANF.aoMudar();
 }
@@ -187,7 +220,8 @@ function anfSentaNovos(){
 }
 // cada pessoa recebe a lista da sala do jeito dela ("você" na linha dela)
 function anfEnviaSala(){
-  for(const l of anfPessoas())l.enviar({t:'sala',regras:resumoRegras(ANF.cfg),tempo:ANF.tempo,sortear:ANF.sortear,
+  const assistindo=anfAssistindo(),segue=anfTorneioSegue();
+  for(const l of anfPessoas())l.enviar({t:'sala',regras:resumoRegras(ANF.cfg),tempo:ANF.tempo,sortear:ANF.sortear,assistindo,segue,
     lugares:ANF.lugares.map((x,i)=>x==='eu'?{nome:OPCOES.meuNome||'Anfitrião',anfitriao:true,col:'var(--accent)'}:!x?{tipo:'bot'}:
       {nome:x.nome,pronto:!!x.pronto,voce:x===l,dono:x===ANF.dono,caiu:!x.aberta,col:corDaPessoa(i)})});
 }
@@ -224,7 +258,7 @@ function anfComando(m){
     case 'sortear':ANF.sortear=!!m.v;anfMudou();return;
     case 'tempo':if(TEMPOS_REDE.hasOwnProperty(m.v))ANF.tempo=m.v;anfMudou();return;
     case 'regras':ANF.cfg=limpaCfg(m.cfg);anfMudou();return;
-    case 'comecar':if(!jogando)anfComecaSala();return;
+    case 'comecar':if(!jogando&&(anfProntos()||anfTorneioSegue()))anfComecaSala();return;
     case 'remover':{const x=ANF.lugares[m.i];if(x&&x!=='eu'&&x!==ANF.dono)anfRemove(x,true);return}
   }
 }
@@ -270,5 +304,18 @@ function anfVolta(l){
   if(S&&S.phase!=='over'&&l.cadeira!=null&&S.players[l.cadeira]){
     l.enviar({t:'evento',ev:{t:'atualiza'},visao:visao(l.cadeira)});
     for(const pd of Object.values(ANF.pedidos))if(pd.pi===l.cadeira&&!pd.ped.encerrado)l.enviar(pd.msg);
+  }else if(anfEspectador(l))l.enviar({t:'evento',ev:{t:'atualiza'},visao:anfVisaoEsp(l)});
+}
+// emoji de quem tem cadeira na partida ('eu' é quem roda a mesa): vai para todos, na cadeira de quem mandou como cada
+// um a vê. Quem assiste não manda
+function anfEmoji(de,e){
+  if(!Number.isInteger(e)||e<0||e>=EMOJIS.length||!anfJogando())return;
+  const pi=de==='eu'?0:de.cadeira;if(pi==null||!S.players[pi])return;
+  const o=de==='eu'?ANF:de,agora=ANF.agora();if(agora-(o.emojiEm||0)<EMOJI_MS)return;o.emojiEm=agora;
+  for(const l of anfPessoas()){
+    if(l===de)continue;
+    if(l.cadeira!=null&&S.players[l.cadeira])l.enviar({t:'emoji',p:giraPara(l.cadeira,pi),e});
+    else if(anfEspectador(l))l.enviar({t:'emoji',p:giraEsp(anfRef(),pi),e});
   }
+  if(de!=='eu'&&ANF.aoEmoji)ANF.aoEmoji(pi,e);
 }

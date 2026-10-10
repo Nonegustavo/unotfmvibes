@@ -79,7 +79,7 @@ async function step() {
     if (shown('settingsOv')) return click(document.getElementById('startBtn')) && 'iniciar';
     if (shown('pokerOv')) return click(document.getElementById('pokerGo')) && 'mix';
     for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps'], ['simonOv', 'simonBtns']]) {
-      if (shown(ov)) { const b = [...document.querySelectorAll(`#${box} button, #${box} .card`)].filter(x => !x.disabled); return click(pick(b)) && ov; }
+      if (shown(ov)) { const b = [...document.querySelectorAll(`#${box} button, #${box} .card, #${box} [role=button]`)].filter(x => !x.disabled); return click(pick(b)) && ov; }
     }
     for (const ov of ['activeOv', 'histOv', 'configOv', 'iosOv']) if (shown(ov)) document.querySelector(`#${ov} .btn.main`)?.click();
     const hand = document.querySelectorAll('#hand .card');

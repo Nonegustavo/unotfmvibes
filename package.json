@@ -12,6 +12,7 @@
     "test:online": "node tests/online.mjs",
     "test:trapaca": "node tests/trapaca.mjs",
     "test:rede": "node tests/rede.mjs",
+    "test:torneio-sala": "node tests/torneio-sala.mjs",
     "test:rede-regras": "node tests/rede-regras.mjs",
     "test:sala": "node tests/sala.mjs",
     "test:sala-online": "node tests/sala-online.mjs",

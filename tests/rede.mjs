@@ -75,7 +75,7 @@ const passo = p => p.evaluate(() => {
   if (shown('endOv')) return 'fim';
   if (shown('pokerOv')) return click(document.getElementById('pokerGo')) && 'mix';
   for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps'], ['simonOv', 'simonBtns']])
-    if (shown(ov)) { const b = [...document.querySelectorAll(`#${box} button, #${box} .card`)].filter(x => !x.disabled); return click(pick(b)) && ov; }
+    if (shown(ov)) { const b = [...document.querySelectorAll(`#${box} button, #${box} .card, #${box} [role=button]`)].filter(x => !x.disabled); return click(pick(b)) && ov; }
   // sino: quem toca vê o botão marcado na hora
   if (document.querySelectorAll('#hand .card').length === 2 && !S.players[0].called && !document.getElementById('unoBtn').disabled) { document.getElementById('unoBtn')?.click(); if (S.players[0].hand.length === 2 && (S.turn === 0 || S.players[0].hand.length === target()) && !VIS.sineta && !S.players[0].called) window.__sinetaLenta = (window.__sinetaLenta || 0) + 1; }
   const ok = [...document.querySelectorAll('#hand .card.ok')];

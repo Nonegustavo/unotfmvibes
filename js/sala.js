@@ -114,7 +114,7 @@ function salaLinhas(lugares){
   return lugares.map((x,i)=>{
     const bot=!x||x.tipo==='bot',nome=bot?'Bot':x.nome;
     const tag=x&&x.voce?'você':bot?'':x.anfitriao?'anfitrião':x.dono?'dono da sala':x.caiu?'📵 caiu':x.pronto?'✓ pronto':'entrou';
-    return {i,bot,nome,tag,ok:!!(x&&x.pronto),col:bot?'#4a3f6b':x.col,voce:!!(x&&x.voce)};
+    return {i,bot,nome,tag,ok:!!(x&&x.pronto),col:bot?'#4a3f6b':x.col,voce:!!(x&&x.voce),dono:!!(x&&(x.dono||x.anfitriao)),caiu:!!(x&&x.caiu)};
   });
 }
 // texto das regras da sala a partir do resumo (resumoRegras: modo, dificuldade e quantas regras)
@@ -150,9 +150,12 @@ function salaDesenha(){
   $('salaConvidar').textContent=pessoas>1?'➕ Convidar outra pessoa':'➕ Convidar alguém';
   $('salaConvidar').disabled=pessoas>=6;
   const jogando=S&&S.phase!=='over';
+  // começar: com pelo menos mais uma pessoa e todas prontas (a próxima rodada de um torneio não espera)
+  const faltam=linhas.filter(x=>!x.bot&&!x.voce&&!x.dono&&!x.caiu&&!x.ok).length,segue=!!(TOUR&&!TOUR.done&&S&&S.phase==='over');
   $('salaComecar').hidden=false;
-  $('salaComecar').textContent=jogando?'Voltar ao jogo':'Começar partida';
-  $('salaComecar').disabled=pessoas<2&&!jogando;
+  $('salaComecar').textContent=jogando?'Voltar ao jogo':faltam&&!segue&&pessoas>=2?`Esperando ${faltam===1?'1 pessoa ficar pronta':faltam+' pessoas ficarem prontas'}…`:segue?'Próxima rodada':'Começar partida';
+  $('salaComecar').disabled=!jogando&&(pessoas<2||(faltam>0&&!segue));
+  if(!SALA.online){ASSISTINDO=anfAssistindo();mostraAssistindo()}
 }
 // comandos de quem manda na sala: na rede local, direto no ANF deste aparelho; online, para o servidor
 function salaCmd(c,x={}){
@@ -201,17 +204,15 @@ function salaBotaoJogo(){
   const jogando=!!(S&&S.players&&S.phase!=='over');
   $('salaComecar').hidden=!jogando;$('salaComecar').disabled=false;$('salaComecar').textContent='Voltar ao jogo';
 }
-// fim da rodada: quem manda começa outra ou volta à sala; os outros veem a sala e esperam
+// fim da rodada: todos voltam à sala (os convidados dão Pronto de novo). No torneio que ainda não acabou, quem manda
+// começa a próxima rodada direto e os outros esperam
 function salaBotoesFim(){
-  $('againBtn').hidden=false;$('endRules').hidden=false;
-  $('endRules').onclick=()=>{$('endOv').classList.remove('show');salaVer()};
-  if(salaManda()){
-    $('againBtn').disabled=false;$('againBtn').onclick=salaComeca;$('endRules').textContent='Voltar à sala';
-    if(/^Esperando/.test($('againBtn').textContent))$('againBtn').textContent='Nova rodada';
-  }else{
-    $('againBtn').disabled=true;$('againBtn').onclick=null;$('againBtn').textContent=SALA.online?'Esperando o dono…':'Esperando o anfitrião…';
-    $('endRules').textContent='Ver a sala';
-  }
+  const segue=!!(TOUR&&!TOUR.done);
+  $('endMenu').hidden=true;$('endRules').hidden=segue;$('againBtn').hidden=!segue;
+  $('endRules').textContent='Voltar à sala';$('endRules').onclick=()=>{$('endOv').classList.remove('show');salaVer()};
+  if(!segue)return;
+  if(salaManda()){$('againBtn').disabled=false;$('againBtn').onclick=salaComeca;$('againBtn').textContent='Próxima rodada'}
+  else{$('againBtn').disabled=true;$('againBtn').onclick=null;$('againBtn').textContent=SALA.online?'Esperando o dono…':'Esperando o anfitrião…'}
 }
 // sair da sala (Sair da partida, no menu; Menu principal, no fim da rodada; Sair da sala, na sala): pergunta antes, com
 // o que acontece para quem sai
@@ -277,6 +278,8 @@ function salaDoAnfitriao(m){
   $('salaLugaresConv').innerHTML=salaLinhas(m.lugares).map(({bot,nome,tag,ok,col})=>`<li class="${bot?'bot':''}" data-nome="${bot?'':salaHtml(nome)}"><span class="av" style="background:${col}">${bot?'🤖':salaHtml(nome[0])}</span><span class="nm">${salaHtml(nome)}</span><span class="tg ${ok?'ok':''}">${tag}</span></li>`).join('');
   $('salaRegrasListaConv').innerHTML=salaRegrasLista(m.regras);
   $('salaRegrasConv').textContent=`${salaRegrasTxt(m.regras)} · tempo para jogar: ${(TEMPOS.find(x=>x[0]===m.tempo)||[])[1]||''}${m.sortear?' · lugares sorteados a cada partida':''}`;
+  // o pronto é o que a sala diz (no fim de cada partida, todos voltam a não estar prontos)
+  const eu=m.lugares.find(x=>x&&x.voce);if(eu)SALA.pronto=!!eu.pronto;
   $('salaPronto').textContent=SALA.pronto?'✓ Pronto (tocar para cancelar)':'Estou pronto';
   salaEstado('salaEstadoConv','✅ Conectado!','ok');
 }
@@ -298,7 +301,9 @@ function onlineInicia(){
   SALA.online=true;SALA.papel='online';telaAcesa();
   redeConvidado();REDE.online=true;REDE.aoSala=onlineMsg;FIM_BOTOES=salaBotoesFim;
   // voltou no meio de uma partida: a sala fecha e a partida aparece
-  REDE.aoVisao=()=>{if(S&&S.players)$('home').hidden=true;if(SALA.voltando&&S&&S.players&&S.phase!=='over'){SALA.voltando=false;$('salaOv').classList.remove('show')}};
+  // entrou com a partida andando: a sala fecha uma vez e a partida aparece, para assistir
+  REDE.aoVisao=()=>{if(S&&S.players)$('home').hidden=true;if(SALA.voltando&&S&&S.players&&S.phase!=='over'){SALA.voltando=false;$('salaOv').classList.remove('show')}
+    const esp=espectador();if(esp&&!SALA.assistiu&&S.phase!=='over')$('salaOv').classList.remove('show');SALA.assistiu=esp};
   // até chegar uma partida, atrás das janelas da sala fica a tela inicial (e não uma mesa vazia)
   $('home').hidden=false;
   $('salaSair').textContent='Sair da sala';
@@ -376,7 +381,7 @@ function onlineMsg(m){
   if(m.t==='removido'){SALA.saindo=true;onlineEsquece();$('endOv').classList.remove('show');salaAbre();$('salaSair').textContent='Voltar';salaEstado('salaEstadoInicio','Você foi tirado da sala.','erro');return}
   if(m.t==='versao'){salaAbre();salaEstado('salaEstadoInicio','O servidor está com outra versão do jogo. Feche o jogo e abra de novo, com internet, para atualizar.','erro');return}
   if(m.t!=='sala')return;
-  const antes=SALA.ultima;SALA.ultima=m;
+  const antes=SALA.ultima;SALA.ultima=m;ASSISTINDO=m.assistindo||0;mostraAssistindo();
   const eu=m.lugares.find(x=>x.voce),dono=!!(eu&&eu.dono);
   if(dono&&!SALA.dono&&antes)toast('Agora você é o dono da sala');
   SALA.dono=dono;

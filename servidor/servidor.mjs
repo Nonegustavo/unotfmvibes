@@ -136,6 +136,7 @@ function confere(m) {
       if (m.toques !== undefined && !(Array.isArray(m.toques) && m.toques.length <= 50 && m.toques.every(x => typeof x === 'string' && x.length <= 2))) return null;
       return { t: 'escolher', id: m.id, valor: m.valor, toques: m.toques };
     case 'pronto': return typeof m.pronto === 'boolean' ? { t: 'pronto', pronto: m.pronto } : null;
+    case 'emoji': return Number.isInteger(m.e) && m.e >= 0 && m.e < 64 ? { t: 'emoji', e: m.e } : null;
     case 'comando': if (typeof m.c !== 'string' || !int(m.n) || !int(m.i) || !int(m.j)) return null;
       return { t: 'comando', c: m.c, n: m.n, i: m.i, j: m.j, v: typeof m.v === 'string' || typeof m.v === 'boolean' ? m.v : undefined, cfg: m.cfg && typeof m.cfg === 'object' ? m.cfg : undefined };
   }

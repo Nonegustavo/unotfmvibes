@@ -24,7 +24,7 @@
 <body>
 <header class="top">
   <div class="brand">unotfm</div>
-  <div class="topbtns"><button class="iconbtn" id="menuBtn" aria-label="Menu" title="Menu (Esc)">☰</button></div>
+  <div class="topbtns"><span class="assistindo" id="assistindo" hidden></span><button class="iconbtn" id="menuBtn" aria-label="Menu" title="Menu (Esc)">☰</button></div>
 </header>
 <section class="rail" id="rail" aria-label="Ordem de jogada"><div class="seatrow" id="seatrow"></div><div class="marker" id="marker"></div></section>
 <section class="rulestrip" id="rulestrip" aria-label="Regras em jogo"></section>
@@ -59,6 +59,7 @@
 <div class="mesabtns" id="mesaBtns">
   <div class="mb-meio"><button class="btn mull" id="mullBtn" hidden>Trocar mão</button><button class="btn mull" id="chalBtn" hidden>Desafiar</button><button class="btn main" id="drawBtn" hidden>Passar</button></div>
   <button class="sino" id="unoBtn" aria-label="Tocar o sino" title="Tocar o sino">🛎️</button>
+  <div class="emojis" id="emojis" hidden><div class="emoji-menu" id="emojiMenu" role="menu" aria-label="Emojis" hidden></div><button type="button" class="emoji-btn" id="emojiBtn" aria-label="Mandar um emoji" aria-haspopup="menu" aria-expanded="false">😊</button></div>
 </div>
 <section class="handwrap" id="handwrap"><div class="limitwarn" id="limitwarn" hidden></div><button type="button" class="tag stat mystat" id="mystat" hidden></button><div class="hand" id="hand" aria-label="Sua mão"></div><div class="tempo" id="tempoBar" hidden aria-hidden="true"><b></b></div></section>
 

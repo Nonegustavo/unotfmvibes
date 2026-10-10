@@ -6,6 +6,7 @@ let acaoRemota=null;
    do monte, a vez passando) sem mexer na partida, até a mesa confirmar. No anfitrião a mesa confirma no mesmo instante;
    no convidado, a prévia cobre a espera da rede. Se a mesa não confirmar, a tela volta para o que a mesa diz */
 const acao=a=>{
+  if(espectador())return false; // quem assiste não joga
   const pv=fazPrevia(a);
   const ok=acaoRemota?acaoRemota(a):agir(0,a);
   if(!ok&&pv)desfazPrevia('recusada');
@@ -478,13 +479,14 @@ function regraFx(ev){
 }
 /* placar do fim da partida (evento 'fim') */
 function telaFim({pi,vencedores:winners,pts,tourMsg}){
-  if(pi>=0){winners.forEach(i=>{const n=S.players[i].name;SCORE[n]=(SCORE[n]||0)+1});save('unotfm-solo-score',SCORE)}
-  sfx(pi>=0&&winners.includes(0)?'win':'lose');if(pi>=0&&winners.includes(0))FX3D.confetti();
-  let title=pi===0?'Você venceu!':pi<0?'Você foi eliminado':`${S.players[pi].name} venceu`;
+  const esp=!!S.players[0].espectador; // quem assistiu: o fim de todos, sem "você"
+  if(pi>=0&&!esp){winners.forEach(i=>{const n=S.players[i].name;SCORE[n]=(SCORE[n]||0)+1});save('unotfm-solo-score',SCORE)}
+  sfx(esp?'bonus':pi>=0&&winners.includes(0)?'win':'lose');if(pi>=0&&winners.includes(0))FX3D.confetti();
+  let title=pi===0?'Você venceu!':pi<0?(esp?'Fim da partida':'Você foi eliminado'):`${S.players[pi].name} venceu`;
   if(R.team&&pi>=0)title=winners.includes(0)?(pi===0?'Sua dupla venceu!':`Sua dupla venceu com ${S.players[pi].name}!`):`${S.players[winners[0]].name} e ${S.players[winners[1]].name} venceram`;
   if(S.timeWin&&pi>=0)title+=' por pontos';
   $('endTitle').textContent=title;
-  $('endSub').textContent=(pi>=0?`Pontos da rodada: ${pts}. `:`Você ${VIS.outWhy}. `)+'Vitórias acumuladas neste navegador:';
+  $('endSub').textContent=(pi>=0?`Pontos da rodada: ${pts}. `:esp?'':`Você ${VIS.outWhy}. `)+'Vitórias acumuladas neste navegador:';
   if(TOUR){
     const goal=TOUR.mode==='tournament'?500:300;
     $('endSub').textContent=(tourMsg?texto(tourMsg)+' ':'')+`Rodada ${TOUR.round}. ${TOUR.mode==='tournament'?'Primeiro a 500 pontos vence.':'Quem chega a 300 pontos sai do torneio.'}`;
@@ -495,8 +497,8 @@ function telaFim({pi,vencedores:winners,pts,tourMsg}){
   }
   $('againBtn').textContent='Nova rodada';
   const hp=p=>[...p.hand,...(p.hand2||[])].reduce((a,c)=>a+cardPoints(c),0);
-  const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||((b.p.outAt||0)-(a.p.outAt||0))||(a.pts-b.pts)||(a.n-b.n));
-  $('endSub').textContent=(S.players[0].out?`Você ${VIS.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
+  const rank=S.players.map((p,i)=>({p,i,pts:hp(p),n:p.hand.length+(p.hand2||[]).length})).filter(x=>!x.p.espectador).sort((a,b)=>((!!a.p.out)-(!!b.p.out))||((b.p.outAt||0)-(a.p.outAt||0))||(a.pts-b.pts)||(a.n-b.n));
+  $('endSub').textContent=(S.players[0].out&&!esp?`Você ${VIS.outWhy}. `:'')+`Ranking pelos pontos das cartas que sobraram na mão (menos é melhor). Números valem o próprio número, ações coloridas 20 e curingas 50. Suas vitórias neste navegador: ${SCORE['Você']||0}.`;
   $('scoreTbl').innerHTML=rank.map((x,k)=>`<tr${x.i===0?' style="font-weight:700"':''}><td>${['🥇','🥈','🥉'][k]||`${k+1}º`} ${x.p.name}${x.p.out?' <span style="color:var(--muted)">(eliminado)</span>':` <span style="color:var(--muted)">(${x.n} carta${x.n===1?'':'s'})</span>`}</td><td>${x.p.out?'—':x.pts+' pts'}</td></tr>`).join('');
   if(FIM_BOTOES)FIM_BOTOES();
   $('endOv').classList.add('show');$('againBtn').focus();
@@ -555,6 +557,7 @@ function statusText(){
   // Mix de Regras no multiplayer: até as cartas serem distribuídas, alguém ainda está escolhendo (ou lendo a lista)
   if(R.poker&&!S.discard.length&&emRede())return 'Aguardando jogadores escolherem as regras…';
   const p=cur();
+  if(S.players[0].espectador)return 'Assistindo…';
   if(S.players[0].out)return S.players[0].foraTorneio?'Fora do torneio. Assistindo…':'Você foi eliminado. Assistindo…';
   if(VIS.announcing&&VIS.annText)return texto(VIS.annText);
   if(deBot(S.turn))return '';
@@ -913,6 +916,9 @@ function desenha(){
   const watching=me.out&&S.phase!=='over';
   if(watching&&!semTurbo){main.textContent='Terminar e descobrir vencedor';main.hidden=false;main.disabled=TB.on}
   $('unoBtn').hidden=watching;
+  // emojis: só no multiplayer, para quem tem cadeira; quem está assistindo vê quantos assistem ao lado do menu
+  $('emojis').hidden=!(emRede()&&!me.espectador&&S.phase!=='over');if($('emojis').hidden)emojiFecha();
+  mostraAssistindo();
   // o sino: já no alvo (atrasado), ou na vez, antes de jogar a carta que deixa no alvo, se houver carta jogável
   // (com uma jogada a caminho da mesa, ainda não)
   const cedo=!VIS.previa&&sinoAntesOk(0);
@@ -1317,6 +1323,53 @@ function confirmaJogo({titulo,texto,sim,nao}){
    e Sair da partida. No solo, a partida fica pausada enquanto o menu, ou uma tela aberta a partir dele (Nova partida,
    Opções), estiver na frente (tbPausa/tbContinua, js/turbo.js); no multiplayer não dá para pausar. Esc abre e fecha */
 const emRede=()=>!!REDE_MODO||typeof SALA!=='undefined'&&!!SALA.papel;
+// quem está assistindo (sem cadeira na partida): na visão dele, a cadeira 0 é de mentira (js/mesa/visao.js)
+const espectador=()=>!!(S&&S.players&&S.players[0]&&S.players[0].espectador);
+/* Quantos assistem (👁️ ao lado do menu, no multiplayer): vem da sala (servidor ou anfitrião da rede local) */
+let ASSISTINDO=0;
+function mostraAssistindo(){
+  const el=$('assistindo'),n=emRede()&&S&&S.players&&S.phase!=='over'?ASSISTINDO:0;
+  el.hidden=!n;el.textContent=`👁️ ${n}`;el.setAttribute('aria-label',`${n} ${n===1?'pessoa assistindo':'pessoas assistindo'}`);el.title=el.getAttribute('aria-label');
+}
+/* Emojis (multiplayer): o botão acima do sino mostra o último usado e abre um menu que rola, com os 4 últimos no
+   topo. Quem manda vê o emoji acima das próprias cartas; os outros, no lugar do avatar dele, por EMOJI_VER ms */
+const EMOJI_VER=2500;
+let EMOJI_RECENTES=load('unotfm-emojis',[]);if(!Array.isArray(EMOJI_RECENTES))EMOJI_RECENTES=[];
+EMOJI_RECENTES=EMOJI_RECENTES.filter(i=>Number.isInteger(i)&&i>=0&&i<EMOJIS.length);
+let emojiUltimo=0;
+const emojiTexto=e=>EMOJIS[e]||'';
+function emojiBotao(){$('emojiBtn').textContent=EMOJI_RECENTES.length?emojiTexto(EMOJI_RECENTES[0]):'😊';$('emojiBtn').classList.toggle('txt',/^[A-Z]+$/.test($('emojiBtn').textContent))}
+function emojiAbre(){
+  const rec=EMOJI_RECENTES.slice(0,4),item=i=>`<button type="button" role="menuitem" data-e="${i}" class="${/^[A-Z]+$/.test(EMOJIS[i])?'txt':''}">${EMOJIS[i]}</button>`;
+  $('emojiMenu').innerHTML=(rec.length?rec.map(item).join('')+'<hr>':'')+EMOJIS.map((x,i)=>item(i)).join('');
+  $('emojiMenu').hidden=false;$('emojiMenu').scrollTop=0;$('emojiBtn').setAttribute('aria-expanded','true');
+}
+function emojiFecha(){$('emojiMenu').hidden=true;$('emojiBtn').setAttribute('aria-expanded','false')}
+function emojiManda(e){
+  emojiFecha();
+  const agora=Date.now();if(agora-emojiUltimo<EMOJI_MS)return;emojiUltimo=agora;
+  EMOJI_RECENTES=[e,...EMOJI_RECENTES.filter(x=>x!==e)].slice(0,4);save('unotfm-emojis',EMOJI_RECENTES);emojiBotao();
+  emojiMostra(0,e);
+  if(REDE.anfitriao)REDE.anfitriao.enviar({t:'emoji',e});else if(REDE.papel==='anfitriao')anfEmoji('eu',e);
+}
+// mostra o emoji de quem mandou: o seu acima das suas cartas; o dos outros no lugar do avatar da cadeira dele
+const EMOJI_BALOES={};
+function emojiMostra(p,e){
+  if(!S||!S.players||!S.players[p])return;
+  const alvo=p===0?$('hand').getBoundingClientRect():document.querySelector(`[data-seat="${p}"] .av`)?.getBoundingClientRect();if(!alvo)return;
+  if(EMOJI_BALOES[p])EMOJI_BALOES[p].remove();
+  const b=document.createElement('div');b.className='emo-balao'+(p===0?' meu':'')+(/^[A-Z]+$/.test(emojiTexto(e))?' txt':'');b.textContent=emojiTexto(e);
+  b.setAttribute('role','status');b.setAttribute('aria-label',p===0?`Você mandou ${emojiTexto(e)}`:`${S.players[p].name} mandou ${emojiTexto(e)}`);
+  document.body.appendChild(b);EMOJI_BALOES[p]=b;
+  const w=b.offsetWidth,h=b.offsetHeight;
+  if(p===0){b.style.left=(innerWidth/2-w/2)+'px';b.style.top=(alvo.top-h-6)+'px'}
+  else{b.style.left=(alvo.left+alvo.width/2-w/2)+'px';b.style.top=(alvo.top+alvo.height/2-h/2)+'px'}
+  setTimeout(()=>{b.classList.add('some');setTimeout(()=>{b.remove();if(EMOJI_BALOES[p]===b)delete EMOJI_BALOES[p]},300)},EMOJI_VER);
+}
+emojiBotao();
+$('emojiBtn').onclick=e=>{e.stopPropagation();$('emojiMenu').hidden?emojiAbre():emojiFecha()};
+$('emojiMenu').onclick=e=>{const b=e.target.closest('[data-e]');if(b)emojiManda(+b.dataset.e)};
+document.addEventListener('pointerdown',e=>{if(!$('emojiMenu').hidden&&!e.target.closest('#emojis'))emojiFecha()});
 let MENU_ABERTO=false; // o menu, ou uma tela aberta a partir dele, está na frente
 function abreMenu(){
   const rede=emRede();

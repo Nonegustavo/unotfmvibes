@@ -115,10 +115,14 @@ try {
   // sem a câmera, o navegador costuma esconder o endereço do aparelho atrás de um nome .local (e a conexão funciona assim)
   const enderecos = await host.evaluate(() => ANF.ligacoes.filter(l => l.pc && l.aberta).map(l => /\.local/.test(l.pc.localDescription.sdp) ? 'nome .local' : 'endereço IP'));
   console.log(`   endereço do anfitrião nos convites: ${[...new Set(enderecos)].join(', ')}`);
-  // pronto
+  // pronto: sem todos prontos, não dá para começar
   await convidados[0].click('#salaPronto');
   await host.waitForFunction(() => /pronto/.test(document.getElementById('salaLugares').textContent), null, { timeout: 5000 });
   confere(true, 'o anfitrião vê quem está pronto');
+  confere(await host.isDisabled('#salaComecar'), 'com uma pessoa ainda não pronta, o anfitrião não consegue começar');
+  await convidados[1].click('#salaPronto');
+  await host.waitForFunction(() => !document.getElementById('salaComecar').disabled, null, { timeout: 5000 });
+  confere(true, 'com todos prontos, o anfitrião pode começar');
   // 5 lugares e uma troca de lugar
   await host.click('#salaLugaresSeg button[data-n="5"]');
   const antes = await host.evaluate(() => ANF.lugares.map(x => x === 'eu' ? 'eu' : x ? x.nome : '-').join(','));
@@ -144,7 +148,7 @@ try {
   for (let i = 0; i < 40; i++) {
     for (const p of [host, ...convidados]) await p.evaluate(() => {
       const shown = id => document.getElementById(id)?.classList.contains('show');
-      for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps']]) if (shown(ov)) { document.querySelector(`#${box} button, #${box} .card`)?.click(); return; }
+      for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps']]) if (shown(ov)) { document.querySelector(`#${box} button, #${box} .card, #${box} [role=button]`)?.click(); return; }
       const ok = document.querySelector('#hand .card.ok'); if (ok) { ok.click(); return; }
       if (typeof myTurn === 'function' && myTurn()) document.getElementById('drawBtn').click();
     });

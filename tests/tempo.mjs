@@ -43,7 +43,7 @@ const joga = p => p.evaluate(() => {
   if (!S || !S.players) return;
   const shown = id => document.getElementById(id)?.classList.contains('show');
   if (shown('pokerOv')) { document.getElementById('pokerGo').click(); return; }
-  for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps'], ['simonOv', 'simonBtns']]) if (shown(ov)) { document.querySelector(`#${box} button, #${box} .card`)?.click(); return; }
+  for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps'], ['simonOv', 'simonBtns']]) if (shown(ov)) { document.querySelector(`#${box} button, #${box} .card, #${box} [role=button]`)?.click(); return; }
   const ok = document.querySelector('#hand .card.ok'); if (ok) { ok.click(); return; }
   if (myTurn()) document.getElementById('drawBtn').click();
 });

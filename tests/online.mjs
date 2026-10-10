@@ -3,7 +3,10 @@
 // vão fazer, em várias salas ao mesmo tempo. Em cada sala:
 // - o dono cria a sala e muda lugares, regras e tempo; as outras pessoas entram pelo código e ficam prontas;
 // - o dono começa; durante a partida, uma pessoa cai e volta com a chave dela, para o mesmo lugar;
-// - todos veem o fim; o dono começa outra partida, tira uma pessoa da sala e sai: o posto de dono passa adiante.
+// - na primeira sala, alguém entra com a partida andando e assiste (todas as cadeiras em cima, sem a mão de ninguém, e o
+//   dono vê 1 assistindo); emojis chegam a todos na cadeira de quem mandou (no máximo um a cada 2 s; quem assiste não manda);
+// - todos veem o fim e deixam de estar prontos; sem todos prontos a partida não começa; prontos de novo, o dono começa
+//   outra partida (quem assistia ganha cadeira), tira uma pessoa da sala e sai: o posto de dono passa adiante.
 // Antes, uma conexão que fica muda (o app fechado sem avisar) precisa ser fechada pelo servidor.
 // Confere também que cada um se vê na própria cadeira e que nada que ele não pode saber chega a ele.
 // Uso: npm run test:online             (4 salas)
@@ -90,12 +93,44 @@ async function umaSala(k) {
   // a mesma cadeira: os mesmos vizinhos (a não ser que uma Dança das Cadeiras tenha trocado os lugares no meio)
   const dancou = () => q.msgs.some(m => m.t === 'evento' && m.ev.t === 'cadeirasTrocadas');
   await ate(() => q.robo.estado().players.map(x => x.name).join() === antes || q.robo.fim || dancou(), 5000, `${tag}: ${q.nome} não voltou para a mesma cadeira`);
+  // espectador: entra com a partida andando (só na primeira sala)
+  if (k === 0 && !q.robo.fim) {
+    const esp = await pessoa(`Espectador ${k + 1}`);
+    esp.c.manda({ t: 'entrar', codigo: dono.codigo, nome: esp.nome, versao: VERSAO });
+    await ate(() => esp.robo.estado() && esp.robo.estado().players, 5000, `${tag}: quem entrou não recebeu a partida para assistir`);
+    const v = esp.robo.estado();
+    if (v && v.players) {
+      if (!v.players[0].espectador || v.players.length !== 6) falhou(`${tag}: a visão de quem assiste não tem a cadeira de mentira mais as 5 (${v.players.length})`);
+      if (v.players[1].name !== dono.nome) falhou(`${tag}: quem assiste não vê a mesa a partir do dono (${v.players[1].name})`);
+      if (v.players.some(p => p.hand.some(c => !c.oculta && c.type !== 'batata'))) falhou(`${tag}: quem assiste vê cartas de alguém`);
+    }
+    await ate(() => sala(dono) && sala(dono).assistindo === 1, 5000, `${tag}: o dono não vê 1 pessoa assistindo`);
+    // emojis: q manda dois seguidos (só o primeiro passa); o dono e quem assiste veem na cadeira dele
+    const emojis = p => p.msgs.filter(m => m.t === 'emoji');
+    q.c.manda({ t: 'emoji', e: 2 }); q.c.manda({ t: 'emoji', e: 3 });
+    esp.c.manda({ t: 'emoji', e: 4 });
+    await ate(() => emojis(dono).length && emojis(esp).length, 5000, `${tag}: o emoji não chegou`);
+    await espera(600);
+    for (const p of [dono, esp]) {
+      const l = emojis(p), vv = p.robo.estado();
+      if (l.length !== 1 || l[0].e !== 2) falhou(`${tag}: ${p.nome} recebeu emojis ${JSON.stringify(l)} (esperava só o 2)`);
+      else if (vv.players[l[0].p]?.name !== q.nome) falhou(`${tag}: ${p.nome} viu o emoji na cadeira de ${vv.players[l[0].p]?.name}, e não de ${q.nome}`);
+    }
+    todos.push(esp); outros.push(esp);
+  }
   // até o fim
   await ate(() => todos.every(p => p.robo.fim), 240000, `${tag}: nem todos viram o fim da partida`);
   const vezes = q.robo.estado().vezes;
+  // fim: ninguém está pronto, e sem os prontos a partida não começa
+  await ate(() => sala(dono) && outros.every(p => linha(dono, p.nome) && !linha(dono, p.nome).pronto), 5000, `${tag}: no fim, os outros continuam prontos`);
+  dono.c.manda({ t: 'comando', c: 'comecar' }); await espera(800);
+  if (todos.some(p => !p.robo.fim)) falhou(`${tag}: a partida começou sem todos prontos`);
+  for (const p of outros) p.c.manda({ t: 'pronto', pronto: true });
+  await ate(() => outros.every(p => linha(dono, p.nome)?.pronto), 5000, `${tag}: o dono não vê quem ficou pronto de novo`);
   // outra partida, depois o dono tira uma pessoa e sai
   dono.c.manda({ t: 'comando', c: 'comecar' });
   await ate(() => todos.every(p => !p.robo.fim && p.robo.estado().discard.length), 8000, `${tag}: a segunda partida não começou`);
+  if (todos.some(p => p.robo.estado().players[0].espectador)) falhou(`${tag}: alguém continuou só assistindo na segunda partida`);
   if (outros.length >= 2) {
     const tirada = outros[outros.length - 1], i = sala(dono).lugares.findIndex(x => x.nome === tirada.nome);
     dono.c.manda({ t: 'comando', c: 'remover', i });

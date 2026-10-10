@@ -95,7 +95,7 @@ function redeSemSinal(sem){
 }
 function redeAnfitriao(){
   REDE.papel='anfitriao';semTurbo=true;nativeTimeout(redeSinal,1000);
-  ANF.agora=realNow;ANF.cfg=CFG;ANF.aviso=redeAviso;anfInicia();
+  ANF.agora=realNow;ANF.cfg=CFG;ANF.aviso=redeAviso;anfInicia();ANF.aoEmoji=emojiMostra;
   // partida nova (pela sala ou, nos testes, quando os convidados chegam): o placar e as Configurações fecham
   ANF.aoComecar=()=>{$('endOv').classList.remove('show');$('settingsOv').classList.remove('show')};
   $('home').hidden=true;
@@ -139,6 +139,7 @@ function redeLigaAnfitriao(l){
     if(!REDE.conectado){REDE.conectado=true;redeAviso('Convidado: conectado ao anfitrião')}
     if(m.t==='versao'){redeAviso('Atualize o jogo: o anfitrião está com outra versão');if(REDE.aoSala)REDE.aoSala({t:'versao'});return}
     if(['sala','entrou','erro','removido'].includes(m.t)){if(REDE.aoSala)REDE.aoSala(m);return}
+    if(m.t==='emoji'){emojiMostra(m.p,m.e);return}
     if(m.visao){
       // a visão substitui a partida inteira; o que a tela guardou nela (janela aberta) continua
       const auto=S&&S.autoResolve,pre=S&&S.preLanded;

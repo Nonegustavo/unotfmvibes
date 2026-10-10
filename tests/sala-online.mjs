@@ -3,7 +3,11 @@
 // - O dono cria a sala pelo 👥 ("Pela internet") e recebe o código e o link.
 // - A Bia entra abrindo o link; o Caio digita o código.
 // - O dono muda os lugares e troca a ordem; os outros veem a mesma lista e ficam prontos; o dono começa.
-// - A partida anda; a Bia recarrega a página no meio dela e volta sozinha para a mesma cadeira.
+// - A partida anda; a Dani entra pelo link no meio dela e assiste (todas as cadeiras em cima, "Assistindo…", sem emojis),
+//   e os outros veem "👁️ 1" ao lado do menu. O dono manda um emoji: aparece acima das cartas dele e na cadeira dele
+//   para a Bia.
+// - A Bia recarrega a página no meio da partida e volta sozinha para a mesma cadeira.
+// - No fim, todos veem só "Voltar à sala"; a Bia volta à sala sem estar pronta, e o dono não consegue começar.
 // - O dono tira o Caio da sala e depois sai: o posto de dono passa para a Bia, que vê os botões de dono.
 // Tira capturas (tests/sala-online-*.png).
 // Uso: npm run test:sala-online   (--ver abre o navegador visível)
@@ -46,7 +50,7 @@ const foto = (p, nome) => p.screenshot({ path: path.join(ROOT, 'tests', `sala-on
 const nomesNaLista = (p, id) => p.evaluate(id => [...document.querySelectorAll(`#${id} li .nm`)].map(e => e.textContent), id);
 const joga = p => p.evaluate(() => {
   const shown = id => document.getElementById(id)?.classList.contains('show');
-  for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps']]) if (shown(ov)) { document.querySelector(`#${box} button, #${box} .card`)?.click(); return; }
+  for (const [ov, box] of [['colorOv', 'colorBtns'], ['pickOv', 'picks'], ['swapOv', 'swaps']]) if (shown(ov)) { document.querySelector(`#${box} button, #${box} .card, #${box} [role=button]`)?.click(); return; }
   const ok = document.querySelector('#hand .card.ok'); if (ok) { ok.click(); return; }
   if (typeof myTurn === 'function' && myTurn()) document.getElementById('deck').click();
 });
@@ -125,12 +129,51 @@ try {
   confere(true, 'o Caio voltou ao jogo');
   await foto(dono, 'jogo');
 
+  // ---------- a Dani entra no meio da partida e assiste ----------
+  const dani = await abre('Dani', '&sala=' + codigo);
+  await dani.waitForSelector('#salaOv.show', { timeout: 5000 });
+  await dani.fill('#salaNome', 'Dani'); await dani.click('#salaEntrarConvite');
+  await dani.waitForFunction(() => S && S.players && S.players[0].espectador && S.phase !== 'over', null, { timeout: 10000 });
+  await dani.waitForFunction(() => !document.getElementById('salaOv').classList.contains('show'), null, { timeout: 5000 });
+  const vd = await dani.evaluate(() => ({ cadeiras: document.querySelectorAll('#seatrow .seat').length, status: document.getElementById('status').textContent, mao: document.querySelectorAll('#hand .card').length, emojis: document.getElementById('emojis').hidden, primeira: S.players[1].name }));
+  confere(vd.cadeiras === 5 && vd.status === 'Assistindo…' && vd.mao === 0 && vd.emojis && vd.primeira === 'Gustavo', `a Dani assiste com as 5 cadeiras em cima, a partir do dono (${JSON.stringify(vd)})`);
+  await dono.waitForFunction(() => !document.getElementById('assistindo').hidden && document.getElementById('assistindo').textContent === '👁️ 1', null, { timeout: 5000 });
+  confere(true, 'o dono vê "👁️ 1" ao lado do menu');
+  await foto(dani, 'espectador');
+  // emoji do dono
+  await dono.click('#emojiBtn');
+  confere(await dono.isVisible('#emojiMenu') && await dono.evaluate(() => document.querySelectorAll('#emojiMenu button').length === EMOJIS.length), 'o dono abre o menu de emojis');
+  await foto(dono, 'emojis');
+  await dono.click('#emojiMenu button[data-e="0"]');
+  confere(await dono.evaluate(() => !!document.querySelector('.emo-balao.meu') && document.getElementById('emojiBtn').textContent === EMOJIS[0]), 'o emoji aparece acima das cartas do dono, e o botão passa a mostrar ele');
+  await foto(dono, 'emoji-meu');
+  await bia.waitForFunction(() => [...document.querySelectorAll('.emo-balao')].some(b => /Gustavo/.test(b.getAttribute('aria-label'))), null, { timeout: 5000 });
+  confere(true, 'a Bia vê o emoji na cadeira do dono');
+  await foto(bia, 'emoji');
+
   // ---------- a Bia recarrega a página e volta sozinha ----------
   const vizinhos = await bia.evaluate(() => S.players.map(p => p.name).join(','));
   await bia.reload();
   await bia.waitForFunction(() => S && S.players && S.players[0].name === 'Bia' && S.discard.length, null, { timeout: 10000 });
   confere(await bia.evaluate(() => S.players.map(p => p.name).join(',')) === vizinhos || await bia.evaluate(() => S.phase === 'over'), 'a Bia recarregou a página e voltou para a mesma cadeira');
   confere(await bia.evaluate(() => document.getElementById('home').hidden), 'depois de voltar, ela vê a partida (e não a tela inicial)');
+
+  // ---------- fim da partida: só "Voltar à sala", e todos dão pronto de novo ----------
+  const fimVisto = p => p.evaluate(() => document.getElementById('endOv').classList.contains('show'));
+  for (let i = 0; i < 600 && !(await fimVisto(dono) && await fimVisto(bia)); i++) { for (const p of [dono, bia, caio]) await joga(p); await dono.waitForTimeout(150); }
+  for (const p of [dono, bia, dani]) {
+    const b = await p.evaluate(() => ({ voltar: !document.getElementById('endRules').hidden && document.getElementById('endRules').textContent, outra: !document.getElementById('againBtn').hidden, menu: !document.getElementById('endMenu').hidden }));
+    confere(b.voltar === 'Voltar à sala' && !b.outra && !b.menu, `${p.nome}: no fim, só "Voltar à sala" (${JSON.stringify(b)})`);
+  }
+  await foto(dani, 'fim');
+  await bia.click('#endRules');
+  await bia.waitForSelector('#salaOv.show', { timeout: 5000 });
+  confere(await bia.textContent('#salaPronto') === 'Estou pronto', 'a Bia volta à sala sem estar pronta');
+  await bia.evaluate(() => document.getElementById('salaOv').classList.remove('show'));
+  await dono.click('#endRules');
+  await dono.waitForSelector('#salaOv.show', { timeout: 5000 });
+  confere(await dono.isDisabled('#salaComecar') && /^Esperando/.test(await dono.textContent('#salaComecar')), `o dono não consegue começar sem todos prontos ("${await dono.textContent('#salaComecar')}")`);
+  await dono.evaluate(() => document.getElementById('salaOv').classList.remove('show'));
 
   // ---------- o dono tira o Caio e sai ----------
   await dono.click('#menuBtn');

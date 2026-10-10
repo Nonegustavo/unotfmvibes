@@ -83,7 +83,8 @@ try {
   for (const cmd of [{ c: 'lugares', n: 2 }, { c: 'remover', i: 0 }, { c: 'tempo', v: 'rapido' }, { c: 'comecar' }]) ana.manda({ t: 'comando', ...cmd });
   await espera(500);
   confere(JSON.stringify(ultima(dono, 'sala').lugares.map(x => x.nome || 'bot')) === antes && !ana.recebidas.some(m => m && m.t === 'evento'), 'comandos de dono mandados por outra pessoa não fazem nada');
-  // começa (o dono)
+  // começa (o dono), com a Ana pronta
+  ana.manda({ t: 'pronto', pronto: true }); await espera(300);
   dono.manda({ t: 'comando', c: 'tempo', v: 'normal' });
   dono.manda({ t: 'comando', c: 'comecar' });
   await ana.espera(m => m && m.t === 'evento' && m.visao && m.visao.S.discard.length, 5000);

@@ -177,7 +177,8 @@ function markOut(pi,reason,icon){
   log(`${J(pi)} foi eliminado: ${why}.`);emit({t:'aviso',txt:`${J(pi)} foi eliminado!`,cor:'var(--cr)'});
   emit({t:'eliminado',p:pi,motivo:why,a:pi});
   // sem nenhuma pessoa no jogo, os bots jogam mais rápido (com outras pessoas ainda jogando, o ritmo continua o mesmo)
-  if(pessoa(pi)&&!alive().some(pessoa))S.spectate=true;
+  // sem nenhuma pessoa no jogo, os bots aceleram (a não ser que alguém esteja assistindo na sala)
+  if(pessoa(pi)&&!alive().some(pessoa)&&!OPCOES.assistindo)S.spectate=true;
   const a=alive();
   if(a.length>1)emit({t:'aviso',a:pi,txt:'Você foi eliminado. Assistindo os adversários…',cor:'var(--cr)'});
   if(a.length===1||(R.team&&new Set(a.map(teamOf)).size===1)){endRound(a[0]);return true}
@@ -238,11 +239,12 @@ function newGame(){
   const tourMode=R.tournament?'tournament':R.survivor?'survivor':null;
   if(!tourMode)TOUR=null;
   else if(!TOUR||TOUR.mode!==tourMode||TOUR.done)TOUR={mode:tourMode,pts:{},names:null,out:[],round:0};
-  // com pessoas de outros aparelhos (sala), as cadeiras são as da sala: no torneio, quem saiu dele continua na cadeira,
-  // fora da partida. No solo, os adversários que saíram do torneio deixam a mesa
+  // com pessoas de outros aparelhos (sala), as cadeiras são as da sala; quem saiu do torneio deixa a mesa (no solo e na
+  // sala; quem roda a mesa na rede local, na cadeira 0, continua sentado, fora da partida)
   const sala=!!(OPCOES.controles&&OPCOES.controles.includes('rede'));
   let names;
-  if(TOUR&&TOUR.names)names=sala?TOUR.names:TOUR.names.filter(n=>!TOUR.out.includes(n));
+  // quem saiu do torneio deixa a mesa (na sala, o anfitrião já tirou as cadeiras deles; as pessoas assistem)
+  if(TOUR&&TOUR.names)names=TOUR.names.filter(n=>!TOUR.out.includes(n));
   else{
     names=shuffle([...BOTNAMES]).slice(0,R.bots);
     if(TOUR)TOUR.names=names;
