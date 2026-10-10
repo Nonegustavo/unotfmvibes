@@ -419,14 +419,18 @@ function playCard(pi,card,chosen){
   if(on&&card.type==='skip'){S.skip=true;const v=nextIdx(pi,1);emit({t:'fx',g:'⊘',txt:V(v,'Você perdeu a vez',`${J(v)} perdeu a vez`),cor:'var(--cr)',modo:'stamp'});emit({t:'selo',p:v,ic:'⊘',cor:'var(--cr)'})}
   if(on&&card.type==='rev'){
     S.dir*=-1;emit({t:'sentido'});
-    if(S.pending>0){emit({t:'fx',g:ARROWS,txt:`Contra-ataque! +${S.pending} volta`,cor:'var(--accent)',modo:S.dir===1?'cw':'ccw'});msg+=' e devolveu a compra'}
+    // Contra-ataque: a compra volta e quem a recebe compra na hora, sem poder se defender (endTurn)
+    if(S.pending>0){S.contra=true;emit({t:'fx',g:ARROWS,txt:`Contra-ataque! +${S.pending} volta`,cor:'var(--accent)',modo:S.dir===1?'cw':'ccw'});msg+=' e devolveu a compra'}
     else{emit({t:'fx',g:ARROWS,txt:'Sentido invertido',cor:S.dir===1?'var(--accent)':'var(--accent)',modo:S.dir===1?'cw':'ccw'});if(alive().length===2)S.skip=true}
   }
   if(on&&isDraw(card)){
+    const antes=S.pending;
     S.pending+=drawVal(card);S.pendingType=card.type;
     S.chal=(card.type!=='d2'&&!R.nochallenge)?{by:pi,bluff:hadColor,amt:drawVal(card),col:colBefore}:null;
     if(S.pending>drawVal(card))msg+=` (acumulado +${S.pending})`;
-    emit({t:'som',k:'plus'});emit({t:'pausa',ms:600});
+    // o som sobe um tom a cada carta de compra jogada por cima de outra (acumulando)
+    S.plusN=antes>0?(S.plusN||0)+1:0;
+    emit({t:'som',k:'plus',...(S.plusN?{n:S.plusN}:{})});emit({t:'pausa',ms:600});
   }
   if(card.color==='w'&&chosen&&peaceOn){card.chosen=chosen}
   else if(card.color==='w'&&chosen){card.chosen=chosen;emit({t:'brilho',cor:CVAR[chosen]});emit({t:'3d',k:'sparks',onde:'mesa',args:[CVAR[chosen]]});if(!isDraw(card))emit({t:'fx',g:`<span class="wheel" style="width:calc(var(--cw)*1.1);background:${CVAR[chosen]}"></span>`,txt:CNAME[chosen],cor:CVAR[chosen],modo:'stamp'})}
@@ -540,7 +544,8 @@ function endTurn(){
   S.deNovo=S.extra; // Perfeição: quem jogou joga de novo (o bot, mais depressa)
   S.extra=false;S.skip=false;
   S.turn=S.players[S.turn].out&&steps===0?nextIdx(S.turn,1):nextIdx(S.turn,steps);
-  if(S.pending>0&&comboMode()==='none'&&!R.nou){
+  const contra=S.contra;S.contra=false;
+  if(S.pending>0&&((comboMode()==='none'&&!R.nou)||contra)){
     const v=S.turn;S.chal=null;
     if(noDraw(v)||curseIs('ice')||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}

@@ -255,7 +255,8 @@ const SND={
   caught:()=>{tone(320,.35,{type:'sawtooth',to:140,vol:.14})},
   skip:()=>{tone(240,.09,{type:'square',vol:.12});tone(180,.14,{type:'square',vol:.12,at:.11})},
   rev:()=>{tone(300,.22,{to:900,vol:.16});tone(900,.22,{to:300,vol:.12,at:.2});noise(.4,{f:800,fTo:3000,vol:.08})},
-  plus:()=>{tone(200,.12,{type:'sawtooth',vol:.14});tone(300,.18,{type:'sawtooth',vol:.14,at:.12});noise(.15,{f:400,vol:.1,at:.12,filter:'lowpass'})},
+  // +2/+4: um tom acima (2 semitons) a cada carta de compra acumulada por cima (n)
+  plus:n=>{const k=Math.pow(2,Math.min(n||0,10)*2/12);tone(200*k,.12,{type:'sawtooth',vol:.14});tone(300*k,.18,{type:'sawtooth',vol:.14,at:.12});noise(.15,{f:400*k,vol:.1,at:.12,filter:'lowpass'})},
   wild:()=>arp([523,659,784,988],.05,{type:'triangle',vol:.14,d:.25}),
   king:()=>{arp([523,659,784,1046],.08,{type:'square',vol:.06,d:.3});tone(1318,.5,{type:'triangle',vol:.09,at:.34})},
   sun:()=>arp([523,659,784,1046,1318],.07,{type:'triangle',vol:.13,d:.4}),

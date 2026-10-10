@@ -150,6 +150,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Se a jogada era legal, o desafiante perde a vez.
   - Perder a vez por penalidade não conta como "passar" para encerrar a Nevasca.
   - Na Morte súbita, quem precisaria comprar com o monte congelado não passa: é eliminado (`takeDraw`).
+- **Contra-ataque** (`nou`): o Inverter devolve a compra acumulada, e quem a recebe compra na hora e perde a vez, sem poder se defender (`S.contra`, no `endTurn`). O som do +2/+4 sobe um tom a cada carta de compra acumulada por cima (`S.plusN`, `n` no evento `som`).
 - **Compra:** depois de comprar, o jogador pode jogar **qualquer** carta jogável ou passar.
   - Compra e Passa passa a vez ao comprar.
   - Compra Rápida joga a carta comprada sozinha, mesmo que não combine (exceto a Bomba).
