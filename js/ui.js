@@ -728,7 +728,7 @@ function renderRail(){
     const vistos=VIS.saidVisto||(VIS.saidVisto=new Set()),saidNovo=said&&!vistos.has(p.name);if(said)vistos.add(p.name);else vistos.delete(p.name);
     const ctCls=said?(saidNovo?'said novo':'said'):hidden?'':near?'nr':v<=3?'low':'';
     const fanN=hidden?1:Math.min(n,8);
-    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&(p.colorida??colorful(p))?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)};animation-delay:${shinyDelay()};--teiaD:${-(performance.now()%3200).toFixed(0)}ms" data-seat="${i}">
+    parts.push(`<div data-name="${p.name}" class="seat ${p.webbed&&!p.out?'webbed':''} ${near?'near':''} ${R.shiny&&!p.out&&S.phase!=='over'&&(p.colorida??colorful(p))?'shiny':''} ${S.turn===i&&S.phase!=='over'?'on':''} ${p.out?'out':''} ${partner(i)===0?'partner':''}" style="--lv:${lv.toFixed(2)};animation-delay:${shinyDelay()}" data-seat="${i}">
       ${R.team?`<span class="tdot" style="background:${TEAMCOL[teamOf(i)]}" title="${partner(i)===0?'sua dupla':'dupla '+(teamOf(i)+1)}"></span>`:''}
       
       <div class="nm">${p.name}</div>
