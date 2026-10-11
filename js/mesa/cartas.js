@@ -470,7 +470,7 @@ function applySpecial(pi,card){
       return pedeEspecial(pi,card,'carta',{titulo:'Carta do Banimento',sub:'Escolha uma carta. Todas as cartas com o mesmo símbolo saem do jogo.',opcoes:()=>shuffle([...S.players[pi].hand]).slice(0,3)},
         ()=>{const o3=shuffle([...p.hand]).slice(0,3);return {e:rand(o3),lista:o3,ver:'down'}},c=>banType(pi,c));
     case 'box':
-      alive().forEach((i,k)=>{const c=mk('w','random');c.extra=true;S.players[i].hand.push(c);S.players[i].called=false;emit({t:'recebe',p:i,ids:[c.id],de:'monte',atraso:k*60,origem:false})});
+      alive().forEach((i,k)=>{const c=mk('w','random');c.extra=true;c.doPresente=true;S.players[i].hand.push(c);S.players[i].called=false;emit({t:'recebe',p:i,ids:[c.id],de:'monte',atraso:k*60,origem:false})});
       emit({t:'fx',g:'📦',txt:'Todos ganham uma Carta Misteriosa',cor:col,modo:'slam'});log('Presente: todos ganharam uma Carta Misteriosa.');return massCheck();
     case 'confuse':p.confuseNext=true;emit({t:'fx',g:'🍄',txt:`${V(pi,'Você jogará',J(pi)+' jogará')} aleatoriamente na próxima vez`,cor:col,modo:'stamp'});log(`${J(pi)} ficará confuso.`);return 'done';
     case 'ink':{

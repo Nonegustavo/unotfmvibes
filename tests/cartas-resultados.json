@@ -1072,11 +1072,11 @@
  "carta:box:voce": {
   "fim": "turnos",
   "erros": [],
-  "vez": 2,
-  "sentido": -1,
+  "vez": 0,
+  "sentido": 1,
   "cor": "r",
   "fase": "play",
-  "compra": 2,
+  "compra": 0,
   "lado": "a",
   "clima": null,
   "maldicao": null,
@@ -1088,7 +1088,7 @@
    "b:num1",
    "b:num2",
    "g:num2",
-   "r:d2"
+   "r:rev"
   ],
   "monte": 81,
   "jogadores": [
@@ -1107,7 +1107,7 @@
    "Jingle jogou 1 Azul.",
    "Papaille jogou 2 Azul.",
    "Você jogou 2 Verde.",
-   "Drekkemaus jogou Carta Misteriosa → +2 Vermelho."
+   "Drekkemaus jogou Carta Misteriosa → Inverter Vermelho."
   ],
   "eventos": [
    "fechaJanelas",
@@ -1207,12 +1207,12 @@
    "som k=play",
    "redesenhaMesa",
    "gira",
-   "fx g=❓ txt=Virou +2 Vermelho cor=var(--cr) modo=stamp",
+   "fx g=❓ txt=Virou Inverter Vermelho cor=var(--cr) modo=stamp",
    "anuncioFim",
    "redesenhaMesa",
-   "origem p=3 carta=r:d2 anunciada=true",
-   "som k=plus",
-   "pausa ms=600"
+   "origem p=3 carta=r:rev anunciada=true",
+   "sentido",
+   "fx g=<svg> txt=Sentido invertido cor=var(--accent) modo=cw"
   ]
  },
  "carta:carousel:adversario": {

@@ -147,8 +147,10 @@ function botAct(){
   if(S.phase==='combo'&&confused(pi)){endTurn();return}
   jogar(pi,botChoose(p,opts));
 }
-function randomPool(){
-  const ex=['random','clone','bomb','chest','d99','half','simon','batata'];
+// presente: a Misteriosa que veio de um Presente não vira outro Presente (senão as Misteriosas extras, que não voltam
+// ao baralho, se multiplicam e a partida pode não acabar)
+function randomPool(presente){
+  const ex=['random','clone','bomb','chest','d99','half','simon','batata',...(presente?['box']:[])];
   const pool=R.noaction?[]:['skip','rev','d2'];
   if(!R.noaction)Object.entries(SP).forEach(([k,v])=>{if(!ex.includes(k)&&spOn(k))pool.push(k)});
   return pool.length?pool:['skip','rev','d2'];
@@ -157,7 +159,7 @@ function morphCard(card,prev){
   card.orig=card.orig||card.type;
   if(card.type==='clone'&&(!prev||['chest','batata','simon','half','bomb','clone','random'].includes(prev.type)))card.type='random';
   if(card.type==='clone'){card.type=prev.type;card.value=prev.value;card.color=(prev.color==='w'||prev.color==='k')?'w':prev.color}
-  else if(card.type==='random'){card.type=rand(randomPool());card.value=null;card.color=rand(COLORS)}
+  else if(card.type==='random'){card.type=rand(randomPool(card.doPresente));card.value=null;card.color=rand(COLORS)}
 }
 /* ---------- controlador do adversário: pensa (balão) e responde aos pedidos ---------- */
 CONTROLES.bot={

@@ -156,7 +156,7 @@ python -m http.server 8000    # na raiz do repositório (no Windows é "python";
   - Compra e Passa passa a vez ao comprar.
   - Compra Rápida joga a carta comprada sozinha, mesmo que não combine (exceto a Bomba).
   - Compra Implacável compra 1 por vez (2 com a Bigorna) e não deixa passar enquanto não houver carta jogável.
-- **Reembaralhar:** `restoreCard`/`returnable` devolvem as cartas à forma original (coringa preto, Misteriosa e Clonagem desfeitas, cor de antes da Tinta, Batata vermelha). Cartas com `extra: true` (Misteriosas do Presente, cópias da Partilha, Tesouro) não voltam ao baralho.
+- **Reembaralhar:** `restoreCard`/`returnable` devolvem as cartas à forma original (coringa preto, Misteriosa e Clonagem desfeitas, cor de antes da Tinta, Batata vermelha). Cartas com `extra: true` (Misteriosas do Presente, cópias da Partilha, Tesouro) não voltam ao baralho. A Misteriosa que veio de um Presente (`doPresente`) nunca vira outro Presente (`randomPool(presente)`): sem isso as Misteriosas extras se multiplicavam e cerca de 1 partida em 80 com o Presente não acabava.
 - **Status:**
   - `seatStatus(i)` para jogadores: selo na borda de baixo da cadeira e o seu selo acima da mão.
   - `tableStatus()` para a mesa: selos abaixo do baralho.
