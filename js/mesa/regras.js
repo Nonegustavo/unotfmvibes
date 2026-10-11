@@ -547,6 +547,8 @@ function endTurn(){
   const contra=S.contra;S.contra=false;
   if(S.pending>0&&((comboMode()==='none'&&!R.nou)||contra)){
     const v=S.turn;S.chal=null;
+    // quem estava preso na teia já perde esta vez comprando: a teia acaba aqui
+    if(S.players[v].webbed)S.players[v].webbed=false;
     if(noDraw(v)||curseIs('ice')||S.weather==='blizzard'){S.pending=0;S.pendingType=null;if(noDraw(v)){if(markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return}S.turn=nextIdx(v,1);startTurn();return}
     if(S.pending>=99){S.pending=0;S.pendingType=null;S.turn=v;drawn99(v,()=>{S.turn=nextIdx(v,1);startTurn()});return}
     const n=drawAmt(v,S.pending);drawN(v,n);emit({t:'selo',p:v,ic:'⊘',cor:'var(--cr)'});emit({t:'pausa',ms:900});
@@ -557,16 +559,32 @@ function endTurn(){
   }
   startTurn();
 }
+// quem não pode se defender de uma compra acumulada (preso na teia) compra na hora, e depois segue (depois)
+function compraPreso(v,depois){
+  S.chal=null;
+  if(noDraw(v)||curseIs('ice')||S.weather==='blizzard'){
+    S.pending=0;S.pendingType=null;
+    if(noDraw(v)&&markOut(v,S.death?'precisou comprar na morte súbita':'comprou com a maldição do espinho',S.death?'☠️':'🌵'))return;
+    depois();return;
+  }
+  if(S.pending>=99){S.pending=0;S.pendingType=null;drawn99(v,depois);return}
+  const n=drawAmt(v,S.pending);drawN(v,n);emit({t:'selo',p:v,ic:'⊘',cor:'var(--cr)'});emit({t:'pausa',ms:900});
+  log(`${J(v)} ${V(v,'compra','comprou')} ${n}.`);
+  S.pending=0;S.pendingType=null;
+  if(overloaded(v)&&markOut(v))return;
+  depois();
+}
 function startTurn(){
   S.tok++;S.vezes=(S.vezes||0)+1; // quantas vezes começaram nesta partida (o turbo e os testes contam por aqui)
   const cp=cur();
   // Batata: o contador mostra a vez atual com ela (1/5 na primeira, 5/5 na última)
   if(!cp.out&&cp.hand.some(c=>c.type==='batata'))cp.batata=(cp.batata||0)+1;
   if(cp.webbed){
-    cp.webbed=false;const g=S.gen,tok=S.tok;
-    emit({t:'selo',p:S.turn,ic:'🕸️',cor:'var(--muted)'});emit({t:'fx',g:'🕸️',txt:V(S.turn,'Você está preso na teia',`${J(S.turn)} está preso na teia`),cor:'var(--muted)',modo:'stamp'});
-    log(`${J(S.turn)} perdeu a vez (teia).`);atualiza();
-    agendar(()=>{if(g===S.gen&&tok===S.tok&&S.phase!=='over')endTurn()},1100);
+    // preso na teia: perde a vez; com uma compra acumulada para ele, não pode se defender e compra na hora
+    cp.webbed=false;const g=S.gen,tok=S.tok,v=S.turn,compra=S.pending>0;
+    emit({t:'selo',p:v,ic:'🕸️',cor:'var(--muted)'});emit({t:'fx',g:'🕸️',txt:V(v,'Você está preso na teia',`${J(v)} está preso na teia`)+(compra?`: +${S.pending}`:''),cor:'var(--muted)',modo:'stamp'});
+    log(`${J(v)} perdeu a vez (teia).`);atualiza();
+    agendar(()=>{if(g!==S.gen||tok!==S.tok||S.phase==='over')return;if(compra&&S.pending>0)compraPreso(v,endTurn);else endTurn()},1100);
     return;
   }
   if(cp.ctrlReal&&!cp.caiu&&(cp.esgotou||0)<3)devolve(S.turn);

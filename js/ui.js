@@ -584,7 +584,8 @@ function seatStatus(i){
   if(p.caiu)L.push({ic:'📵',short:'📵',name:'Caiu',txt:'a conexão caiu; um bot joga até ele voltar'});
   else if(p.ctrlReal)L.push({ic:'💤',short:'💤',name:'Ausente',txt:i===0?'o seu tempo acabou e um bot está jogando por você. Toque numa carta ou no monte para voltar':'o tempo dele acabou; um bot joga até ele voltar'});
   if(p.webbed)L.push({ic:'🕸️',short:'🕸️',name:'Teia',txt:'perde a próxima vez'});
-  if(p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
+  // a sua Batata já tem o selo na própria carta: o da sua área sairia repetido
+  if(i!==0&&p.hand.some(c=>c.type==='batata')&&p.batata)L.push({ic:'🥔',short:`🥔${p.batata}`,name:'Batata',txt:`está com ela há ${p.batata}/5 turnos. Se ainda estiver com ela no fim do quinto, é eliminado`});
   if(p.treasure)L.push({ic:'🧭',short:`🧭${p.treasure}`,name:'Busca',txt:`jogou ${p.treasure}/3, na terceira ganha a Carta do Tesouro`});
   if(p.hand2&&p.hand2.length)L.push({ic:'✋',short:`✋${p.hand2.length}`,name:'Segunda mão',txt:`${p.hand2.length} carta${p.hand2.length===1?'':'s'} pendente${p.hand2.length===1?'':'s'} na segunda mão`});
   if(S.other){const k=S.other.players[i].hand.length;
@@ -1044,12 +1045,15 @@ function openTarget(title,sub,opts,cb){
   // descem: uma cópia solta de cada cadeira voa do lugar dela (no topo) até o lugar na janela, por cima de tudo; a da
   // janela só aparece quando a cópia chega (a janela não sobe, para o movimento ser só o das cadeiras)
   const voa=(de,para,c,atraso,ida)=>{
-    const f=c.cloneNode(true);f.classList.add('alvo-voando');
-    Object.assign(f.style,{left:de.left+'px',top:de.top+'px',width:de.width+'px',height:de.height+'px',visibility:'visible'});document.body.appendChild(f);
+    // a cópia voa dentro de uma faixa de mentira com as mesmas classes da de verdade (com 5 ou mais jogadores, os nomes
+    // são menores: fora dela, eles cresceriam e seriam cortados com "…")
+    const f=c.cloneNode(true),w=document.createElement('div');f.classList.add('alvo-voando');
+    w.className='rail alvo-voo'+($('rail').classList.contains('many')?' many':'');w.appendChild(f);
+    Object.assign(f.style,{left:de.left+'px',top:de.top+'px',width:de.width+'px',height:de.height+'px',visibility:'visible'});document.body.appendChild(w);
     const a=f.animate([{transform:'none'},{transform:`translate(${para.left-de.left}px,${para.top-de.top}px) scale(${para.width/de.width},${para.height/de.height})`}],
       {duration:ALVO_MS,delay:atraso,easing:ida?'cubic-bezier(.3,.8,.3,1)':'cubic-bezier(.5,0,.6,1)',fill:'both'});
     // (com uma garantia, se a animação não avisar o fim)
-    return new Promise(r=>{let ok=false;const fim=()=>{if(ok)return;ok=true;f.remove();r()};a.onfinish=fim;a.oncancel=fim;setTimeout(fim,atraso+ALVO_MS+250)});
+    return new Promise(r=>{let ok=false;const fim=()=>{if(ok)return;ok=true;w.remove();r()};a.onfinish=fim;a.oncancel=fim;setTimeout(fim,atraso+ALVO_MS+250)});
   };
   const semVoo=RM||S.turbo;
   if(!semVoo){

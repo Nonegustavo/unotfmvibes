@@ -182,6 +182,7 @@
 #swapOv.voltando .sheet h2,#swapOv.voltando .sheet .sub,#swapOv.voltando .alvo-eu{opacity:0;transition:opacity .15s}
 #swapOv.voltando .sheet{background:transparent;box-shadow:none;transition:background .2s,box-shadow .2s}
 .rail.escolhendo .seat{visibility:hidden}
+.rail.alvo-voo{position:fixed;left:0;top:0;width:0;height:0;padding:0;overflow:visible;z-index:32;pointer-events:none}
 .seat.alvo-voando{position:fixed;margin:0;z-index:32;pointer-events:none;transform-origin:0 0;box-sizing:border-box}
 .alvo-eu{display:block;margin:0.75rem auto 0;min-width:9rem;text-align:center;justify-content:center}
 .swaps.row button{flex-direction:column;align-items:center;gap:0.25rem;min-width:5.375rem;flex:0 1 6.875rem;text-align:center;padding:0.625rem 0.5rem}
